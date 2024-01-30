@@ -28,7 +28,7 @@
             <hr />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@my.fit.edu" />
                 <label for="email">Email</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger" />
             </div>
@@ -129,6 +129,7 @@
         [Required]
         [EmailAddress]
         [Display(Name = "Email")]
+        [EmailDomain("my.fit.edu", ErrorMessage = "Email must be in the domain 'my.fit.edu'.")]
         public string Email { get; set; } = "";
 
         [Required]
@@ -141,5 +142,29 @@
         [Display(Name = "Confirm password")]
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = "";
+    }
+    public class EmailDomainAttribute : ValidationAttribute
+    {
+        private readonly string _domain;
+
+        public EmailDomainAttribute(string domain)
+        {
+            _domain = domain;
+        }
+
+        public override bool IsValid(object value)
+        {
+            if (value is string email)
+            {
+                string domain = email.Substring(email.IndexOf('@') + 1);
+                return domain.ToLower() == _domain.ToLower();
+            }
+            return false;
+        }
+
+        public override string FormatErrorMessage(string name)
+        {
+            return $"The domain of the {name} must be {_domain}.";
+        }
     }
 }

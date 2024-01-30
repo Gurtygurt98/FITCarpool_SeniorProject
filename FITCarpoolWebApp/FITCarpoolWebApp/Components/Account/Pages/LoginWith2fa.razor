@@ -63,7 +63,6 @@
         user = await SignInManager.GetTwoFactorAuthenticationUserAsync() ??
             throw new InvalidOperationException("Unable to load two-factor authentication user.");
     }
-
     private async Task OnValidSubmitAsync()
     {
         var authenticatorCode = Input.TwoFactorCode!.Replace(" ", string.Empty).Replace("-", string.Empty);
@@ -86,7 +85,6 @@
             message = "Error: Invalid authenticator code.";
         }
     }
-
     private sealed class InputModel
     {
         [Required]
