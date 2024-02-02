@@ -5,6 +5,11 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
+using WebPWrecover.Data;
+using WebPWrecover.Services;
+using Microsoft.AspNetCore.Identity.UI.Services;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,23 +1,68 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen.Blazor
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebar1Expanded = !sidebar1Expanded)" />
+            <RadzenLabel Text="FIT Carpool Web App" onclick="@sidebar1Expanded" />
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar @bind-Expanded="@sidebar1Expanded">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Home" Path="/" Icon="home" />
+            <RadzenPanelMenuItem Text="Rider View" Path="auth" Icon="lock" />
+            <RadzenPanelMenuItem Text="Driver View" Path="auth" Icon="car" />
+            <AuthorizeView>
+                <Authorized>
+                    <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="user" />
+                    <RadzenPanelMenuItem Text="Logout" Icon="sign-out" Click="@InvokeLogout" />
+                </Authorized>
+                <NotAuthorized>
+                    <RadzenPanelMenuItem Text="Register" Path="Account/Register" Icon="edit" />
+                    <RadzenPanelMenuItem Text="Login" Path="Account/Login" Icon="login" />
+                </NotAuthorized>
+            </AuthorizeView>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
             @Body
-        </article>
-    </main>
-</div>
+        </div>
+    </RadzenBody>
+    <RadzenFooter>
+        Florida Tech Carpool
+    </RadzenFooter>
+</RadzenLayout>
 
-<div id="blazor-error-ui">
-    An unhandled error has occurred.
-    <a href="" class="reload">Reload</a>
-    <a class="dismiss">🗙</a>
-</div>
+<form id="logoutForm" method="post" action="Account/Logout" style="display:none">
+    <AntiforgeryToken />
+    <input type="hidden" name="returnUrl" value="@currentUrl" />
+    @* Include antiforgery token if necessary *@
+</form>
+
+@code {
+    bool sidebar1Expanded = true;
+    private string? currentUrl;
+    // Runs on the page intialization, to get current user page and keep track of where they navigate to 
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+    // Used to keep track of the current user page 
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+    // Method to 
+    private async Task InvokeLogout()
+    {
+        await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('logoutForm').submit();");
+
+    }
+}

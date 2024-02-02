@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/FITCarpoolWebApp/FITCarpoolWebApp/appsettings.json
+/FITCarpoolWebApp/FITCarpoolWebApp/appsettings.Development.json
