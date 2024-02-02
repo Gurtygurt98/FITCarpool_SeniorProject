@@ -5,10 +5,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
-using WebPWrecover.Data;
-using WebPWrecover.Services;
 using Microsoft.AspNetCore.Identity.UI.Services;
-
+using MudBlazor.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,7 +19,10 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+// Services for component libraries 
 builder.Services.AddRadzenComponents();
+builder.Services.AddMudServices();
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;

@@ -1,0 +1,67 @@
+﻿@page "/"
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<AuthorizeView>
+    <Authorized>
+
+        <RadzenStack>
+            <RadzenCard Class="rz-my-12 rz-mx-auto">
+                <MudGrid Justify="Justify.Center">
+                    <MudItem xs="12" lg="12">
+                        <MudText Typo="Typo.h2" Align="Align.Center">Welcome, @userName!</MudText>
+                        </MudItem>
+                        <MudItem xs="12" lg="6">
+                            <RadzenButton Text="Riders" Click="@(() => NavigateTo("riders"))" />
+                        </MudItem>
+                        <MudItem xs="12" lg="6">
+                            <RadzenButton Text="Driver" Click="@(() => NavigateTo("driver"))" />
+                        </MudItem>
+                        <MudItem xs="12" lg="6">
+                            <RadzenButton Text="Group Find" Click="@(() => NavigateTo("group-find"))" />
+                        </MudItem>
+                    </MudGrid>
+            </RadzenCard>
+            <RadzenCard class="p-1 rz-background-color-success rz-color-on-success rz-text-align-center" style="height: 40px; width: 40px;">
+                B
+            </RadzenCard>
+            <RadzenCard class="p-1 rz-background-color-warning rz-color-on-warning rz-text-align-center" style="height: 60px; width: 60px;">
+                C
+            </RadzenCard>
+            <RadzenCard class="p-1 rz-background-color-danger rz-color-on-danger rz-text-align-center" style="height: 80px; width: 80px;">
+                D
+            </RadzenCard>
+        </RadzenStack>
+    </Authorized>
+    <NotAuthorized>
+        <div>
+            <RadzenButton Text="Login" Click="@(() => NavigationManager.NavigateTo("login"))" />
+            <RadzenButton Text="Register" Click="@(() => NavigationManager.NavigateTo("register"))" />
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string userName = "Not found";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name;
+        }
+        else
+        {
+            userName = "Not found";
+        }
+    }
+
+    private void NavigateTo(string page)
+    {
+        NavigationManager.NavigateTo($"/{page}");
+    }
+}

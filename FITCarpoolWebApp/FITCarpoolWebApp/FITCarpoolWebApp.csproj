@@ -13,7 +13,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.1" />
-    <PackageReference Include="Radzen.Blazor" Version="4.24.3" />
+    <PackageReference Include="MudBlazor" Version="6.15.0" />
+    <PackageReference Include="Radzen.Blazor" Version="4.24.5" />
   </ItemGroup>
 
 </Project>
