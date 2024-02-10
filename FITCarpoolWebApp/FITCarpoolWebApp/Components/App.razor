@@ -20,6 +20,15 @@
     <script src="_framework/blazor.web.js"></script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script>
+        function requestUserLocation(dotNetReference) {
+            navigator.geolocation.getCurrentPosition(
+                position => dotNetReference.invokeMethodAsync('HandleSuccess', position.coords.latitude, position.coords.longitude),
+                error => dotNetReference.invokeMethodAsync('HandleError', error.message)
+            );
+        }
+    </script>
+
 
 </body>
 

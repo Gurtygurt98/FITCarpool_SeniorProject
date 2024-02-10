@@ -1,0 +1,89 @@
+﻿@page "/rider"
+@using DataAccessLibrary.Data.API
+@using Microsoft.AspNetCore.Authorization
+@inject IGMapsAPI _GmapKey
+@inject IJSRuntime JSRuntime
+
+@attribute [Authorize]
+<MudGrid Justify="Justify.Center">
+    <MudItem xs="12" sm="10" md="8" lg="6" xl="4">
+        <MudText Typo="Typo.h1">Rider Sample Page</MudText>
+        @if (!string.IsNullOrEmpty(MapApi))
+        {
+            <MudCard Elevation="1" Outlined="true">
+                <MudCardHeader>
+                    <MudText Typo="Typo.h3">Rider Location:</MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@userLocationInfo</MudText>
+
+                </MudCardHeader>
+                <MudCardContent>
+                    <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
+                                     Center="new GoogleMapPosition() { Lat = userLocation.Latitude, Lng = userLocation.Longitude }" Zoom="12">
+                        <Markers>
+                            <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @userLocation.Latitude, Lng = @userLocation.Longitude }) />
+                        </Markers>
+                    </RadzenGoogleMap>
+                </MudCardContent>
+
+            </MudCard>
+        }
+        else
+        {
+            <MudText Typo="Typo.body1">There was an error with using/getting the Google Maps API Key</MudText>
+        }
+    </MudItem>
+
+</MudGrid>
+
+@code {
+    private string? MapApi = null;
+    private bool IsLocationAvailable = false;
+    private Location userLocation = new Location();
+    private string userLocationInfo = "Your Location";
+    private RadzenGoogleMap googleMap;
+
+    protected override async Task OnInitializedAsync()
+    {
+        MapApi = _GmapKey.MapAPI;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await GetUserLocation();
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetUserLocation()
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Allow this site to access your location?"))
+        {
+            await JSRuntime.InvokeVoidAsync("requestUserLocation", DotNetObjectReference.Create(this));
+        }
+    }
+
+    [JSInvokable]
+    public async void HandleSuccess(double latitude, double longitude)
+    {
+        userLocation.Latitude = latitude;
+        userLocation.Longitude = longitude;
+        IsLocationAvailable = true;
+        userLocationInfo = await _GmapKey.GetLocationInfoAsync(latitude, longitude);
+        InvokeAsync(StateHasChanged); // Ensure UI is updated with new location
+    }
+
+    [JSInvokable]
+    public void HandleError(string error)
+    {
+        Console.WriteLine($"Error getting location: {error}");
+        // Handle error here
+    }
+
+    private class Location
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+}

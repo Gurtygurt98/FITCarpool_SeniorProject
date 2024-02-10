@@ -1,0 +1,44 @@
+﻿@page "/Group-Find"
+@using MudBlazor
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
+            <MudText Typo="Typo.h2" Align="Align.Center">Groups that meet your preferences</MudText>
+                    
+        </RadzenStack>
+        <MudDataGrid Items="groups" Bordered="true" T="Group">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Name" />
+                <PropertyColumn Property="x => x.MaxSize" Title="Max Group Size" />
+                <PropertyColumn Property="x => x.CurrentSize" Title="Current Group Size" />
+                <PropertyColumn Property="x => x.Description" Title="Description" />
+            </Columns>
+        </MudDataGrid>
+    </RadzenCard>
+</RadzenStack>
+@code {
+    private List<Group> groups;
+
+    protected override void OnInitialized()
+    {
+        groups = new List<Group>
+        {
+            new Group { Name = "Group 1", MaxSize = 10, CurrentSize = 5, Description = "Sample Group 1" },
+            new Group { Name = "Group 2", MaxSize = 8, CurrentSize = 6, Description = "Sample Group 2" },
+            new Group { Name = "Group 3", MaxSize = 15, CurrentSize = 10, Description = "Sample Group 3" }
+        };
+    }
+    public class Group
+    {
+        public string? Name { get; set; }
+        public int MaxSize { get; set; }
+        public int CurrentSize { get; set; }
+        public string? Description { get; set; }
+    }
+
+}

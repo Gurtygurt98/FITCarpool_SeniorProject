@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Radzen;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using MudBlazor.Services;
+using DataAccessLibrary.Data.API;
+using AspNetMonsters.Blazor.Geolocation;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -22,6 +24,12 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 // Services for component libraries 
 builder.Services.AddRadzenComponents();
 builder.Services.AddMudServices();
+// Data Access Services 
+builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
+
+// Geolocation Services
+builder.Services.AddHttpClient();
+builder.Services.AddTransient<LocationService>();
 
 builder.Services.AddAuthentication(options =>
     {
