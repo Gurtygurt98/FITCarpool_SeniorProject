@@ -2,7 +2,46 @@
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize]
-<MudText Typo = "Typo.h1">Driver Sample Page </MudText>
-@code {
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
+            <MudText Typo="Typo.h3">Overall Finish Time: @overallFinishTime</MudText>
+                <MudText Typo="Typo.h3">Pickup Locations:</MudText>
 
+                @foreach (var address in pickupAddresses)
+            {
+                <div>
+                    <span>@address</span>
+                    <span style="margin-left: 10px;">ETA: @GetETA(address)</span>
+                </div>
+            }
+            <RadzenButton Text="Generate Directions" Click="@(() => GenerateDirections())" Style="margin-top: 20px;" />
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    List<string> pickupAddresses = new List<string>
+    {
+        "123 Main St, City, State, Zip",
+        "456 Elm St, City, State, Zip",
+        "789 Oak St, City, State, Zip"
+    };
+
+    string overallFinishTime = "6:00 PM";
+
+    private string GetETA(string address)
+    {
+        // Sample method to calculate ETA (replace with actual implementation)
+        // For demonstration purposes, we'll just return a random ETA between 15 and 30 minutes
+        Random rnd = new Random();
+        int minutes = rnd.Next(15, 31);
+        return DateTime.Now.AddMinutes(minutes).ToString("h:mm tt");
+    }
+
+    private void GenerateDirections()
+    {
+        // Sample method to generate directions
+        // You can implement your logic here
+    }
 }

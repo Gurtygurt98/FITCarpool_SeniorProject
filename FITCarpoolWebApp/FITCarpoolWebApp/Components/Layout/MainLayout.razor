@@ -4,7 +4,8 @@
 @inject TooltipService tooltipService
 @using Microsoft.AspNetCore.Components.Authorization
 @using Radzen.Blazor
-
+<RadzenDialog />
+<RadzenNotification />
 <RadzenLayout>
     <RadzenHeader>
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
@@ -20,6 +21,7 @@
                     <RadzenPanelMenuItem Text="Rider View" Path="Rider" Icon="local_taxi" />
                     <RadzenPanelMenuItem Text="Driver View" Path="Driver" Icon="directions_car_filled" />
                     <RadzenPanelMenuItem Text="Find Groups" Path="Group-Find" Icon="group_work" />
+                    <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
                     <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="account_circle" />
                     <RadzenPanelMenuItem Text="Logout" Icon="logout" Click="@InvokeLogout" />
                 </Authorized>

@@ -5,35 +5,23 @@
 @inject IJSRuntime JSRuntime
 
 @attribute [Authorize]
-<MudGrid Justify="Justify.Center">
-    <MudItem xs="12" sm="10" md="8" lg="6" xl="4">
-        <MudText Typo="Typo.h1">Rider Sample Page</MudText>
-        @if (!string.IsNullOrEmpty(MapApi))
-        {
-            <MudCard Elevation="1" Outlined="true">
-                <MudCardHeader>
-                    <MudText Typo="Typo.h3">Rider Location:</MudText>
-                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@userLocationInfo</MudText>
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
+            <MudText Typo="Typo.h3">Driver Location:</MudText>
+            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@userLocationInfo</MudText>
+        </RadzenStack>
+        <MudCardContent>
+            <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
+                                Center="new GoogleMapPosition() { Lat = userLocation.Latitude, Lng = userLocation.Longitude }" Zoom="12">
+                <Markers>
+                    <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @userLocation.Latitude, Lng = @userLocation.Longitude }) />
+                </Markers>
+            </RadzenGoogleMap>
+        </MudCardContent>
+    </RadzenCard>
+</RadzenStack>
 
-                </MudCardHeader>
-                <MudCardContent>
-                    <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
-                                     Center="new GoogleMapPosition() { Lat = userLocation.Latitude, Lng = userLocation.Longitude }" Zoom="12">
-                        <Markers>
-                            <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @userLocation.Latitude, Lng = @userLocation.Longitude }) />
-                        </Markers>
-                    </RadzenGoogleMap>
-                </MudCardContent>
-
-            </MudCard>
-        }
-        else
-        {
-            <MudText Typo="Typo.body1">There was an error with using/getting the Google Maps API Key</MudText>
-        }
-    </MudItem>
-
-</MudGrid>
 
 @code {
     private string? MapApi = null;

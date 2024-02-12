@@ -3,10 +3,11 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
+@using DataAccessLibrary.Model
+@using FITCarpoolWebApp.Components.MainPages
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using FITCarpoolWebApp.Data
-
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
@@ -155,4 +156,5 @@
             return $"The domain of the {name} must be {_domain}.";
         }
     }
+
 }

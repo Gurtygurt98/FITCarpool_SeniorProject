@@ -9,7 +9,6 @@
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
             <MudText Typo="Typo.h2" Align="Align.Center">Groups that meet your preferences</MudText>
-                    
         </RadzenStack>
         <MudDataGrid Items="groups" Bordered="true" T="Group">
             <Columns>
@@ -17,6 +16,11 @@
                 <PropertyColumn Property="x => x.MaxSize" Title="Max Group Size" />
                 <PropertyColumn Property="x => x.CurrentSize" Title="Current Group Size" />
                 <PropertyColumn Property="x => x.Description" Title="Description" />
+                <TemplateColumn>
+                    <CellTemplate>
+                        <RadzenButton Text="Join Group"  Class="btn btn-primary" />
+                    </CellTemplate>
+                </TemplateColumn>
             </Columns>
         </MudDataGrid>
     </RadzenCard>
@@ -33,6 +37,7 @@
             new Group { Name = "Group 3", MaxSize = 15, CurrentSize = 10, Description = "Sample Group 3" }
         };
     }
+
     public class Group
     {
         public string? Name { get; set; }
@@ -40,5 +45,4 @@
         public int CurrentSize { get; set; }
         public string? Description { get; set; }
     }
-
 }
