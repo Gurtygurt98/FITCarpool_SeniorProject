@@ -8,6 +8,7 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
+@inject Radzen.DialogService DialogService
 
 <PageTitle>Profile</PageTitle>
 
@@ -28,6 +29,10 @@
                 <label for="phone-number" class="form-label">Phone number</label>
                 <ValidationMessage For="() => Input.PhoneNumber" class="text-danger" />
             </div>
+            <div class="form-floating mb-3">
+                <RadzenLabel Text="Select Role" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+                <RadzenDropDown @bind-Value="@Input.Role" Data=@RoleData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+            </div>
             <button type="submit" class="w-100 btn btn-lg btn-primary">Save</button>
         </EditForm>
         <MudText>Total Miles Driving: 212 miles</MudText>
@@ -38,8 +43,10 @@
         <MudRating Disabled="true" SelectedValue="3" />
     </div>
 </div>
-
+<RadzenLabel Text="Select Role" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+<RadzenDropDown @bind-Value="@Input.Role" Data=@RoleData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 @code {
+    IEnumerable<string> RoleData = new string[] { "Rider", "Driver", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
     private ApplicationUser user = default!;
     private string? username;
     private string? phoneNumber;
@@ -55,19 +62,19 @@
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         username = await UserManager.GetUserNameAsync(user);
         phoneNumber = await UserManager.GetPhoneNumberAsync(user);
-
+        Input.Role ??= user.Role;
         Input.PhoneNumber ??= phoneNumber;
     }
 
     private async Task OnValidSubmitAsync()
     {
-        if (Input.PhoneNumber != phoneNumber)
+        user.PhoneNumber = Input.PhoneNumber;
+        user.Role = Input.Role;
+        var updateResult = await UserManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
         {
-            var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
-            if (!setPhoneResult.Succeeded)
-            {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
-            }
+            RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number or role.", HttpContext);
+            return;
         }
 
         await SignInManager.RefreshSignInAsync(user);
@@ -79,5 +86,6 @@
         [Phone]
         [Display(Name = "Phone number")]
         public string? PhoneNumber { get; set; }
+        public string? Role { get; set; }
     }
 }
