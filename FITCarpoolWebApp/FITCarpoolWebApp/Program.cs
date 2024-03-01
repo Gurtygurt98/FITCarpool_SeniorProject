@@ -9,10 +9,15 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using MudBlazor.Services;
 using DataAccessLibrary.Data.API;
 using AspNetMonsters.Blazor.Geolocation;
+using DataAccessLibrary;
+using Serilog;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
-
+// Configure Serilog
+builder.Host.UseSerilog((ctx, lc) => lc
+    .ReadFrom.Configuration(ctx.Configuration));
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -30,7 +35,8 @@ builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
 // Geolocation Services
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<LocationService>();
-
+// services to allow database connection 
+builder.Services.AddTransient<ISQLDataAccess, SQLDataAccess>();
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
@@ -44,6 +50,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
