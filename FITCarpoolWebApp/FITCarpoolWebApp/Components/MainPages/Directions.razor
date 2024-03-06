@@ -1,0 +1,73 @@
+﻿@page "/directions"
+@using DataAccessLibrary.Data.API
+@using Microsoft.AspNetCore.Authorization
+@inject IJSRuntime JSRuntime
+@inject IGMapsAPI _GmapKey // Inject your service to access the Google Maps API key
+
+@attribute [Authorize]
+<div>
+    <div class="input-group" style="margin-bottom: 20px;">
+        <input @bind="address1" class="form-control" placeholder="Enter address 1" />
+        <input @bind="address2" class="form-control" placeholder="Enter address 2" />
+        <input @bind="address3" class="form-control" placeholder="Enter address 3" />
+        <button class="btn btn-primary" @onclick="GetUserLocation">Show Route</button>
+    </div>
+
+    <div class="map-container" style="width: 100%; height: 75vh;">
+        @if (IsLocationAvailable)
+        {
+            <iframe width="100%" height="100%" frameborder="0" style="border:0"
+                    allowfullscreen
+                    src="@mapUrl">
+            </iframe>
+        }
+        else
+        {
+            <p>Loading your location...</p>
+        }
+    </div>
+</div>
+
+@code {
+    private bool IsLocationAvailable = false;
+    private string mapUrl = "";
+    private string MapApi = "";
+    private string address1 = "", address2 = "", address3 = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        MapApi = _GmapKey.MapAPI; // Use the injected service to get the API key
+    }
+
+    private async Task GetUserLocation()
+    {
+        if (!string.IsNullOrEmpty(address1) && !string.IsNullOrEmpty(address2) && !string.IsNullOrEmpty(address3))
+        {
+            if (await JSRuntime.InvokeAsync<bool>("confirm", "Allow this site to access your location?"))
+            {
+                await JSRuntime.InvokeVoidAsync("requestUserLocation", DotNetObjectReference.Create(this));
+            }
+        }
+        else
+        {
+            Console.WriteLine("Please enter all three addresses.");
+        }
+    }
+
+    [JSInvokable]
+    public void HandleSuccess(double latitude, double longitude)
+    {
+        var origin = $"{latitude},{longitude}";
+        // Construct the URL for multiple destinations
+        mapUrl = $"https://www.google.com/maps/embed/v1/directions?key={MapApi}&origin={origin}&destination={Uri.EscapeDataString(address3)}&waypoints={Uri.EscapeDataString(address1)}|{Uri.EscapeDataString(address2)}&mode=driving";
+        IsLocationAvailable = true;
+        StateHasChanged(); // Refresh to display the map
+    }
+
+    [JSInvokable]
+    public void HandleError(string error)
+    {
+        Console.WriteLine($"Error getting location: {error}");
+        // Handle error here, possibly displaying a message to the user
+    }
+}
