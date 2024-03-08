@@ -13,8 +13,8 @@
             <RadzenLabel Text="FIT Carpool Group Finder" />
         </RadzenStack>
     </RadzenHeader>
-    <RadzenSidebar Responsive="false" Style="width: max-content">
-        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false">
+    <RadzenSidebar Responsive="false" Style="width: max-content; position: absolute">
+        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false" >
             <RadzenPanelMenuItem Text="Home" Path="/" Icon="home"/>
             <AuthorizeView>
                 <Authorized>
@@ -22,6 +22,8 @@
                     <RadzenPanelMenuItem Text="Driver View" Path="Driver" Icon="directions_car_filled" />
                     <RadzenPanelMenuItem Text="Find Groups" Path="Group-Find" Icon="group_work" />
                     <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
+                    <RadzenPanelMenuItem Text="Directions" Path="Directions" Icon="directions" />
+
                     <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="account_circle" />
                     <RadzenPanelMenuItem Text="Logout" Icon="logout" Click="@InvokeLogout" />
                 </Authorized>
@@ -34,10 +36,15 @@
         </RadzenPanelMenu>
     </RadzenSidebar>
     <RadzenBody>
+        <div class="rz-p-4" style="margin-left:5vh; margin-right:5vh" >
             @Body
+
+        </div>
     </RadzenBody>
     <RadzenFooter>
-        This site is currently under construction by Austin Phillips, Hunter Smith, Jason Smith and Jacqueline Torres. 
+        <div class="rz-p-4" style="margin-left:5vh; margin-right:5vh">
+            This site is currently under construction by Austin Phillips, Hunter Smith, Jason Smith and Jacqueline Torres.
+        </div>
     </RadzenFooter>
 </RadzenLayout>
 <form id="logoutForm" method="post" action="Account/Logout" style="display:none">

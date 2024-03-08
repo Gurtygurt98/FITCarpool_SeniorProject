@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="Appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AspNetMonsters.Blazor.Geolocation" Version="0.4.0.1017" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.1" />
@@ -18,10 +26,15 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageReference Include="MudBlazor" Version="6.15.0" />
     <PackageReference Include="Radzen.Blazor" Version="4.24.5" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DataAccessLibrary\DataAccessLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Logs\" />
   </ItemGroup>
 
 </Project>
