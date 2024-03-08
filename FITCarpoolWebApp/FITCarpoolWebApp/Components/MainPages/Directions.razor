@@ -24,15 +24,14 @@
         <MudItem xs="12" md="12">
             @foreach(DirectionsStop currStops in stops)
             {
-                @if(stops.Last().Id == currStops.Id)
+                @if(stops.Last().Id != currStops.Id)
                 {
-                    // Last one gets the ability to add 
-                    <Stops model="currStops" OnAddStop="AddStop" OnRemoveStop="RemoveStop" _isLast="true"></Stops>
+                    // Last one gets the ability to add
+                    <Stops model="currStops" OnAddStop="AddStop" OnRemoveStop="RemoveStop"></Stops>
 
                 } else
                 {
-                    <Stops model="currStops" OnAddStop="AddStop" OnRemoveStop="RemoveStop"></Stops>
-
+                    <Stops model="currStops" OnAddStop="AddStop" OnRemoveStop="RemoveStop" _isLast="true"></Stops>
                 }
             }
         </MudItem>
@@ -109,8 +108,8 @@
     }
     public void AddStop(int id)
     {
-        stops.Add(new DirectionsStop(StopCount, ""));
         StopCount++;
+        stops.Add(new DirectionsStop(StopCount, ""));
         StateHasChanged();
     }
     public void RemoveStop(DirectionsStop id)
