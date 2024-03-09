@@ -1,7 +1,13 @@
 ﻿@inherits LayoutComponentBase
 @layout FITCarpoolWebApp.Components.Layout.MainLayout
 @inject NavigationManager NavigationManager
-
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject TooltipService tooltipService
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen.Blazor
+<RadzenDialog />
+<RadzenNotification />
 @if (HttpContext is null)
 {
     <p>Loading...</p>
