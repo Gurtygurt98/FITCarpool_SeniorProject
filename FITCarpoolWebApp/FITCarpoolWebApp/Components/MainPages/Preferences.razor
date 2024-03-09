@@ -6,6 +6,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using FITCarpoolWebApp.Data
+
 @inject Radzen.DialogService DialogService
 
 @page "/Preferences"
@@ -27,21 +28,47 @@
 
             <MudText Typo="Typo.h2" Align="Align.Center">Comfort Preferences</MudText>
 
-            
+            <RadzenLabel Text="Select Music Preferences" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
+            <RadzenDropDown @bind-Value="@selectedMusicGenres" Data="@musicGenres" Multiple="true" AllowClear="true" Placeholder="Select Music Preferences" 
+                Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
+            <RadzenLabel Text="Select Car Temperature Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+            <RadzenDropDown @bind-Value=@temperaturePreference Data=@carTempValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+
         </RadzenStack>
     </RadzenCard> 
 </RadzenStack>
 
 @code {
-    // Logic added for creating user preferences - schedule 
-    RadzenScheduler<ScheduleModel> scheduler;
-    RadzenUpload upload;
+    // Logic added for creating user preferences 
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
     // Gender 
     string genderPreference = "No Preference";
     string eatingPreference = "No Preference";
     string smokingPreference = "No Preference";
+    string temperaturePreference = "No Preference";
+    IEnumerable<string> genderValues = new string[] { "No Preference", "Women and Non-binary Only", "Same Gender", "Non-binary Only" };
+    IEnumerable<string> carEatingValues = new string[] { "No Preference", "Vehcile allows eating", "Vehicle does not allow eating" };
+    IEnumerable<string> carSmokingValues = new string[] { "No Preference", "Vehcile allows smoking", "Vehcile does not allow smoking" };
+    IEnumerable<string> carTempValues = new string[] { "No Preference", "Warmer", "Colder" };
 
+    List<string> selectedMusicGenres = new List<string>();
+    IEnumerable<MusicGenre> musicGenres = new List<MusicGenre>
+    {
+        new MusicGenre { Id = "1", Name = "No Preference" },
+        new MusicGenre { Id = "2", Name = "Pop" },
+        new MusicGenre { Id = "3", Name = "Rock" },
+        new MusicGenre { Id = "4", Name = "Hip Hop" },
+        new MusicGenre { Id = "5", Name = "R&B" },
+        new MusicGenre { Id = "6", Name = "Country" },
+        new MusicGenre { Id = "7", Name = "Folk" },
+        new MusicGenre { Id = "8", Name = "Classical" }
+    };
+
+    class MusicGenre
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
 
     string gender = "Other";
     string role = "Rider";
@@ -55,8 +82,6 @@
     string drivingDistance;
     bool allowEatingDrink;
     bool allowSmoking;
-    IEnumerable<string> genderValues = new string[] { "No Preference", "Women and Non-binary Only", "Same Gender", "Non-binary Only" };
-    IEnumerable<string> carEatingValues = new string[] { "No Preference", "Vehcile allows eating", "Vehicle does not allow eating"};
-    IEnumerable<string> carSmokingValues = new string[] { "No Preference", "Vehcile allows smoking", "Vehcile does not allow smoking" };
+    
 
 }
