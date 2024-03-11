@@ -2,7 +2,10 @@
 @using System.Text
 @using System.Text.Encodings.Web
 @using DataAccessLibrary.Model
+<<<<<<< HEAD
+=======
 @using DataAccessLibrary.Model.Database_Models
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
 @using FITCarpoolWebApp.Components.MainPages
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
@@ -64,7 +67,11 @@
         <RadzenStack>
             <MudText Typo="Typo.h2" Align="Align.Center">Edit Schedule</MudText>
         </RadzenStack>
+<<<<<<< HEAD
+        <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="ScheduleModel" Data=@appointments StartProperty="Start" EndProperty="End"
+=======
         <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="SchedulesModel" Data=@appointments StartProperty="Start" EndProperty="End"
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
                          TextProperty="Text" SelectedIndex="2"
                          SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender star>
             <RadzenDayView />
@@ -77,7 +84,11 @@
 
 @code {
     // Logic added for creating user preferences - schedule 
+<<<<<<< HEAD
+    RadzenScheduler<ScheduleModel> scheduler;
+=======
     RadzenScheduler<SchedulesModel> scheduler;
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
     RadzenUpload upload;
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
     // Gender 
@@ -96,6 +107,37 @@
     IEnumerable<string> genderData = new string[] { "Male", "Female", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
     IEnumerable<string> roles = new string[] { "Rider" , "Driver"};
 
+<<<<<<< HEAD
+    IList<ScheduleModel> appointments = new List<ScheduleModel>
+    {
+           // 3 days before
+        new ScheduleModel { Start = DateTime.Today.AddDays(-3).AddHours(8), End = DateTime.Today.AddDays(-3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddDays(-3).AddHours(17), End = DateTime.Today.AddDays(-3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+
+        // 2 days before
+        new ScheduleModel { Start = DateTime.Today.AddDays(-2).AddHours(8), End = DateTime.Today.AddDays(-2).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddDays(-2).AddHours(17), End = DateTime.Today.AddDays(-2).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+
+        // 1 day before
+        new ScheduleModel { Start = DateTime.Today.AddDays(-1).AddHours(8), End = DateTime.Today.AddDays(-1).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddDays(-1).AddHours(17), End = DateTime.Today.AddDays(-1).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+
+        // Today
+        new ScheduleModel { Start = DateTime.Today.AddHours(8), End = DateTime.Today.AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddHours(17), End = DateTime.Today.AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+
+        // 1 day after
+        new ScheduleModel { Start = DateTime.Today.AddDays(1).AddHours(8), End = DateTime.Today.AddDays(1).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddDays(1).AddHours(17), End = DateTime.Today.AddDays(1).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+
+        // 2 days after
+        new ScheduleModel { Start = DateTime.Today.AddDays(2).AddHours(8), End = DateTime.Today.AddDays(2).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddDays(2).AddHours(17), End = DateTime.Today.AddDays(2).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+
+        // 3 days after
+        new ScheduleModel { Start = DateTime.Today.AddDays(3).AddHours(8), End = DateTime.Today.AddDays(3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+        new ScheduleModel { Start = DateTime.Today.AddDays(3).AddHours(17), End = DateTime.Today.AddDays(3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+=======
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {
            // 3 days before
@@ -125,6 +167,7 @@
         // 3 days after
         new SchedulesModel { Start = DateTime.Today.AddDays(3).AddHours(8), End = DateTime.Today.AddDays(3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
         new SchedulesModel { Start = DateTime.Today.AddDays(3).AddHours(17), End = DateTime.Today.AddDays(3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
     };
 
     void OnSlotRender(SchedulerSlotRenderEventArgs args)
@@ -138,7 +181,11 @@
 
         if (args.View.Text != "Year")
         {
+<<<<<<< HEAD
+            ScheduleModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Appointment",
+=======
             SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Appointment",
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
                 new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
 
             if (data != null)
@@ -150,11 +197,19 @@
         }
     }
 
+<<<<<<< HEAD
+    async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<ScheduleModel> args)
+    {
+        Console.WriteLine($"Appt Selected: {args.Start} to {args.End}");
+
+        var copy = new ScheduleModel
+=======
     async Task OnAppointmentSelect(SchedulerAppointmentSelectEventArgs<SchedulesModel> args)
     {
         Console.WriteLine($"Appt Selected: {args.Start} to {args.End}");
 
         var copy = new SchedulesModel
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
             {
                 Start = args.Data.Start,
                 End = args.Data.End,
@@ -174,7 +229,11 @@
         await scheduler.Reload();
     }
 
+<<<<<<< HEAD
+    void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<ScheduleModel> args)
+=======
     void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<SchedulesModel> args)
+>>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
     {
         // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
 
