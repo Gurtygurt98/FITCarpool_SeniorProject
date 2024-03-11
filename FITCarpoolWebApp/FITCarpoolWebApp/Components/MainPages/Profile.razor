@@ -28,7 +28,7 @@
             <RadzenTextBox @bind-Value="@address" Placeholder="Address" Style="width: 100%; max-width: 400px;" />
             <RadzenTextBox @bind-Value="@pickupLocation" Placeholder="Pick-up Location" Style="width: 100%; max-width: 400px;" />
             <RadzenTextBox @bind-Value="@dropoffLocation" Placeholder="Drop-off Location" Style="width: 100%; max-width: 400px;" />
-            @if (role == "Driver")
+            @if (role == "driver")
             {
                 <RadzenTextBox @bind-Value="@drivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%; max-width: 400px;" />
             }
@@ -39,7 +39,7 @@
             </RadzenCard>
         </RadzenStack>
     </RadzenCard>
-    @if (role == "Driver")
+    @if (role == "driver")
     {
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
             <RadzenStack>
@@ -82,7 +82,7 @@
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
     // Gender 
     string gender = "Other";
-    string role = "Rider";
+    string role = "rider";
     string seatbelts;
     string vehicleModel;
     string vehicleColor;
@@ -94,7 +94,7 @@
     bool allowEatingDrink;
     bool allowSmoking;
     IEnumerable<string> genderData = new string[] { "Male", "Female", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
-    IEnumerable<string> roles = new string[] { "Rider" , "Driver"};
+    IEnumerable<string> roles = new string[] { "rider" , "driver"};
 
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {

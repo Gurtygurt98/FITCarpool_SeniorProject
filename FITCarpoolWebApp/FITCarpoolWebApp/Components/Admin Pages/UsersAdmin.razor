@@ -1,30 +1,60 @@
 ﻿@page "/Admin/Users Management"
 @using MudBlazor
-@using Radzen.Blazor
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @layout AdminLayout
-@inject IUsersData UsersData;
-<h3>Users Database Management</h3>
+@inject IUsersData _dbUsers
+
+<MudDataGrid T="UsersModel" Items="UserList" ReadOnly="false" EditMode="MudBlazor.DataGridEditMode.Cell"
+             StartedEditingItem="StartedEditingUser" CanceledEditingItem="CanceledEditingUser" CommittedItemChanges="CommittedUserChanges"
+             Bordered="true" Dense="true">
+    <Columns>
+        <PropertyColumn Property="x => x.UserId" Title="User ID" IsEditable="false" />
+        <PropertyColumn Property="x => x.Email" Title="Email" />
+        <PropertyColumn Property="x => x.FirstName" Title="First Name" />
+        <PropertyColumn Property="x => x.LastName" Title="Last Name" />
+        <PropertyColumn Property="x => x.Phone" Title="Phone" />
+        <PropertyColumn Property="x => x.UserType" Title="User Type" />
+        <TemplateColumn Title="Actions" Width="150px">
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteUser(context.Item))" />
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
 
 @code {
-    List<UsersModel> UserList = new List<UsersModel>();
-    private string userName = "Not found";
+    private List<UsersModel> UserList = new();
+    private string _searchString;
 
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        var user = authState.User;
+        UserList = await _dbUsers.GetAllUser();
+    }
 
-        if (user.Identity.IsAuthenticated)
-        {
-            userName = user.Identity.Name;
-        }
-        else
-        {
-            userName = "Not found";
-        }
+    void StartedEditingUser(UsersModel user)
+    {
+        // Implement functionality as needed
+    }
+
+    void CanceledEditingUser(UsersModel user)
+    {
+        // Implement functionality as needed
+    }
+
+    async Task CommittedUserChanges(UsersModel user)
+    {
+        await _dbUsers.UpdateUser(user);
+        // Optionally, refresh the UserList if needed
+        UserList = await _dbUsers.GetAllUser();
+    }
+
+    async Task DeleteUser(UsersModel user)
+    {
+        await _dbUsers.DeleteUser(user.UserId);
+        UserList.Remove(user);
+        StateHasChanged(); // Refresh the UI
     }
 }
