@@ -11,6 +11,7 @@ using DataAccessLibrary.Data.API;
 using AspNetMonsters.Blazor.Geolocation;
 using DataAccessLibrary;
 using Serilog;
+using DataAccessLibrary.Data.Database;
 
 
 
@@ -31,6 +32,17 @@ builder.Services.AddRadzenComponents();
 builder.Services.AddMudServices();
 // Data Access Services 
 builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
+
+// Database Connection services
+builder.Services.AddTransient<ICarpoolGroupsData, CarpoolGroupsData>();
+builder.Services.AddTransient<IFriendsData, FriendsData>();
+builder.Services.AddTransient<IGroupMemberLocationsData, GroupMemberLocationsData>();
+builder.Services.AddTransient<IGroupMembersData, GroupMembersData>();
+builder.Services.AddTransient<IMessagesData, MessagesData>();
+builder.Services.AddTransient<IPreferencesData, PreferencesData>();
+builder.Services.AddTransient<ISchedulesData, SchedulesData>();
+builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
+builder.Services.AddTransient<IUsersData, UsersData>();
 
 // Geolocation Services
 builder.Services.AddHttpClient();
