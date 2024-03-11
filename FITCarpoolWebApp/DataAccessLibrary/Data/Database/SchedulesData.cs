@@ -29,11 +29,7 @@ namespace DataAccessLibrary.Data.Database
 
         public async Task UpdateSchedule(SchedulesModel schedule)
         {
-<<<<<<< HEAD
-            string sql = @"UPDATE Schedules SET UserID = @UserId, DayOfWeek = @DayOfWeek, StartTime = @StartTime, EndTime = @EndTime WHERE ScheduleID = @ScheduleId";
-=======
             string sql = @"UPDATE Schedules SET UserID = @UserId, DayOfWeek = @DayOfWeek, StartTime = @StartTime, EndTime = @EndTime, Text = @Text WHERE ScheduleID = @ScheduleId";
->>>>>>> a0659ffbb39356fbf87dd3cb6550cd4e447510d7
             await _db.SaveData(sql, schedule);
         }
 
