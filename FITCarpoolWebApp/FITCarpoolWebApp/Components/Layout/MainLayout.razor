@@ -11,6 +11,7 @@
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenLabel Text="FIT Carpool Group Finder" />
+
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar Responsive="false" Style="width: max-content; position: absolute">
@@ -18,20 +19,27 @@
             <RadzenPanelMenuItem Text="Home" Path="/" Icon="home"/>
             <AuthorizeView>
                 <Authorized>
+                    <RadzenPanelMenuItem Text="Profile" Path="Profile" Icon="account_circle" />
+                    <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
                     <RadzenPanelMenuItem Text="Rider View" Path="Rider" Icon="local_taxi" />
                     <RadzenPanelMenuItem Text="Driver View" Path="Driver" Icon="directions_car_filled" />
                     <RadzenPanelMenuItem Text="Find Groups" Path="Group-Find" Icon="group_work" />
-                    <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
+                    <RadzenPanelMenuItem Text="Friends List" Path="Friends" Icon="supervised_user_circle" />
                     <RadzenPanelMenuItem Text="Directions" Path="Directions" Icon="directions" />
                     <RadzenPanelMenuItem Text="Group" Path="Group" Icon="directions" />
 
-                    <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="account_circle" />
+                    <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="manage_accounts" />
                     <RadzenPanelMenuItem Text="Logout" Icon="logout" Click="@InvokeLogout" />
                 </Authorized>
                 <NotAuthorized>
                     <RadzenPanelMenuItem Text="Register" Path="Account/Register" Icon="edit" />
                     <RadzenPanelMenuItem Text="Login" Path="Account/Login" Icon="login" />
                 </NotAuthorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <RadzenPanelMenuItem Text="Admin Home Page" Path="Admin/Home Page" Icon="manage_accounts" />
+                </Authorized>
             </AuthorizeView>
 
         </RadzenPanelMenu>
@@ -75,5 +83,9 @@
     {
         await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('logoutForm').submit();");
 
+    }
+    private void NavigateTo(string page)
+    {
+        NavigationManager.NavigateTo($"/{page}");
     }
 }

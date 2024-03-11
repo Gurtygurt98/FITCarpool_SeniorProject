@@ -1,0 +1,19 @@
+﻿@inherits LayoutComponentBase
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject TooltipService tooltipService
+@using Microsoft.AspNetCore.Components.Authorization
+@using Radzen.Blazor
+<RadzenDialog />
+<RadzenNotification />
+@using Microsoft.AspNetCore.Authorization
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        @Body
+    </Authorized>
+    <NotAuthorized>
+        <MudText>Not Authorized to view admin pages</MudText>
+    </NotAuthorized>
+</AuthorizeView>
+

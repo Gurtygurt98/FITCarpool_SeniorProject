@@ -1,0 +1,30 @@
+﻿@page "/Admin/Users Management"
+@using MudBlazor
+@using Radzen.Blazor
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@layout AdminLayout
+@inject IUsersData UsersData;
+<h3>Users Database Management</h3>
+
+@code {
+    List<UsersModel> UserList = new List<UsersModel>();
+    private string userName = "Not found";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name;
+        }
+        else
+        {
+            userName = "Not found";
+        }
+    }
+}

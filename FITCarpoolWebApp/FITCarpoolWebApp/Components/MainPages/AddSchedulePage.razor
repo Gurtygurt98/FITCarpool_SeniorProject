@@ -1,7 +1,7 @@
 ﻿@using DataAccessLibrary.Model
 @inject Radzen.DialogService DialogService
 
-<RadzenTemplateForm TItem="ScheduleModel" Data="@model" Submit=@OnSubmit>
+<RadzenTemplateForm TItem="SchedulesModel" Data="@model" Submit=@OnSubmit>
     <div class="row" style="margin-bottom: 16px">
         <div class="col-md-3">
             <RadzenLabel Text="Text" />
@@ -43,7 +43,7 @@
     [Parameter]
     public DateTime End { get; set; }
 
-    ScheduleModel model = new ScheduleModel();
+    SchedulesModel model = new SchedulesModel();
 
     protected override void OnParametersSet()
     {
@@ -51,7 +51,7 @@
         model.End = End;
     }
 
-    void OnSubmit(ScheduleModel model)
+    void OnSubmit(SchedulesModel model)
     {
         DialogService.Close(model);
     }
