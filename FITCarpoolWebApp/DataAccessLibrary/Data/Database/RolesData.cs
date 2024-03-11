@@ -1,11 +1,11 @@
-﻿using DataAccessLibrary.Model;
+﻿using DataAccessLibrary.Model.Database_Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DataAccessLibrary.Data.User_Management
+namespace DataAccessLibrary.Data.Database
 {
     public class RolesData
     {
@@ -15,10 +15,10 @@ namespace DataAccessLibrary.Data.User_Management
         {
             _db = db;
         }
-        public Task<List<RolesModel>> GetUserRoles()
+        public async Task<List<RolesModel>> GetUserRoles()
         {
             string sql = " ";
-            return _db.LoadData<RolesModel, dynamic>(sql, new { });
+            return await _db.LoadData<RolesModel, dynamic>(sql, new { });
         }
     }
 }
