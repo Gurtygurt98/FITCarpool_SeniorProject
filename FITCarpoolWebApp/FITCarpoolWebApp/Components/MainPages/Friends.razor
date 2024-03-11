@@ -1,0 +1,57 @@
+﻿@page "/Friends"
+@using MudBlazor
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
+            <MudText Typo="Typo.h2" Align="Align.Center">Friends List</MudText>
+            <RadzenTextBox Placeholder="Search for friends..." Style="width:100%; margin-bottom:15px;" />
+            
+        </RadzenStack>
+        <MudDataGrid Items="friends" Bordered="true" T="Friend">
+            <Columns>
+                <PropertyColumn Property="x => x.Name" Title="Name" />
+                <PropertyColumn Property="x => x.Status" Title="Online Status" />
+                <TemplateColumn>
+                    <CellTemplate>
+                        <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    
+    private void OnClick(string message)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message});
+    }
+
+    private List<Friend> friends;
+
+    protected override void OnInitialized()
+    {
+        friends = new List<Friend>
+        {
+            new Friend { Name = "Friend 1", Status = "Recently Online"},
+            new Friend { Name = "Friend 2", Status = "Recently Online"},
+            new Friend { Name = "Friend 3", Status = "Offline"},
+            new Friend { Name = "Friend 4", Status = "Recently Online"},
+            new Friend { Name = "Friend 5", Status = "Offline"}
+        };
+    }
+
+    public class Friend
+    {
+        public string? Name { get; set; }
+        public string? Status { get; set; }
+    }
+}

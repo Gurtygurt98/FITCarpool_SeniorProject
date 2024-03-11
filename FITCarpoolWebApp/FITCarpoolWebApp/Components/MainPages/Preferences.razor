@@ -19,14 +19,14 @@
             <RadzenLabel Text="Select Rider Gender Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
             <RadzenDropDown @bind-Value=@genderPreference Data=@genderValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
             
-            <MudText Typo="Typo.h2" Align="Align.Center">Cleanliness Preferences</MudText>
+            <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Cleanliness Preferences</MudText>
 
             <RadzenLabel Text="Select Car Eating Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
             <RadzenDropDown @bind-Value=@eatingPreference Data=@carEatingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
             <RadzenLabel Text="Select Car Smoking Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
             <RadzenDropDown @bind-Value=@smokingPreference Data=@carSmokingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
-            <MudText Typo="Typo.h2" Align="Align.Center">Comfort Preferences</MudText>
+            <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Comfort Preferences</MudText>
 
             <RadzenLabel Text="Select Music Preferences" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
             <RadzenDropDown @bind-Value="@selectedMusicGenres" Data="@musicGenres" Multiple="true" AllowClear="true" Placeholder="Select Music Preferences" 
