@@ -11,18 +11,19 @@ namespace DataAccessLibrary.Model
         public int ScheduleId { get; set; }
         public int UserId { get; set; }
         public string DayOfWeek { get; set; } 
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }
+        public string Text { get; set; }
 
         public SchedulesModel() { }
 
-        public SchedulesModel(int scheduleId, int userId, string dayOfWeek, TimeSpan startTime, TimeSpan endTime)
+        public SchedulesModel(int scheduleId, int userId, string dayOfWeek, DateTime startTime, DateTime endTime)
         {
             ScheduleId = scheduleId;
             UserId = userId;
             DayOfWeek = dayOfWeek;
-            StartTime = startTime;
-            EndTime = endTime;
+            Start = startTime;
+            End = endTime;
         }
     }
 
