@@ -17,9 +17,13 @@
             <MudText Typo="Typo.h2" Align="Align.Center">Basic Info</MudText>
             <RadzenTextBox Placeholder="First Name" Style="width:100%; margin-bottom:15px;" />
             <RadzenTextBox Placeholder="Last Name" Style="width:100%; margin-bottom:15px;" />
-            <RadzenTextBox Placeholder="Phone Number" Style="width:100%; margin-bottom:15px;" />
+            <RadzenTextBox Placeholder="Phone Number" Style="width:100%; margin-bottom:5px;" />
+            <RadzenLabel Text="Phone Number Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
+            <RadzenDropDown @bind-Value="@selectedPrivacy" Data="@privacyOptions" Multiple="true" AllowClear="true" Placeholder="Select Privacy Setting"
+                            Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
 
-            <RadzenLabel Text="Select Gender" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+
+            <RadzenLabel Text="Select Gender" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle; margin-top:15px" />
             <RadzenDropDown @bind-Value=@gender Data=@genderData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
             
             <RadzenLabel Text="Select Role" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
@@ -32,6 +36,10 @@
             {
                 <RadzenTextBox @bind-Value="@drivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%; max-width: 400px;" />
             }
+            <RadzenLabel Text="Address Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
+            <RadzenDropDown @bind-Value="@selectedPrivacy" Data="@privacyOptions" Multiple="true" AllowClear="true" Placeholder="Select Privacy Setting"
+                            Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
+
             <RadzenCard>
                 <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Profile Picture Upload</RadzenText>
                 <RadzenUpload @ref="upload" Auto="false" Url="upload/multiple" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"
@@ -95,6 +103,23 @@
     bool allowSmoking;
     IEnumerable<string> genderData = new string[] { "Male", "Female", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
     IEnumerable<string> roles = new string[] { "rider" , "driver"};
+
+    List<string> selectedPrivacy = new List<string> { "1" };
+    //List<string> selectedPrivacy = new List<string> ("1" );
+    IEnumerable<PrivacyOption> privacyOptions = new List<PrivacyOption>
+    {
+        new PrivacyOption { Id = "1", Name = "Share With No One" },
+        new PrivacyOption { Id = "2", Name = "Share with Friends" },
+        new PrivacyOption { Id = "3", Name = "Share with Group Driver" },
+        new PrivacyOption { Id = "4", Name = "Share with Other Group Passengers" },
+    };
+
+    class PrivacyOption
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
+
 
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {
