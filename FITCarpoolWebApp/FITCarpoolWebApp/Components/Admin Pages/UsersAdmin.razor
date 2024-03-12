@@ -1,34 +1,46 @@
 ﻿@page "/Admin/Users Management"
+@using Microsoft.EntityFrameworkCore
 @using MudBlazor
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @layout AdminLayout
+@using System.Net.Http.Json
+@inject HttpClient httpClient
 @inject IUsersData _dbUsers
 
-<MudDataGrid T="UsersModel" Items="UserList" ReadOnly="false" EditMode="MudBlazor.DataGridEditMode.Cell"
-             StartedEditingItem="StartedEditingUser" CanceledEditingItem="CanceledEditingUser" CommittedItemChanges="CommittedUserChanges"
-             Bordered="true" Dense="true">
-    <Columns>
-        <PropertyColumn Property="x => x.UserId" Title="User ID" IsEditable="false" />
-        <PropertyColumn Property="x => x.Email" Title="Email" />
-        <PropertyColumn Property="x => x.FirstName" Title="First Name" />
-        <PropertyColumn Property="x => x.LastName" Title="Last Name" />
-        <PropertyColumn Property="x => x.Phone" Title="Phone" />
-        <PropertyColumn Property="x => x.UserType" Title="User Type" />
-        <TemplateColumn Title="Actions" Width="150px">
-            <CellTemplate>
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteUser(context.Item))" />
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-</MudDataGrid>
 
-@code {
+<RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+    <MudDataGrid T="UsersModel" Items="UserList" Bordered="true" Dense="true" ReadOnly="false" EditMode="MudBlazor.DataGridEditMode.Form"
+                 StartedEditingItem="@StartedEditingUser" CanceledEditingItem="@CanceledEditingUser" CommittedItemChanges="@CommittedUserChanges" EditTrigger="DataGridEditTrigger.Manual">
+        <Columns>
+            <PropertyColumn Property="x => x.UserId" Title="User ID" IsEditable="false" />
+            <PropertyColumn Property="x => x.Email" Title="Email" />
+            <PropertyColumn Property="x => x.FirstName" Title="First Name" />
+            <PropertyColumn Property="x => x.LastName" Title="Last Name" />
+            <PropertyColumn Property="x => x.Phone" Title="Phone" />
+            <PropertyColumn Property="x => x.UserType" Title="UsersType">
+                <EditTemplate>
+                    <MudSelect @bind-Value="context.Item.UserType" Required RequiredError="You must select a Position!!!" Margin="@Margin.Dense">
+                        <MudSelectItem Value="@("driver")">Driver</MudSelectItem>
+                         <MudSelectItem Value="@("rider")">Rider</MudSelectItem>
+                    </MudSelect>
+                </EditTemplate>
+            </PropertyColumn>
+            <TemplateColumn Title="Actions">
+                <CellTemplate>
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteUser(context.Item))" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@context.Actions.StartEditingItemAsync" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</RadzenCard>
+ @code {
     private List<UsersModel> UserList = new();
     private string _searchString;
-
+    private string test = "driver";
     protected override async Task OnInitializedAsync()
     {
         UserList = await _dbUsers.GetAllUser();
@@ -36,18 +48,15 @@
 
     void StartedEditingUser(UsersModel user)
     {
-        // Implement functionality as needed
     }
 
     void CanceledEditingUser(UsersModel user)
     {
-        // Implement functionality as needed
     }
 
     async Task CommittedUserChanges(UsersModel user)
     {
         await _dbUsers.UpdateUser(user);
-        // Optionally, refresh the UserList if needed
         UserList = await _dbUsers.GetAllUser();
     }
 

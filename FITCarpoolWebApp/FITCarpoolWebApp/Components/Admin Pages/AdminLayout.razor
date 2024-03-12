@@ -5,6 +5,10 @@
 @inject TooltipService tooltipService
 @using Microsoft.AspNetCore.Components.Authorization
 @using Radzen.Blazor
+@using MudBlazor
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 <RadzenDialog />
 <RadzenNotification />
 @using Microsoft.AspNetCore.Authorization
@@ -22,7 +26,7 @@
                     @*Need two because of overlap issues*@
                     <RadzenPanelMenuItem Text="Home" Path="/Admin" Icon="home" />
                     <RadzenPanelMenuItem Text="Home" Path="/Admin" Icon="home" />
-                    <RadzenPanelMenuItem Text="User Admin" Path="Admin/Users Management" Icon="account_circle" />
+                    <RadzenPanelMenuItem Text="User Admin" Path="/Admin/Users Management" Icon="account_circle" />
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody>
