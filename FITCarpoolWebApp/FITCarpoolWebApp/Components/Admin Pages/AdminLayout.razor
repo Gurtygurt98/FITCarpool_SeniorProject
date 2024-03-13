@@ -7,7 +7,13 @@
 @using Radzen.Blazor
 @using MudBlazor
 <MudThemeProvider />
-<MudDialogProvider />
+<MudDialogProvider FullWidth="true"
+                   MaxWidth="MaxWidth.Medium"
+                   CloseButton="true"
+                   DisableBackdropClick="true"
+                   NoHeader="true"
+                   Position="MudBlazor.DialogPosition.Center"
+                   CloseOnEscapeKey="true" />
 <MudSnackbarProvider />
 <RadzenDialog />
 <RadzenNotification />
@@ -19,6 +25,9 @@
                 <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
                     <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
                     <RadzenLabel Text="FIT Carpool Group Finder" />
+                    <MudSpacer></MudSpacer>
+                    <MudIconButton Href="/" Icon="@Icons.Material.Filled.Home"></MudIconButton>
+
                 </RadzenStack>
             </RadzenHeader>
             <RadzenSidebar Responsive="false" Style="width: max-content; position: absolute">
@@ -27,6 +36,10 @@
                     <RadzenPanelMenuItem Text="Home" Path="/Admin" Icon="home" />
                     <RadzenPanelMenuItem Text="Home" Path="/Admin" Icon="home" />
                     <RadzenPanelMenuItem Text="User Admin" Path="/Admin/Users Management" Icon="account_circle" />
+                    <RadzenPanelMenuItem Text="Roles Admin" Path="/Admin/Roles Management" Icon="work" />
+                    <RadzenPanelMenuItem Text="Carpool Groups Admin" Path="/Admin/CarpoolGroups Management" Icon="group" />
+
+
                 </RadzenPanelMenu>
             </RadzenSidebar>
             <RadzenBody>
@@ -45,6 +58,7 @@
         <MudText>Not Authorized to view admin pages</MudText>
     </NotAuthorized>
 </AuthorizeView>
+
 @code {
     bool sidebarExpanded = false;
     private string? currentUrl;

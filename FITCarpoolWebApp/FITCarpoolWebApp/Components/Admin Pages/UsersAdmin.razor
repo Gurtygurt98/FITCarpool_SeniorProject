@@ -9,6 +9,7 @@
 @using System.Net.Http.Json
 @inject HttpClient httpClient
 @inject IUsersData _dbUsers
+@inject IDialogService DialogService
 
 
 <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
@@ -17,8 +18,14 @@
         <Columns>
             <PropertyColumn Property="x => x.UserId" Title="User ID" IsEditable="false" />
             <PropertyColumn Property="x => x.Email" Title="Email" />
-            <PropertyColumn Property="x => x.FirstName" Title="First Name" />
-            <PropertyColumn Property="x => x.LastName" Title="Last Name" />
+            <TemplateColumn Title="Name">
+                <CellTemplate>
+                    @{
+                        var user = context.Item as UsersModel;
+                        <div>@($"{user.FirstName} {user.LastName}")</div>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
             <PropertyColumn Property="x => x.Phone" Title="Phone" />
             <PropertyColumn Property="x => x.UserType" Title="UsersType">
                 <EditTemplate>
@@ -28,6 +35,11 @@
                     </MudSelect>
                 </EditTemplate>
             </PropertyColumn>
+             <PropertyColumn Property="x => x.UserLocation" Title="Loc" />
+             <PropertyColumn Property="x => x.PickupLocation" Title="Pickup" />
+             <PropertyColumn Property="x => x.DropoffLocation" Title="Dropoff" />
+             <PropertyColumn Property="x => x.DrivingDistance" Title="Dist" />
+
             <TemplateColumn Title="Actions">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteUser(context.Item))" />
@@ -37,10 +49,11 @@
         </Columns>
     </MudDataGrid>
 </RadzenCard>
+
+
  @code {
     private List<UsersModel> UserList = new();
     private string _searchString;
-    private string test = "driver";
     protected override async Task OnInitializedAsync()
     {
         UserList = await _dbUsers.GetAllUser();
@@ -59,11 +72,21 @@
         await _dbUsers.UpdateUser(user);
         UserList = await _dbUsers.GetAllUser();
     }
-
     async Task DeleteUser(UsersModel user)
     {
-        await _dbUsers.DeleteUser(user.UserId);
-        UserList.Remove(user);
-        StateHasChanged(); // Refresh the UI
+        var parameters = new MudBlazor.DialogParameters();
+        parameters.Add("ContentText", $"Are you sure you want to delete {user.FirstName} {user.LastName}?");
+        parameters.Add("ButtonText", "Delete");
+        parameters.Add("Color", Color.Error);
+        var dialog = DialogService.Show<ConfirmationDialog>("Delete User",parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            await _dbUsers.DeleteUser(user.UserId);
+            await _dbUsers.DeleteAccount(user.Email);
+            UserList.Remove(user);
+            StateHasChanged(); // Refresh the UI
+        }
     }
 }

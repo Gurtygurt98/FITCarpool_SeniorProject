@@ -10,5 +10,6 @@ namespace DataAccessLibrary.Data.Database
         Task<List<UsersModel>> GetUser(int id);
         Task<List<UsersModel>> GetUser(string email);
         Task UpdateUser(UsersModel user);
+        Task DeleteAccount(string email);
     }
 }

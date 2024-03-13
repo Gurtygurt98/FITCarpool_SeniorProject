@@ -50,11 +50,14 @@ namespace DataAccessLibrary.Data.Database
             string sql = @"DELETE FROM Users WHERE UserId = @ID";
             await _db.SaveData(sql, new { ID = id });
         }
-
+        public async Task DeleteAccount(string email)
+        {
+            string sql = @"DELETE FROM AspNetUsers WHERE Email = @Email;";
+            await _db.SaveData(sql, new { Email = email });
+        }
         // Add a new user
         public async Task AddUser(UsersModel user)
         {
-            Console.WriteLine(user);
             string sql = @"INSERT INTO Users (Email, FirstName, Phone, UserType, UserLocation, 
                                                PickupLocation, DropoffLocation, DrivingDistance, LastName) 
                            VALUES (@Email, @FirstName,@Phone, @UserType, @UserLocation, 
