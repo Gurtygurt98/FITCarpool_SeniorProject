@@ -26,7 +26,7 @@
                     }
                 </CellTemplate>
             </TemplateColumn>
-=            <PropertyColumn Property="x => x.Phone" Title="Phone" />
+            <PropertyColumn Property="x => x.Phone" Title="Phone" />
             <PropertyColumn Property="x => x.UserType" Title="UsersType">
                 <EditTemplate>
                     <MudSelect @bind-Value="context.Item.UserType" Required RequiredError="You must select a Position!!!" Margin="@Margin.Dense">
@@ -84,6 +84,7 @@
         if (!result.Cancelled)
         {
             await _dbUsers.DeleteUser(user.UserId);
+            await _dbUsers.DeleteAccount(user.Email);
             UserList.Remove(user);
             StateHasChanged(); // Refresh the UI
         }
