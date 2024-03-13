@@ -41,6 +41,7 @@ builder.Services.AddTransient<IGroupMembersData, GroupMembersData>();
 builder.Services.AddTransient<IMessagesData, MessagesData>();
 builder.Services.AddTransient<IPreferencesData, PreferencesData>();
 builder.Services.AddTransient<ISchedulesData, SchedulesData>();
+builder.Services.AddTransient<IRolesData, RolesData>();
 builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
 builder.Services.AddTransient<IUsersData, UsersData>();
 

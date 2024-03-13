@@ -14,7 +14,12 @@
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenLabel Text="FIT Carpool Group Finder" />
-
+            <MudSpacer></MudSpacer>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <MudIconButton Href="/Admin" Icon="@Icons.Material.Filled.AdminPanelSettings"></MudIconButton>
+                </Authorized>
+            </AuthorizeView>
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar Responsive="false" Style="width: max-content; position: absolute">
@@ -46,6 +51,7 @@
                     <RadzenPanelMenuItem Text="Admin Home Page" Path="Admin" Icon="admin_panel_settings" />
                 </Authorized>
             </AuthorizeView>
+
 
         </RadzenPanelMenu>
     </RadzenSidebar>
