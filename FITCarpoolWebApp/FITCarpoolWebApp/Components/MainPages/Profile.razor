@@ -42,29 +42,41 @@
                 {
                     <RadzenNumeric @bind-Value="@InputModel.DrivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%; max-width: 400px;" Min="0" Step="1" />
                 }
+                @*Address Privacy Settings*@
                 <RadzenLabel Text="Address Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
                 <RadzenDropDown @bind-Value="@InputModel.AddressPrivacy" Data="@privacyOptions" Multiple="false" AllowClear="true" Placeholder="Select Privacy Setting"
                                 Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
-
+                @*Upload File*@
                 <RadzenCard>
                     <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Profile Picture Upload</RadzenText>
-                    <RadzenUpload @ref="upload" Auto="true" Url="@uploadUrl" Progress="@((args) => OnProgress(args, "Upload with additional parameter"))" class="w-100" Accept="image/*" />
-
+                    <RadzenUpload @ref="upload" Auto="false" Multiple="false" Url="@(uploadUrlProfile)"
+                                  InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" />
+                        @*Need to make this part of the actual upload on the bottom of the page to update the entire thing*@
+                    <RadzenButton Text="Upload" Click=@(args => upload.Upload()) class="d-block mt-4" />
                 </RadzenCard>
+                @*Current Profile Picture File*@
+                <RadzenStack AlignItems="Radzen.AlignItems.Center" Class="rz-mx-auto rz-my-12">
+                    <RadzenText Text="Current Profile Picture" Style="margin-bottom: 10px;" />
+                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px;" />
+                </RadzenStack>
             </RadzenStack>
+
+            @*Driver Only Section*@
             @if (role == "driver")
             {
                 <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
                     <RadzenStack>
                         <MudText Typo="Typo.h2" Align="Align.Center">Vehicle Info</MudText>
-                        <RadzenTextBox @bind-Value="@seatbelts" Placeholder="Number of Functional Seatbelts" Style="width: 100%; max-width: 400px;" />
-                        <RadzenTextBox @bind-Value="@vehicleModel" Placeholder="Manufacturer and Model" Style="width: 100%; max-width: 400px;" />
-                        <RadzenTextBox @bind-Value="@vehicleColor" Placeholder="Vehicle Color" Style="width: 100%; max-width: 400px;" />
-                        <RadzenTextBox @bind-Value="@licensePlate" Placeholder="License Plate Number" Style="width: 100%; max-width: 400px;" />
+                        <RadzenNumeric @bind-Value="@InputModel.BeltCount" Placeholder="Number of Functional Seatbelts" Style="width: 100%; max-width: 400px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.MakeModel" Placeholder="Manufacturer and Model" Style="width: 100%; max-width: 400px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.VehicleColor" Placeholder="Vehicle Color" Style="width: 100%; max-width: 400px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.LicensePlate" Placeholder="License Plate Number" Style="width: 100%; max-width: 400px;" />
+                        @*Need to add logic to submit area to handle the bool inputs from the check boxes below *@
                         <RadzenLabel Text="Allow Eating & Drinking" Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
                         <RadzenCheckBox @bind-Value="@allowEatingDrink" Text="Allow eat/drink in the car" Style="margin-top: 10px;" />
                         <RadzenLabel Text="Allow Smoking " Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
                         <RadzenCheckBox @bind-Value="@allowSmoking" Text="Allow smoking in the car" Style="margin-top: 10px;" />
+                        @*License Plate Image upload *@
                         <RadzenCard>
                             <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Car & License Plate Picture Upload</RadzenText>
                             <RadzenUpload @ref="upload" Auto="true" Url="upload/multiple" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"
@@ -73,6 +85,7 @@
                     </RadzenStack>
                 </RadzenCard>
             }
+            @*Schedule Section*@
             <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
                 <RadzenStack>
                     <MudText Typo="Typo.h2" Align="Align.Center">Edit Schedule</MudText>
@@ -87,6 +100,7 @@
             </RadzenCard>
         }else
         {
+            @*Error Section*@
             <MudText Typo="Typo.h6">Your account was created before full integration, please delete your account under user management and create a new account</MudText>
         }
 
@@ -98,16 +112,34 @@
 
 @code {
     private List<UsersModel> UserList = null;
-    private string uploadUrl;
+    private string uploadUrlLicense;
+    private string uploadUrlProfile;
+
     UsersModel InputModel = new();
     // Logic added for creating user preferences - schedule
     RadzenScheduler<SchedulesModel> scheduler = new();
     RadzenUpload upload;
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
+    List<string> selectedPrivacy = new List<string> { "1" };
+    IEnumerable<PrivacyOption> privacyOptions = new List<PrivacyOption>
+    {
+        new PrivacyOption { Id = "1", Name = "Share With No One" },
+        new PrivacyOption { Id = "2", Name = "Share with Friends" },
+        new PrivacyOption { Id = "3", Name = "Share with Group Driver" },
+        new PrivacyOption { Id = "4", Name = "Share with Other Group Passengers" },
+    };
+
+    class PrivacyOption
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
     // Gender
     string gender = "Other";
     private string userName = "Not found";
-
+    string file;
+    string fileName;
+    long? fileSize;
     string role = "rider";
     string seatbelts;
     string vehicleModel;
@@ -141,28 +173,15 @@
         {
             InputModel = UserList.First();
             PrepareUploadUrl();
-            Console.WriteLine(uploadUrl);
         }
     }
-    List<string> selectedPrivacy = new List<string> { "1" };
-    //List<string> selectedPrivacy = new List<string> ("1" );
-    IEnumerable<PrivacyOption> privacyOptions = new List<PrivacyOption>
-    {
-        new PrivacyOption { Id = "1", Name = "Share With No One" },
-        new PrivacyOption { Id = "2", Name = "Share with Friends" },
-        new PrivacyOption { Id = "3", Name = "Share with Group Driver" },
-        new PrivacyOption { Id = "4", Name = "Share with Other Group Passengers" },
-    };
 
-    class PrivacyOption
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-    }
     private void PrepareUploadUrl()
     {
         var userId = InputModel.UserId; // Assuming InputModel.ID holds the user ID you intend to use
-        uploadUrl = $"upload/{userId}";
+        uploadUrlProfile = $"/FileUpload/upload/{InputModel.UserId}";
+        uploadUrlLicense = $"/FileUpload/upload/license/{InputModel.UserId}";
+
     }
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {

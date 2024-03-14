@@ -18,33 +18,49 @@ namespace FITCarpoolWebApp.Controller
             _usersData = usersData;
         }
 
-        // Adjusted to expect a userId query parameter
         [HttpPost("upload/{userId}")]
-        public async Task<IActionResult> UploadProfilePicture(List<IFormFile> files, [FromQuery] int userId)
+        public async Task<IActionResult> UploadProfilePicture(IFormFile file, [FromRoute] int userId)
         {
-            foreach (var formFile in files)
-            {
-                if (formFile.Length > 0)
-                {
-                    using (var memoryStream = new MemoryStream())
-                    {
-                        await formFile.CopyToAsync(memoryStream);
-                        byte[] fileBytes = memoryStream.ToArray();
 
-                        // Now, use the userId along with the fileBytes to update the user's profile picture in the database
-                        await UpdateUserProfilePictureAsync(userId, fileBytes);
-                    }
+            if (file.Length > 0)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await file.CopyToAsync(memoryStream);
+                    byte[] fileBytes = memoryStream.ToArray();
+
+                    await UpdateUserProfilePictureAsync(userId, fileBytes);
                 }
             }
 
             return Ok();
         }
 
-        // This method needs to be implemented to update the user's profile picture in the database using userId and fileBytes
         private async Task UpdateUserProfilePictureAsync(int userId, byte[] fileBytes)
         {
-            Console.WriteLine(userId + " - " + fileBytes.Length);
             await _usersData.UpdateUserProfilePicture(userId, fileBytes);
+        }
+        [HttpPost("upload/license/{userId}")]
+        public async Task<IActionResult> UploadLicense(IFormFile file, [FromRoute] int userId)
+        {
+
+            if (file.Length > 0)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await file.CopyToAsync(memoryStream);
+                    byte[] fileBytes = memoryStream.ToArray();
+
+                    await UpdateUserLicensePictureAsync(userId, fileBytes);
+                }
+            }
+
+            return Ok();
+        }
+
+        private async Task UpdateUserLicensePictureAsync(int userId, byte[] fileBytes)
+        {
+            await _usersData.UpdateUserLicensePicture(userId, fileBytes);
         }
     }
 }
