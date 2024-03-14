@@ -6,17 +6,27 @@
 @using Radzen.Blazor
 <RadzenDialog />
 <RadzenNotification />
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 <RadzenLayout>
     <RadzenHeader>
         <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenLabel Text="FIT Carpool Group Finder" />
-
+            <MudSpacer></MudSpacer>
+            <AuthorizeView Roles="Admin">
+                <Authorized>
+                    <MudIconButton Href="/Admin" Icon="@Icons.Material.Filled.AdminPanelSettings"></MudIconButton>
+                </Authorized>
+            </AuthorizeView>
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar Responsive="false" Style="width: max-content; position: absolute">
         <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false" >
-            <RadzenPanelMenuItem Text="Home" Path="/" Icon="home"/>
+            @*Need two because of overlap issues*@
+            <RadzenPanelMenuItem Text="Home" Path="/" Icon="home" />
+            <RadzenPanelMenuItem Text="Home" Path="/" Icon="home" />
             <AuthorizeView>
                 <Authorized>
                     <RadzenPanelMenuItem Text="Profile" Path="Profile" Icon="account_circle" />
@@ -38,9 +48,10 @@
             </AuthorizeView>
             <AuthorizeView Roles="Admin">
                 <Authorized>
-                    <RadzenPanelMenuItem Text="Admin Home Page" Path="Admin/Home Page" Icon="manage_accounts" />
+                    <RadzenPanelMenuItem Text="Admin Home Page" Path="Admin" Icon="admin_panel_settings" />
                 </Authorized>
             </AuthorizeView>
+
 
         </RadzenPanelMenu>
     </RadzenSidebar>

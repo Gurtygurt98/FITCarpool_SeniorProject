@@ -41,6 +41,7 @@ builder.Services.AddTransient<IGroupMembersData, GroupMembersData>();
 builder.Services.AddTransient<IMessagesData, MessagesData>();
 builder.Services.AddTransient<IPreferencesData, PreferencesData>();
 builder.Services.AddTransient<ISchedulesData, SchedulesData>();
+builder.Services.AddTransient<IRolesData, RolesData>();
 builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
 builder.Services.AddTransient<IUsersData, UsersData>();
 
@@ -68,6 +69,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddDefaultTokenProviders();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
@@ -90,7 +92,7 @@ app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
+app.MapControllers();
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 

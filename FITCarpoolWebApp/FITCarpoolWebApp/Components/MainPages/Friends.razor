@@ -21,6 +21,7 @@
                 <TemplateColumn>
                     <CellTemplate>
                         <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
+                        <RadzenButton Click=@(args => OnClick2("Friend Removed")) Text="Remove Friend" ButtonStyle="ButtonStyle.Danger" />
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
@@ -33,6 +34,10 @@
     private void OnClick(string message)
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message});
+    }
+    private void OnClick2(string message)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
 
     private List<Friend> friends;

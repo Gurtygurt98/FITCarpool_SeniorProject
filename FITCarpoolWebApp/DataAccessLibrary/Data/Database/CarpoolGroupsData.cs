@@ -34,10 +34,10 @@ namespace DataAccessLibrary.Data.Database
             await _db.SaveData(sql, group);
         }
 
-        public async Task DeleteCarpoolGroup(int groupId)
+        public async Task DeleteCarpoolGroup(CarpoolGroupsModel group)
         {
             string sql = @"DELETE FROM CarpoolGroups WHERE GroupID = @GroupId";
-            await _db.SaveData(sql, new { GroupId = groupId });
+            await _db.SaveData(sql, new { group.GroupId });
         }
     }
 }

@@ -10,7 +10,7 @@ namespace DataAccessLibrary.Model
     {
         public int ScheduleId { get; set; }
         public int UserId { get; set; }
-        public string DayOfWeek { get; set; }
+        public string DayOfWeek { get; set; } 
         public DateTime Start { get; set; }
         public DateTime End { get; set; }
         public string Text { get; set; }
