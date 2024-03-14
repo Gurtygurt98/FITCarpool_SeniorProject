@@ -20,23 +20,30 @@ namespace DataAccessLibrary.Data.Database
             return await _db.LoadData<PreferencesModel, dynamic>(sql, new { });
         }
 
-        public async Task<PreferencesModel> GetPreference(int userId)
+        public async Task<List<PreferencesModel>> GetPreference(int userId)
         {
             string sql = "SELECT * FROM Preferences WHERE UserID = @UserId";
-            var result = await _db.LoadData<PreferencesModel, dynamic>(sql, new { UserId = userId });
-            return result.FirstOrDefault();
+            return await _db.LoadData<PreferencesModel, dynamic>(sql, new { UserId = userId });
         }
 
         public async Task UpdatePreference(PreferencesModel preference)
         {
-            string sql = @"UPDATE Preferences SET PreferenceValue = @PreferenceValue WHERE UserID = @UserId";
+            string sql = @"UPDATE Preferences SET GenderPreference = @GenderPreference, EatingPreference = @EatingPreference, SmokingPreference = @SmokingPreference, 
+                            TemperaturePreference = @TemperaturePreference, MusicPreference = @MusicPreference WHERE UserID = @UserId";
             await _db.SaveData(sql, preference);
         }
+
 
         public async Task DeletePreference(int userId)
         {
             string sql = "DELETE FROM Preferences WHERE UserID = @UserId";
             await _db.SaveData(sql, new { UserId = userId });
+        }
+        public async Task AddUser(int userId)
+        {
+            var defaultPreference = new PreferencesModel(userId);
+            string sql = @"INSERT INTO Preferences (UserID, GenderPreference, EatingPreference, SmokingPreference, TemperaturePreference, MusicPreference) VALUES (@UserId, @GenderPreference, @EatingPreference, @SmokingPreference, @TemperaturePreference, @MusicPreference)";
+            await _db.SaveData(sql, defaultPreference);
         }
     }
 }
