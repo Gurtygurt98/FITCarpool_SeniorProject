@@ -11,5 +11,6 @@ namespace DataAccessLibrary.Data.Database
         Task<List<UsersModel>> GetUser(string email);
         Task UpdateUser(UsersModel user);
         Task DeleteAccount(string email);
+        Task UpdateUserProfilePicture(int userId, byte[] profilePicture);
     }
 }

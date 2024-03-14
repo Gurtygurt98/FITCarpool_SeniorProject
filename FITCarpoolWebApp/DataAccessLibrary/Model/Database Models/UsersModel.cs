@@ -17,9 +17,18 @@ namespace DataAccessLibrary.Model
         public string UserLocation { get; set; }
         public string PickupLocation { get; set; }
         public string DropoffLocation { get; set; }
-        public int DrivingDistance { get; set; }
-
-
+        public int DrivingDistance { get; set; } = 30;
+        public string PhonePrivacy { get; set; } = "Share With No One";
+        public string Gender { get; set; } = "Other";
+        public byte[] ProfilePicture { get; set; }
+        public string AddressPrivacy { get; set; } = "Share With No One";
+        public int? BeltCount { get; set; } 
+        public string MakeModel { get; set; }
+        public string VehicleColor { get; set; }
+        public string LicensePlate { get; set; }
+        public byte[] LicensePlatePicture { get; set; }
+        public string AllowEatDrink { get; set; }
+        public string AllowSmokeVape { get; set; }
         public UsersModel() { }
 
         public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance)
@@ -48,6 +57,30 @@ namespace DataAccessLibrary.Model
             PickupLocation = pickupLocation;
             DropoffLocation = dropoffLocation;
             DrivingDistance = drivingDistance;
+        }
+        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, string phonePrivacy, string gender, byte[] profilePicture, string addressPrivacy, int? beltCount, string makeModel, string vehicleColor, string licensePlate, byte[] licensePlatePicture, string allowEatDrink, string allowSmokeVape)
+        {
+            UserId = userId;
+            Email = email;
+            FirstName = firstName;
+            LastName = lastName;
+            Phone = phone;
+            UserType = userType;
+            UserLocation = userLocation;
+            PickupLocation = pickupLocation;
+            DropoffLocation = dropoffLocation;
+            DrivingDistance = drivingDistance;
+            PhonePrivacy = phonePrivacy;
+            Gender = gender;
+            ProfilePicture = profilePicture;
+            AddressPrivacy = addressPrivacy;
+            BeltCount = beltCount;
+            MakeModel = makeModel;
+            VehicleColor = vehicleColor;
+            LicensePlate = licensePlate;
+            LicensePlatePicture = licensePlatePicture;
+            AllowEatDrink = allowEatDrink;
+            AllowSmokeVape = allowSmokeVape;
         }
         public override string ToString()
         {
