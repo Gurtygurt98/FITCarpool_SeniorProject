@@ -1,57 +1,79 @@
 ﻿@using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
+@using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
-@using FITCarpoolWebApp.Components.MainPages
+@using DataAccessLibrary.Model.Database_Models
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using FITCarpoolWebApp.Data
-
 @inject Radzen.DialogService DialogService
-
+@inject HttpClient httpClient
+@inject IUsersData _dbUsers
+@inject IPreferencesData _dbPrefs
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @page "/Preferences"
 <h3>Update Group Preferences</h3>
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
-            <MudText Typo="Typo.h2" Align="Align.Center">Safety Preferences</MudText>
+        @if (InputModelPref != null && !_loading)
+        {
+            <RadzenStack>
+                <MudText Typo="Typo.h2" Align="Align.Center">Safety Preferences</MudText>
 
-            <RadzenLabel Text="Select Rider Gender Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
-            <RadzenDropDown @bind-Value=@genderPreference Data=@genderValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
-            
-            <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Cleanliness Preferences</MudText>
+                <RadzenLabel Text="Select Rider Gender Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+                <RadzenDropDown @bind-Value=@InputModelPref.GenderPreference Data=@genderValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
-            <RadzenLabel Text="Select Car Eating Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
-            <RadzenDropDown @bind-Value=@eatingPreference Data=@carEatingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
-            <RadzenLabel Text="Select Car Smoking Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
-            <RadzenDropDown @bind-Value=@smokingPreference Data=@carSmokingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Cleanliness Preferences</MudText>
 
-            <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Comfort Preferences</MudText>
+                <RadzenLabel Text="Select Car Eating Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+                <RadzenDropDown @bind-Value=@InputModelPref.EatingPreference Data=@carEatingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                <RadzenLabel Text="Select Car Smoking Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+                <RadzenDropDown @bind-Value=@InputModelPref.SmokingPreference Data=@carSmokingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
-            <RadzenLabel Text="Select Music Preferences" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
-            <RadzenDropDown @bind-Value="@selectedMusicGenres" Data="@musicGenres" Multiple="true" AllowClear="true" Placeholder="Select Music Preferences" 
-                Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
-            <RadzenLabel Text="Select Car Temperature Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
-            <RadzenDropDown @bind-Value=@temperaturePreference Data=@carTempValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Comfort Preferences</MudText>
 
-        </RadzenStack>
+                <RadzenLabel Text="Select Music Preferences" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
+                <RadzenDropDown @bind-Value="@selectedMusicGenres" Data="@musicGenres" Multiple="true" AllowClear="true" Placeholder="Select Music Preferences"
+                                Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
+
+                <RadzenLabel Text="Select Car Temperature Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
+                <RadzenDropDown @bind-Value=@InputModelPref.TemperaturePreference Data=@carTempValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                <RadzenButton IsBusy=@_busyUpdate Click=@(args => UpdateUserData()) Text="Update Profile Data" ButtonStyle="ButtonStyle.Primary" Style="width:100%;" />
+
+            </RadzenStack>
+        } else if(_loading)
+        {
+            <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            @*Error Section*@
+            <MudText Typo="Typo.h6">Your account was created before full integration, please delete your account under user management and create a new account</MudText>
+        }
+
     </RadzenCard> 
 </RadzenStack>
 
 @code {
-    // Logic added for creating user preferences 
-    Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
-    // Gender 
-    string genderPreference = "No Preference";
-    string eatingPreference = "No Preference";
-    string smokingPreference = "No Preference";
-    string temperaturePreference = "No Preference";
+    // Data Storing variables 
+    private List<UsersModel> UserList = null;
+    private List<PreferencesModel> PrefList = null;
+    List<string> selectedMusicGenres = new List<string>();
+    private UsersModel SignedOnUser = null;
+    private PreferencesModel InputModelPref = null;
+    private bool _loading = true;
+    private string userName = "Not found";
+    bool _busyUpdate = false;
+    // Data for select statments 
     IEnumerable<string> genderValues = new string[] { "No Preference", "Women and Non-binary Only", "Same Gender", "Non-binary Only" };
     IEnumerable<string> carEatingValues = new string[] { "No Preference", "Vehcile allows eating", "Vehicle does not allow eating" };
     IEnumerable<string> carSmokingValues = new string[] { "No Preference", "Vehcile allows smoking", "Vehcile does not allow smoking" };
     IEnumerable<string> carTempValues = new string[] { "No Preference", "Warmer", "Colder" };
-
-    List<string> selectedMusicGenres = new List<string>();
     IEnumerable<MusicGenre> musicGenres = new List<MusicGenre>
     {
         new MusicGenre { Id = "1", Name = "No Preference" },
@@ -70,18 +92,67 @@
         public string Name { get; set; }
     }
 
-    string gender = "Other";
-    string role = "Rider";
-    string seatbelts;
-    string vehicleModel;
-    string vehicleColor;
-    string licensePlate;
-    string address;
-    string pickupLocation;
-    string dropoffLocation;
-    string drivingDistance;
-    bool allowEatingDrink;
-    bool allowSmoking;
-    
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name;
+
+        }
+        else
+        {
+            userName = "Not found";
+        }
+        UserList = await _dbUsers.GetUser(userName);
+        if (UserList.Any())
+        {
+
+            // gets the current user id 
+            SignedOnUser = UserList.First();
+            PrefList = await _dbPrefs.GetPreference(SignedOnUser.UserId);
+            if (PrefList.Any())
+            {
+
+                // Loads the user preferences if they exist 
+                InputModelPref = PrefList.First();
+            }
+            else
+            {
+                string message = $"Failed to load {SignedOnUser.FirstName} {SignedOnUser.LastName} preferences, adding to Database ";
+                // Adds the user to the preferences DB if the user is not 
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message });
+                InputModelPref = new PreferencesModel(SignedOnUser.UserId);
+                await _dbPrefs.AddUser(InputModelPref.UserId);
+            }
+
+        }
+        _loading = false;
+    }
+    async Task UpdateUserData()
+    {
+        _busyUpdate = true;
+        foreach(String x in selectedMusicGenres)
+        {
+            Console.WriteLine(x);
+        }
+        try
+        {
+            await _dbPrefs.UpdatePreference(InputModelPref);
+
+        }
+        catch (Exception ex)
+        {
+            string message = $"Failed to update {SignedOnUser.FirstName} {SignedOnUser.LastName}. Error {ex.Message} ";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message });
+        }
+        finally
+        {
+            NavigationManager.NavigateTo("/Preferences", forceLoad: true);
+        }
+
+    }
+
 
 }
