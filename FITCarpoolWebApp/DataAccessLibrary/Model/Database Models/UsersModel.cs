@@ -16,7 +16,7 @@ namespace DataAccessLibrary.Model
         public string UserType { get; set; } = "rider";
         public string UserLocation { get; set; }
         public string PickupLocation { get; set; }
-        public string DropoffLocation { get; set; } = "";
+        public string DropoffLocation { get; set; }
         public int DrivingDistance { get; set; } = 30;
         public string PhonePrivacy { get; set; } = "Share With No One";
         public string Gender { get; set; } = "Other";
@@ -27,8 +27,8 @@ namespace DataAccessLibrary.Model
         public string VehicleColor { get; set; }
         public string LicensePlate { get; set; }
         public byte[] LicensePlatePicture { get; set; }
-        public string AllowEatDrink { get; set; }
-        public string AllowSmokeVape { get; set; }
+        public string AllowEatDrink { get; set; } = "false";
+        public string AllowSmokeVape { get; set; } = "false";
         public UsersModel() { }
 
         public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance)

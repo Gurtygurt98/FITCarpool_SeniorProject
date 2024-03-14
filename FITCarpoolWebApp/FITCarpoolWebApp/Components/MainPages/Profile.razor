@@ -12,163 +12,151 @@
 @inject HttpClient httpClient
 @inject IUsersData _dbUsers
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @page "/Profile"
 <h3>Update User Profile</h3>
 <RadzenStack>
-    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        @if (InputModel != null)
-        {
-            <RadzenStack>
-                <MudText Typo="Typo.h2" Align="Align.Center">Basic Info</MudText>
-                <RadzenTextBox @bind-Value="@InputModel.FirstName" Placeholder="First Name" Style="width:100%; margin-bottom:15px;" />
-                <RadzenTextBox @bind-Value="@InputModel.LastName" Placeholder="Last Name" Style="width:100%; margin-bottom:15px;" />
-                <RadzenTextBox @bind-Value="@InputModel.Phone" Placeholder="Phone Number" Style="width:100%; margin-bottom:5px;" />
-                <RadzenLabel  Text="Phone Number Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value="@InputModel.PhonePrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting"
-                                Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
+    @if (InputModel != null)
+    {
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+            @*Profile Information *@
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <RadzenStack>
+                        <MudText Typo="Typo.h2" Align="Align.Center">Basic Info</MudText>
 
+                        <RadzenLabel Text="First Name" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.FirstName" Placeholder="First Name" Style="width:100%;  margin-bottom:5px;" />
 
-                <RadzenLabel Text="Select Gender" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle; margin-top:15px" />
-                <RadzenDropDown @bind-Value=@InputModel.Gender Data=@genderData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                        <RadzenLabel Text="Last Name" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.LastName" Placeholder="Last Name" Style="width:100%;  margin-bottom:5px;" />
 
-                <RadzenLabel Text="Select Role" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value=@InputModel.UserType Data=@rolesData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                        <RadzenLabel Text="Phone Number" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.Phone" Placeholder="Phone Number" Style="width:100%;  margin-bottom:5px;" />
 
-                <MudText Typo="Typo.h2" Align="Align.Left">Location Info</MudText>
-                <RadzenTextBox @bind-Value="@InputModel.UserLocation" Placeholder="Address" Style="width: 100%; max-width: 400px;" />
-                <RadzenTextBox @bind-Value="@InputModel.PickupLocation" Placeholder="Pick-up Location" Style="width: 100%; max-width: 400px;" />
-                <RadzenTextBox @bind-Value="@InputModel.DropoffLocation" Change="@ChangeToType" Placeholder="Drop-off Location" Style="width: 100%; max-width: 400px;" />
+                        <RadzenLabel Text="Phone Number Privacy Setting" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenDropDown @bind-Value="@InputModel.PhonePrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting" Style="width:100%;  margin-bottom:5px;" />
+
+                        <RadzenLabel Text="Select Gender" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenDropDown @bind-Value=@InputModel.Gender Data=@genderData Style="width:100%;  margin-bottom:5px;" />
+
+                        <RadzenLabel Text="Select Role" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenDropDown @bind-Value=@InputModel.UserType Data=@rolesData Style="width:100%;  margin-bottom:5px;" />
+
+                        <MudText Typo="Typo.h2" Align="Align.Left">Location Info</MudText>
+
+                        <RadzenLabel Text="Address" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.UserLocation" Placeholder="Address" Style="width:100%;  margin-bottom:5px;" />
+
+                        <RadzenLabel Text="Pick-up Location" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.PickupLocation" Placeholder="Pick-up Location" Style="width:100%;  margin-bottom:5px;" />
+
+                        <RadzenLabel Text="Drop-off Location" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenTextBox @bind-Value="@InputModel.DropoffLocation" Placeholder="Drop-off Location" Style="width:100%;  margin-bottom:5px;" />
+
+                        @if (InputModel.UserType.Equals("driver"))
+                        {
+                            <RadzenLabel Text="Driving Distance (in miles)" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenNumeric @bind-Value="@InputModel.DrivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%;  margin-bottom:5px;" Min="0" Step="1" />
+                        }
+
+                        <RadzenLabel Text="Address Privacy Setting" Style="display: block; margin-bottom: 5px;" />
+                        <RadzenDropDown @bind-Value="@InputModel.AddressPrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting" Style="width:100%;  margin-bottom:5px;" />
+
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="display: block; margin-bottom: 5px;">Profile Picture Upload</RadzenText>
+                        <RadzenUpload @ref="ProfileUpload" Auto="false" Multiple="false" Url="@(uploadUrlProfile)" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" Style=" margin-bottom:5px;" />
+
+                        @if (InputModel.ProfilePicture != null)
+                        {
+                            <RadzenText Text="Current Profile Picture" Style="margin-bottom: 10px;" />
+                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                        }
+                    </RadzenStack>
+                </MudItem>
+
+                @*Driver Only Section*@
                 @if (InputModel.UserType.Equals("driver"))
                 {
-                    <RadzenNumeric @bind-Value="@InputModel.DrivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%; max-width: 400px;" Min="0" Step="1" />
-                }
-                @*Address Privacy Settings*@
-                <RadzenLabel Text="Address Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value="@InputModel.AddressPrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting"
-                                Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
-                @*Upload File*@
-                <RadzenCard>
-                    <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Profile Picture Upload</RadzenText>
-                    <RadzenUpload @ref="upload" Auto="false" Multiple="false" Url="@(uploadUrlProfile)"
-                                  InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" />
-                        @*Need to make this part of the actual upload on the bottom of the page to update the entire thing*@
-                    <RadzenButton Text="Upload" Click=@(args => upload.Upload()) class="d-block mt-4" />
-                </RadzenCard>
-                @*Current Profile Picture File*@
-                @if(InputModel.ProfilePicture != null)
-                {
-                    <RadzenStack AlignItems="Radzen.AlignItems.Center" Class="rz-mx-auto rz-my-12">
-                        <RadzenText Text="Current Profile Picture" Style="margin-bottom: 10px;" />
-                        <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px;" />
-                    </RadzenStack>
-                }
- 
-            </RadzenStack>
+                    <MudItem xs="12" md="6">
+                        <RadzenStack>
+                            <MudText Typo="Typo.h2" Align="Align.Center">Vehicle Info</MudText>
 
-            @*Driver Only Section*@
-            @if (InputModel.UserType.Equals("driver"))
-            {
-                <RadzenStack>
-                    <MudText Typo="Typo.h2" Align="Align.Center">Vehicle Info</MudText>
-                    <RadzenNumeric @bind-Value="@InputModel.BeltCount" Placeholder="Number of Functional Seatbelts" Style="width: 100%; max-width: 400px;" />
-                    <RadzenTextBox @bind-Value="@InputModel.MakeModel" Placeholder="Manufacturer and Model" Style="width: 100%; max-width: 400px;" />
-                    <RadzenTextBox @bind-Value="@InputModel.VehicleColor" Placeholder="Vehicle Color" Style="width: 100%; max-width: 400px;" />
-                    <RadzenTextBox @bind-Value="@InputModel.LicensePlate" Placeholder="License Plate Number" Style="width: 100%; max-width: 400px;" />
-                    @*Need to add logic to submit area to handle the bool inputs from the check boxes below *@
-                    <RadzenLabel Text="Allow Eating & Drinking" Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
-                    <RadzenCheckBox @bind-Value="@allowEatingDrink" Text="Allow eat/drink in the car" Style="margin-top: 10px;" />
-                    <RadzenLabel Text="Allow Smoking " Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
-                    <RadzenCheckBox @bind-Value="@allowSmoking" Text="Allow smoking in the car" Style="margin-top: 10px;" />
-                    @*License Plate Image upload *@
-                    @*Upload File*@
-                    <RadzenCard>
-                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">License Picture Upload</RadzenText>
-                        <RadzenUpload @ref="upload" Auto="false" Multiple="false" Url="@(uploadUrlLicense)"
-                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" />
-                        @*Need to make this part of the actual upload on the bottom of the page to update the entire thing*@
-                        <RadzenButton Text="Upload" Click=@(args => upload.Upload()) class="d-block mt-4" />
-                    </RadzenCard>
-                    @*Current License file Picture File*@
-                    @if (InputModel.LicensePlatePicture != null)
-                    {
-                        <RadzenStack AlignItems="Radzen.AlignItems.Center" Class="rz-mx-auto rz-my-12">
-                            <RadzenText Text="Current License Picture" Style="margin-bottom: 10px;" />
-                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.LicensePlatePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px;" />
+                            <RadzenLabel Text="Number of Functional Seatbelts" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenNumeric @bind-Value="@InputModel.BeltCount" Placeholder="Number of Functional Seatbelts" Style="width:100%;  margin-bottom:5px;" />
+
+                            <RadzenLabel Text="Manufacturer and Model" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenTextBox @bind-Value="@InputModel.MakeModel" Placeholder="Manufacturer and Model" Style="width:100%;  margin-bottom:5px;" />
+
+                            <RadzenLabel Text="Vehicle Color" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenTextBox @bind-Value="@InputModel.VehicleColor" Placeholder="Vehicle Color" Style="width:100%;  margin-bottom:5px;" />
+
+                            <RadzenLabel Text="License Plate Number" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenTextBox @bind-Value="@InputModel.LicensePlate" Placeholder="License Plate Number" Style="width:100%;  margin-bottom:5px;" />
+
+                            <RadzenLabel Text="Allow Eating & Drinking in the car" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenCheckBox @bind-Value="@allowEatingDrink" Text="Allow eat/drink in the car" Style=" margin-bottom:5px;" />
+
+                            <RadzenLabel Text="Allow Smoking in the car" Style="display: block; margin-bottom: 5px;" />
+                            <RadzenCheckBox @bind-Value="@allowSmoking" Text="Allow smoking in the car" Style=" margin-bottom:5px;" />
+
+                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="display: block; margin-bottom: 5px;">License Picture Upload</RadzenText>
+                            <RadzenUpload @ref="LicenseUpload" Auto="false" Multiple="false" Url="@(uploadUrlLicense)" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" Style=" margin-bottom:5px;" />
+
+                            @if (InputModel.LicensePlatePicture != null)
+                            {
+                                <RadzenText Text="Current License Picture" Style="margin-bottom: 10px;" />
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.LicensePlatePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                            }
                         </RadzenStack>
-                    }
- 
-                </RadzenStack>
-            }
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <RadzenButton IsBusy=@_busyUpdate Click=@(args => UpdateUserData()) Text="Update Profile Data" ButtonStyle="ButtonStyle.Primary" Style="width:100%;" />
+                </MudItem>
+            </MudGrid>
+
+
             @*Schedule Section*@
-            <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-                <RadzenStack>
-                    <MudText Typo="Typo.h2" Align="Align.Center">Edit Schedule</MudText>
-                </RadzenStack>
-                <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="SchedulesModel" Data=@appointments StartProperty="Start" EndProperty="End"
-                                 TextProperty="Text" SelectedIndex="2"
-                                 SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender star>
-                    <RadzenDayView />
-                    <RadzenWeekView />
-                    <RadzenMonthView />
-                </RadzenScheduler>
-            </RadzenCard>
-        }else
-        {
-            @*Error Section*@
-            <MudText Typo="Typo.h6">Your account was created before full integration, please delete your account under user management and create a new account</MudText>
-        }
-
-    </RadzenCard>
-
-
-
+            <MudText Typo="Typo.h2" Align="Align.Center">Edit Schedule</MudText>
+            <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="SchedulesModel" Data=@appointments StartProperty="Start" EndProperty="End"
+                                TextProperty="Text" SelectedIndex="2"
+                                SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender star>
+                <RadzenDayView />
+                <RadzenWeekView />
+                <RadzenMonthView />
+            </RadzenScheduler>
+        </RadzenCard>
+    }else
+    {
+        @*Error Section*@
+        <MudText Typo="Typo.h6">Your account was created before full integration, please delete your account under user management and create a new account</MudText>
+    }
 </RadzenStack>
 
 @code {
     private List<UsersModel> UserList = null;
-    private string uploadUrlLicense;
-    private string uploadUrlProfile;
-
+    private string uploadUrlLicense = "";
+    private string uploadUrlProfile = "";
+    bool _busyUpdate = false;
     UsersModel InputModel = new();
     // Logic added for creating user preferences - schedule
     RadzenScheduler<SchedulesModel> scheduler = new();
-    RadzenUpload upload;
-    Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
-    List<string> selectedPrivacy = new List<string> { "1" };
-    IEnumerable<PrivacyOption> privacyOptions = new List<PrivacyOption>
-    {
-        new PrivacyOption { Id = "1", Name = "Share With No One" },
-        new PrivacyOption { Id = "2", Name = "Share with Friends" },
-        new PrivacyOption { Id = "3", Name = "Share with Group Driver" },
-        new PrivacyOption { Id = "4", Name = "Share with Other Group Passengers" },
-    };
+    RadzenUpload ProfileUpload = null;
+    RadzenUpload LicenseUpload = null;
 
-    class PrivacyOption
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-    }
-    // Gender
+    Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
     string gender = "Other";
     private string userName = "Not found";
-    string file;
-    string fileName;
-    long? fileSize;
-    string role = "rider";
-    string seatbelts;
-    string vehicleModel;
-    string vehicleColor;
-    string licensePlate;
-    string address;
-    string pickupLocation;
-    string dropoffLocation;
-    string drivingDistance;
     bool allowEatingDrink;
     bool allowSmoking;
     int progress;
     string info;
     IEnumerable<string> genderData = new string[] { "Male", "Female", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
     IEnumerable<string> rolesData = new string[] { "rider", "driver" };
+    IEnumerable<string> privacyOptions = new List<string> { "Share With No One", "Share with Friends", "Share with Group Driver", "Share with Other Group Passengers" };
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -188,6 +176,16 @@
             InputModel = UserList.First();
 
             PrepareUploadUrl();
+            bool success = bool.TryParse(InputModel.AllowSmokeVape, out allowSmoking);
+            if (!success)
+            {
+                allowEatingDrink = false;
+            }
+            success = bool.TryParse(InputModel.AllowEatDrink, out allowEatingDrink);
+            if (!success)
+            {
+                allowEatingDrink = false;
+            }
         }
     }
 
@@ -290,9 +288,35 @@
         this.info = $"% '{name}' / {args.Loaded} of {args.Total} bytes.";
         this.progress = args.Progress;
     }
-    void ChangeToType()
-    {
-        Console.WriteLine(InputModel.UserType);
-        StateHasChanged();
+    // Method to update user database table 
+    async Task UpdateUserData(){
+        _busyUpdate = true;
+        InputModel.AllowSmokeVape = allowSmoking.ToString();
+        InputModel.AllowEatDrink = allowEatingDrink.ToString();
+        try
+        {
+            await _dbUsers.UpdateUser(InputModel);
+            if(ProfileUpload != null)
+            {
+                await ProfileUpload.Upload();
+
+            }
+            if(LicenseUpload != null)
+            {
+                await LicenseUpload.Upload();
+
+            }
+
+        } catch(Exception ex)
+        {
+            string message = $"Failed to update {InputModel.FirstName} {InputModel.LastName}. Error {ex.Message} ";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message });
+        }
+        finally
+        {
+            NavigationManager.NavigateTo("/Profile", forceLoad: true);
+        }
+
     }
+
 }   

@@ -41,10 +41,9 @@ namespace DataAccessLibrary.Data.Database
                            SET Email = @Email, FirstName = @FirstName, LastName = @LastName, Phone = @Phone, 
                                UserType = @UserType, UserLocation = @UserLocation, PickupLocation = @PickupLocation, 
                                DropoffLocation = @DropoffLocation, DrivingDistance = @DrivingDistance, PhonePrivacy = @PhonePrivacy, 
-                               Gender = @Gender, ProfilePicture = @ProfilePicture, AddressPrivacy = @AddressPrivacy, 
+                               Gender = @Gender, AddressPrivacy = @AddressPrivacy, 
                                BeltCount = @BeltCount, MakeModel = @MakeModel, VehicleColor = @VehicleColor, 
-                               LicensePlate = @LicensePlate, LicensePlatePicture = @LicensePlatePicture, 
-                               AllowEatDrink = @AllowEatDrink, AllowSmokeVape = @AllowSmokeVape
+                               LicensePlate = @LicensePlate, AllowEatDrink = @AllowEatDrink, AllowSmokeVape = @AllowSmokeVape
                            WHERE UserId = @UserId";
             await _db.SaveData(sql, user);
         }
