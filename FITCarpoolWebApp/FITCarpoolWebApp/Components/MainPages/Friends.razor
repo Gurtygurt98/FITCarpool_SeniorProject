@@ -14,28 +14,72 @@
             <RadzenTextBox Placeholder="Search for friends..." Style="width:100%; margin-bottom:15px;" />
             
         </RadzenStack>
-        <MudDataGrid Items="friends" Bordered="true" T="Friend">
-            <Columns>
-                <PropertyColumn Property="x => x.Name" Title="Friend Name" />
-                <PropertyColumn Property="x => x.Status" Title="Online Status" />
-                <TemplateColumn>
-                    <CellTemplate>
-                        <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-        </MudDataGrid>
+        @foreach (var row in friends)
+        {
+            <RadzenRow>
+                <RadzenColumn>
+                    @row.Name
+                </RadzenColumn>
+                <RadzenColumn>
+                    @row.Status
+                </RadzenColumn>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => RemoveFriend(row)) Text="Remove" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+            </RadzenRow>
+        }
+    </RadzenCard>
+</RadzenStack>
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
+            <MudText Typo="Typo.h2" Align="Align.Center">Incoming Friend Requests</MudText>
+        </RadzenStack>
+        @foreach (var row in requests)
+        {
+            <RadzenRow>
+                <RadzenColumn>
+                    @row.Name
+                </RadzenColumn>
+                <RadzenColumn>
+                    @row.Status
+                </RadzenColumn>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => AcceptFriendRequest(row)) Text="Accept" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => DeclineFriendRequest(row)) Text="Decline" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+            </RadzenRow>
+        }
     </RadzenCard>
 </RadzenStack>
 
 @code {
-    
+
     private void OnClick(string message)
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message});
     }
+    private void RemoveFriend(Friend f)
+    {
+        friends.Remove(f);
+    }
+    private void AcceptFriendRequest(Friend f)
+    {
+        friends.Add(f);
+        requests.Remove(f);
+    }
+    private void DeclineFriendRequest(Friend f)
+    {
+        requests.Remove(f);
+    }
 
     private List<Friend> friends;
+    private List<Friend> requests;
 
     protected override void OnInitialized()
     {
@@ -46,6 +90,12 @@
             new Friend { Name = "Friend 3", Status = "Offline"},
             new Friend { Name = "Friend 4", Status = "Recently Online"},
             new Friend { Name = "Friend 5", Status = "Offline"}
+        };
+        requests = new List<Friend>
+        {
+            new Friend { Name = "Friend 6", Status = "Recently Online"},
+            new Friend { Name = "Friend 7", Status = "Recently Online"},
+            new Friend { Name = "Friend 8", Status = "Offline"},
         };
     }
 
