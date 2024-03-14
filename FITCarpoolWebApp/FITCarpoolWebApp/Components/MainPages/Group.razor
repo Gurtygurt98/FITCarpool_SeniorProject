@@ -1,6 +1,6 @@
 ﻿@inject NavigationManager NavigationManager
 
-@page "/Group"
+@page "/User-Details"
 
 
 <div class="col-auto p-2 justify-content-end bd-highlight">
@@ -52,19 +52,39 @@
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Net Driving Miles: 22</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Net Driving Miles Per Week: 12</RadzenText>
 
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Current Rating </RadzenText>
-        
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
         <RadzenRating @bind-Value=@value ReadOnly=true />
 
         @if(role == 1)
         {
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Ready to drive?</RadzenText>
-            <MudItem xs="12" md="12">
-                <button class="btn btn-primary" Click="@(() => NavigateTo("Friends"))">Get Directions</button>
-
-            </MudItem>
-
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Ready to drive?</RadzenText>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenButton Click="@(() => NavigateTo("Directions"))" Text="Get Directions" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
         }
+        else if (role == 2)
+        {
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Ready for a ride? Find your driver!</RadzenText>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                <RadzenButton Click="@(() => NavigateTo("Rider"))" Text="Find Driver" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
+        }
+
+
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Wrap="FlexWrap.Wrap" ChildrenAlign="ChildrenAlign.Start">
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
+            <RadzenCheckBox @bind-Value=@show Name="Show" />
+        </RadzenStack>
+        
+        @if(show == true)
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
+        }
+        
+
+
 
 
 
@@ -74,6 +94,8 @@
 
 @code {
     int value = 3;
+
+    bool show;
 
     public int role { get; private set; }
 
