@@ -24,27 +24,27 @@
                 <RadzenTextBox @bind-Value="@InputModel.LastName" Placeholder="Last Name" Style="width:100%; margin-bottom:15px;" />
                 <RadzenTextBox @bind-Value="@InputModel.Phone" Placeholder="Phone Number" Style="width:100%; margin-bottom:5px;" />
                 <RadzenLabel  Text="Phone Number Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value="@InputModel.PhonePrivacy" Data="@privacyOptions" Multiple="false" AllowClear="true" Placeholder="Select Privacy Setting"
+                <RadzenDropDown @bind-Value="@InputModel.PhonePrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting"
                                 Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
 
 
                 <RadzenLabel Text="Select Gender" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle; margin-top:15px" />
-                <RadzenDropDown @bind-Value=@gender Data=@genderData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                <RadzenDropDown @bind-Value=@InputModel.Gender Data=@genderData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
                 <RadzenLabel Text="Select Role" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value=@InputModel.UserType Data=@roles Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
+                <RadzenDropDown @bind-Value=@InputModel.UserType Data=@rolesData Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
                 <MudText Typo="Typo.h2" Align="Align.Left">Location Info</MudText>
                 <RadzenTextBox @bind-Value="@InputModel.UserLocation" Placeholder="Address" Style="width: 100%; max-width: 400px;" />
                 <RadzenTextBox @bind-Value="@InputModel.PickupLocation" Placeholder="Pick-up Location" Style="width: 100%; max-width: 400px;" />
-                <RadzenTextBox @bind-Value="@InputModel.DropoffLocation" Placeholder="Drop-off Location" Style="width: 100%; max-width: 400px;" />
-                @if (role == "driver")
+                <RadzenTextBox @bind-Value="@InputModel.DropoffLocation" Change="@ChangeToType" Placeholder="Drop-off Location" Style="width: 100%; max-width: 400px;" />
+                @if (InputModel.UserType.Equals("driver"))
                 {
                     <RadzenNumeric @bind-Value="@InputModel.DrivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%; max-width: 400px;" Min="0" Step="1" />
                 }
                 @*Address Privacy Settings*@
                 <RadzenLabel Text="Address Privacy Setting" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value="@InputModel.AddressPrivacy" Data="@privacyOptions" Multiple="false" AllowClear="true" Placeholder="Select Privacy Setting"
+                <RadzenDropDown @bind-Value="@InputModel.AddressPrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting"
                                 Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
                 @*Upload File*@
                 <RadzenCard>
@@ -55,35 +55,49 @@
                     <RadzenButton Text="Upload" Click=@(args => upload.Upload()) class="d-block mt-4" />
                 </RadzenCard>
                 @*Current Profile Picture File*@
-                <RadzenStack AlignItems="Radzen.AlignItems.Center" Class="rz-mx-auto rz-my-12">
-                    <RadzenText Text="Current Profile Picture" Style="margin-bottom: 10px;" />
-                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px;" />
-                </RadzenStack>
+                @if(InputModel.ProfilePicture != null)
+                {
+                    <RadzenStack AlignItems="Radzen.AlignItems.Center" Class="rz-mx-auto rz-my-12">
+                        <RadzenText Text="Current Profile Picture" Style="margin-bottom: 10px;" />
+                        <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px;" />
+                    </RadzenStack>
+                }
+ 
             </RadzenStack>
 
             @*Driver Only Section*@
-            @if (role == "driver")
+            @if (InputModel.UserType.Equals("driver"))
             {
-                <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-                    <RadzenStack>
-                        <MudText Typo="Typo.h2" Align="Align.Center">Vehicle Info</MudText>
-                        <RadzenNumeric @bind-Value="@InputModel.BeltCount" Placeholder="Number of Functional Seatbelts" Style="width: 100%; max-width: 400px;" />
-                        <RadzenTextBox @bind-Value="@InputModel.MakeModel" Placeholder="Manufacturer and Model" Style="width: 100%; max-width: 400px;" />
-                        <RadzenTextBox @bind-Value="@InputModel.VehicleColor" Placeholder="Vehicle Color" Style="width: 100%; max-width: 400px;" />
-                        <RadzenTextBox @bind-Value="@InputModel.LicensePlate" Placeholder="License Plate Number" Style="width: 100%; max-width: 400px;" />
-                        @*Need to add logic to submit area to handle the bool inputs from the check boxes below *@
-                        <RadzenLabel Text="Allow Eating & Drinking" Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
-                        <RadzenCheckBox @bind-Value="@allowEatingDrink" Text="Allow eat/drink in the car" Style="margin-top: 10px;" />
-                        <RadzenLabel Text="Allow Smoking " Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
-                        <RadzenCheckBox @bind-Value="@allowSmoking" Text="Allow smoking in the car" Style="margin-top: 10px;" />
-                        @*License Plate Image upload *@
-                        <RadzenCard>
-                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">Car & License Plate Picture Upload</RadzenText>
-                            <RadzenUpload @ref="upload" Auto="true" Url="upload/multiple" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})"
-                                          class="w-100" Accept="image/*" />
-                        </RadzenCard>
-                    </RadzenStack>
-                </RadzenCard>
+                <RadzenStack>
+                    <MudText Typo="Typo.h2" Align="Align.Center">Vehicle Info</MudText>
+                    <RadzenNumeric @bind-Value="@InputModel.BeltCount" Placeholder="Number of Functional Seatbelts" Style="width: 100%; max-width: 400px;" />
+                    <RadzenTextBox @bind-Value="@InputModel.MakeModel" Placeholder="Manufacturer and Model" Style="width: 100%; max-width: 400px;" />
+                    <RadzenTextBox @bind-Value="@InputModel.VehicleColor" Placeholder="Vehicle Color" Style="width: 100%; max-width: 400px;" />
+                    <RadzenTextBox @bind-Value="@InputModel.LicensePlate" Placeholder="License Plate Number" Style="width: 100%; max-width: 400px;" />
+                    @*Need to add logic to submit area to handle the bool inputs from the check boxes below *@
+                    <RadzenLabel Text="Allow Eating & Drinking" Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
+                    <RadzenCheckBox @bind-Value="@allowEatingDrink" Text="Allow eat/drink in the car" Style="margin-top: 10px;" />
+                    <RadzenLabel Text="Allow Smoking " Component="RadzenCheckBox" Style="margin-right: 8px; vertical-align: middle;" />
+                    <RadzenCheckBox @bind-Value="@allowSmoking" Text="Allow smoking in the car" Style="margin-top: 10px;" />
+                    @*License Plate Image upload *@
+                    @*Upload File*@
+                    <RadzenCard>
+                        <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">License Picture Upload</RadzenText>
+                        <RadzenUpload @ref="upload" Auto="false" Multiple="false" Url="@(uploadUrlLicense)"
+                                        InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" />
+                        @*Need to make this part of the actual upload on the bottom of the page to update the entire thing*@
+                        <RadzenButton Text="Upload" Click=@(args => upload.Upload()) class="d-block mt-4" />
+                    </RadzenCard>
+                    @*Current License file Picture File*@
+                    @if (InputModel.LicensePlatePicture != null)
+                    {
+                        <RadzenStack AlignItems="Radzen.AlignItems.Center" Class="rz-mx-auto rz-my-12">
+                            <RadzenText Text="Current License Picture" Style="margin-bottom: 10px;" />
+                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.LicensePlatePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px;" />
+                        </RadzenStack>
+                    }
+ 
+                </RadzenStack>
             }
             @*Schedule Section*@
             <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
@@ -154,7 +168,7 @@
     int progress;
     string info;
     IEnumerable<string> genderData = new string[] { "Male", "Female", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
-    IEnumerable<string> roles = new string[] { "rider", "driver" };
+    IEnumerable<string> rolesData = new string[] { "rider", "driver" };
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -172,6 +186,7 @@
         if (UserList.Any())
         {
             InputModel = UserList.First();
+
             PrepareUploadUrl();
         }
     }
@@ -274,5 +289,10 @@
     {
         this.info = $"% '{name}' / {args.Loaded} of {args.Total} bytes.";
         this.progress = args.Progress;
+    }
+    void ChangeToType()
+    {
+        Console.WriteLine(InputModel.UserType);
+        StateHasChanged();
     }
 }   

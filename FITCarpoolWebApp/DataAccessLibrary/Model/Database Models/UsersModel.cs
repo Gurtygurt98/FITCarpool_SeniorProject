@@ -13,7 +13,7 @@ namespace DataAccessLibrary.Model
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Phone { get; set; }
-        public string UserType { get; set; }
+        public string UserType { get; set; } = "rider";
         public string UserLocation { get; set; }
         public string PickupLocation { get; set; }
         public string DropoffLocation { get; set; }
