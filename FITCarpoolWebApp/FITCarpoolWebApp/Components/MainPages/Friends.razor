@@ -27,7 +27,7 @@
                     <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
                 </RadzenColumn>
                 <RadzenColumn>
-                    <RadzenButton Click=@(args => RemoveFriend(row)) Text="Remove" ButtonStyle="ButtonStyle.Primary" />
+                    <RadzenButton Click=@(args => RemoveFriend(row, "Friend Removed")) Text="Remove Friend" ButtonStyle="ButtonStyle.Danger" />
                 </RadzenColumn>
             </RadzenRow>
         }
@@ -64,9 +64,15 @@
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message});
     }
-    private void RemoveFriend(Friend f)
+    private void OnClick2(string message)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
+    }
+
+    private void RemoveFriend(Friend f, string message)
     {
         friends.Remove(f);
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
     private void AcceptFriendRequest(Friend f)
     {
