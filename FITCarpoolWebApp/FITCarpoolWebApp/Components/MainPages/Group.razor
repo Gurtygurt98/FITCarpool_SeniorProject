@@ -35,6 +35,10 @@
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
 
+        
+
+
+
         @if(role == 1)
         {
             <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Role</RadzenText>
@@ -46,11 +50,19 @@
             <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Rider</RadzenText>
         }
 
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Driving/Riding Statistics</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Total Driving Miles: 24</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Total Riding Miles: 68</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Net Driving Miles: 22</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Net Driving Miles Per Week: 12</RadzenText>
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Bio</RadzenText>
+        <RadzenTextArea class="w-60" aria-label="TextArea" />
+        
+        <RadzenStack>
+            <MudText Typo="Typo.h6" Align="Align.Center">Rider/Driver Statistics</MudText>
+        </RadzenStack>
+        <MudDataGrid Items="stats" Bordered="true" T="Statistics">
+            <Columns>
+                <PropertyColumn Property="x => x.title" Title="Description" />
+                <PropertyColumn Property="x => x.miles" Title="Miles" />
+            </Columns>
+        </MudDataGrid>
+            
 
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
         <RadzenRating @bind-Value=@value ReadOnly=true />
@@ -86,14 +98,6 @@
             </RadzenStack>
         }
 
-
-        
-        
-
-
-
-
-
     </RadzenCard>
 </RadzenStack>
 
@@ -110,6 +114,29 @@
     private void NavigateTo(string page)
     {
         NavigationManager.NavigateTo($"/{page}");
+    }
+
+
+    private List<Statistics> stats;
+
+    protected override void OnInitialized()
+    {
+        stats = new List<Statistics>
+        {
+            new Statistics { title = "Total Driving Miles", miles = 3},
+            new Statistics { title = "Total Riding Miles", miles = 8},
+            new Statistics { title = "Net Driving Miles", miles = 15},
+            new Statistics { title = "Net Driving Miles Per Week", miles = 6}
+
+        };
+    }
+
+    public class Statistics
+    {
+        public string? title { get; set; }
+        public int miles { get; set; }
+        public int CurrentSize { get; set; }
+        public string? Description { get; set; }
     }
 
 }
