@@ -1,6 +1,6 @@
 ﻿@inject NavigationManager NavigationManager
 
-@page "/Group"
+@page "/User-Details"
 
 
 <div class="col-auto p-2 justify-content-end bd-highlight">
@@ -35,6 +35,10 @@
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
 
+        
+
+
+
         @if(role == 1)
         {
             <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Role</RadzenText>
@@ -46,27 +50,53 @@
             <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Rider</RadzenText>
         }
 
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Driving/Riding Statistics</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Total Driving Miles: 24</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Total Riding Miles: 68</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Net Driving Miles: 22</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Net Driving Miles Per Week: 12</RadzenText>
-
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Current Rating </RadzenText>
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Bio</RadzenText>
+        <RadzenTextArea class="w-60" aria-label="TextArea" />
         
+        <RadzenStack>
+            <MudText Typo="Typo.h6" Align="Align.Center">Rider/Driver Statistics</MudText>
+        </RadzenStack>
+        <MudDataGrid Items="stats" Bordered="true" T="Statistics">
+            <Columns>
+                <PropertyColumn Property="x => x.title" Title="Description" />
+                <PropertyColumn Property="x => x.miles" Title="Miles" />
+            </Columns>
+        </MudDataGrid>
+            
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
         <RadzenRating @bind-Value=@value ReadOnly=true />
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Wrap="FlexWrap.Wrap" ChildrenAlign="ChildrenAlign.Start">
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
+            <RadzenCheckBox @bind-Value=@show Name="Show" />
+        </RadzenStack>
+
+        @if (show == true)
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
+        }
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Find a group!</RadzenText>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenButton Click="@(() => NavigateTo("Group-Find"))" Text="Find Group" ButtonStyle="ButtonStyle.Primary" />
+        </RadzenStack>
 
         @if(role == 1)
         {
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Ready to drive?</RadzenText>
-            <MudItem xs="12" md="12">
-                <button class="btn btn-primary" Click="@(() => NavigateTo("Friends"))">Get Directions</button>
-
-            </MudItem>
-
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Ready to drive?</RadzenText>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenButton Click="@(() => NavigateTo("Directions"))" Text="Get Directions" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
         }
-
-
+        else if (role == 2)
+        {
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Ready for a ride? Find your driver!</RadzenText>
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+                <RadzenButton Click="@(() => NavigateTo("Rider"))" Text="Find Driver" ButtonStyle="ButtonStyle.Primary" />
+            </RadzenStack>
+        }
 
     </RadzenCard>
 </RadzenStack>
@@ -75,6 +105,8 @@
 @code {
     int value = 3;
 
+    bool show;
+
     public int role { get; private set; }
 
     
@@ -82,6 +114,29 @@
     private void NavigateTo(string page)
     {
         NavigationManager.NavigateTo($"/{page}");
+    }
+
+
+    private List<Statistics> stats;
+
+    protected override void OnInitialized()
+    {
+        stats = new List<Statistics>
+        {
+            new Statistics { title = "Total Driving Miles", miles = 3},
+            new Statistics { title = "Total Riding Miles", miles = 8},
+            new Statistics { title = "Net Driving Miles", miles = 15},
+            new Statistics { title = "Net Driving Miles Per Week", miles = 6}
+
+        };
+    }
+
+    public class Statistics
+    {
+        public string? title { get; set; }
+        public int miles { get; set; }
+        public int CurrentSize { get; set; }
+        public string? Description { get; set; }
     }
 
 }
