@@ -26,7 +26,8 @@ namespace DataAccessLibrary.Model
         public string MakeModel { get; set; }
         public string VehicleColor { get; set; }
         public string LicensePlate { get; set; }
-        public byte[] LicensePlatePicture { get; set; }
+        public byte[] LicensePicture { get; set; }
+        public byte[] CarPicture { get; set; }
         public string AllowEatDrink { get; set; } = "false";
         public string AllowSmokeVape { get; set; } = "false";
         public UsersModel() { }
@@ -58,7 +59,7 @@ namespace DataAccessLibrary.Model
             DropoffLocation = dropoffLocation;
             DrivingDistance = drivingDistance;
         }
-        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, string phonePrivacy, string gender, byte[] profilePicture, string addressPrivacy, int? beltCount, string makeModel, string vehicleColor, string licensePlate, byte[] licensePlatePicture, string allowEatDrink, string allowSmokeVape)
+        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, string phonePrivacy, string gender, byte[] profilePicture, string addressPrivacy, int? beltCount, string makeModel, string vehicleColor, string licensePlate, byte[] licensePicture, byte[] carPicture, string allowEatDrink, string allowSmokeVape)
         {
             UserId = userId;
             Email = email;
@@ -78,7 +79,8 @@ namespace DataAccessLibrary.Model
             MakeModel = makeModel;
             VehicleColor = vehicleColor;
             LicensePlate = licensePlate;
-            LicensePlatePicture = licensePlatePicture;
+            LicensePicture = licensePicture;
+            CarPicture = carPicture;
             AllowEatDrink = allowEatDrink;
             AllowSmokeVape = allowSmokeVape;
         }

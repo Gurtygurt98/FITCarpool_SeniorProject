@@ -66,11 +66,11 @@ namespace DataAccessLibrary.Data.Database
             string sql = @"INSERT INTO Users (Email, FirstName, LastName, Phone, UserType, UserLocation, 
                                                PickupLocation, DropoffLocation, DrivingDistance, PhonePrivacy, Gender, 
                                                ProfilePicture, AddressPrivacy, BeltCount, MakeModel, VehicleColor, 
-                                               LicensePlate, LicensePlatePicture, AllowEatDrink, AllowSmokeVape) 
+                                               LicensePlate, LicensePicture, CarPicture, AllowEatDrink, AllowSmokeVape) 
                            VALUES (@Email, @FirstName, @LastName, @Phone, @UserType, @UserLocation, 
                                    @PickupLocation, @DropoffLocation, @DrivingDistance, @PhonePrivacy, @Gender, 
                                    @ProfilePicture, @AddressPrivacy, @BeltCount, @MakeModel, @VehicleColor, 
-                                   @LicensePlate, @LicensePlatePicture, @AllowEatDrink, @AllowSmokeVape)";
+                                   @LicensePlate, @LicensePicture, @CarPicture, @AllowEatDrink, @AllowSmokeVape)";
             await _db.SaveData(sql, user);
         }
         public async Task UpdateUserProfilePicture(int userId, byte[] profilePicture)
@@ -82,8 +82,14 @@ namespace DataAccessLibrary.Data.Database
         public async Task UpdateUserLicensePicture(int userId, byte[] licensePicture)
         {
 
-            string sql = "UPDATE Users SET LicensePlatePicture = @LicensePlatePic WHERE UserId = @UserId";
-            await _db.SaveData(sql, new { UserId = userId, LicensePlatePic = licensePicture });
+            string sql = "UPDATE Users SET LicensePicture = @LicensePic WHERE UserId = @UserId";
+            await _db.SaveData(sql, new { UserId = userId, LicensePic = licensePicture });
+        }
+        public async Task UpdateUserCarPicture(int userId, byte[] carPicture)
+        {
+
+            string sql = "UPDATE Users SET CarPicture = @CarPic WHERE UserId = @UserId";
+            await _db.SaveData(sql, new { UserId = userId, CarPic = carPicture });
         }
     }
 }
