@@ -103,10 +103,19 @@
                             <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="display: block; margin-bottom: 5px;">License Picture Upload</RadzenText>
                             <RadzenUpload @ref="LicenseUpload" Auto="false" Multiple="false" Url="@(uploadUrlLicense)" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" Style=" margin-bottom:5px;" />
 
-                            @if (InputModel.LicensePlatePicture != null)
+                            @if (InputModel.LicensePicture != null)
                             {
                                 <RadzenText Text="Current License Picture" Style="margin-bottom: 10px;" />
-                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.LicensePlatePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.LicensePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                            }
+
+                            <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="display: block; margin-bottom: 5px;">Vehicle Picture Upload</RadzenText>
+                            <RadzenUpload @ref="CarUpload" Auto="false" Multiple="false" Url="@(uploadUrlCar)" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" Style=" margin-bottom:5px;" />
+
+                            @if (InputModel.CarPicture != null)
+                            {
+                                <RadzenText Text="Current Vehicle Picture" Style="margin-bottom: 10px;" />
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.CarPicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
                             }
                         </RadzenStack>
                     </MudItem>
@@ -138,6 +147,7 @@
 @code {
     private List<UsersModel> UserList = null;
     private string uploadUrlLicense = "";
+    private string uploadUrlCar = "";
     private string uploadUrlProfile = "";
     bool _busyUpdate = false;
     UsersModel InputModel = new();
@@ -145,6 +155,7 @@
     RadzenScheduler<SchedulesModel> scheduler = new();
     RadzenUpload ProfileUpload = null;
     RadzenUpload LicenseUpload = null;
+    RadzenUpload CarUpload = null;
 
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
     string gender = "Other";
@@ -194,6 +205,7 @@
         var userId = InputModel.UserId; // Assuming InputModel.ID holds the user ID you intend to use
         uploadUrlProfile = $"/FileUpload/upload/{InputModel.UserId}";
         uploadUrlLicense = $"/FileUpload/upload/license/{InputModel.UserId}";
+        uploadUrlCar = $"/FileUpload/upload/car/{InputModel.UserId}";
 
     }
     IList<SchedulesModel> appointments = new List<SchedulesModel>
@@ -304,6 +316,11 @@
             if(LicenseUpload != null)
             {
                 await LicenseUpload.Upload();
+
+            }
+            if (CarUpload != null)
+            {
+                await CarUpload.Upload();
 
             }
 

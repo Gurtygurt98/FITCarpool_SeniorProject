@@ -40,6 +40,8 @@ namespace FITCarpoolWebApp.Controller
         {
             await _usersData.UpdateUserProfilePicture(userId, fileBytes);
         }
+
+
         [HttpPost("upload/license/{userId}")]
         public async Task<IActionResult> UploadLicense(IFormFile file, [FromRoute] int userId)
         {
@@ -57,10 +59,34 @@ namespace FITCarpoolWebApp.Controller
 
             return Ok();
         }
-
         private async Task UpdateUserLicensePictureAsync(int userId, byte[] fileBytes)
         {
             await _usersData.UpdateUserLicensePicture(userId, fileBytes);
+        }
+
+
+
+        [HttpPost("upload/car/{userId}")]
+        public async Task<IActionResult> UploadCar(IFormFile file, [FromRoute] int userId)
+        {
+
+            if (file.Length > 0)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await file.CopyToAsync(memoryStream);
+                    byte[] fileBytes = memoryStream.ToArray();
+
+                    await UpdateUserCarPictureAsync(userId, fileBytes);
+                }
+            }
+
+            return Ok();
+        }
+
+        private async Task UpdateUserCarPictureAsync(int userId, byte[] fileBytes)
+        {
+            await _usersData.UpdateUserCarPicture(userId, fileBytes);
         }
     }
 }
