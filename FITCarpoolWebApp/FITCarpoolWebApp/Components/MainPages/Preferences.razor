@@ -34,11 +34,20 @@
                 <RadzenDropDown @bind-Value=@InputModelPref.SmokingPreference Data=@carSmokingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
                 <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Comfort Preferences</MudText>
+                <RadzenLabel Text="Music Preferences" Component="MusicCheck" Style="margin-right: 8px; vertical-align: middle;" />
+                <MudStack Row="true">
+                    <RadzenCheckBox Name="MusicCheck" TValue="bool" Change=@(args => _noMusicPreference = args) Value=_noMusicPreference></RadzenCheckBox>
+                    <span> No Music Preference </span>
 
-                <RadzenLabel Text="Select Music Preferences" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
-                <RadzenDropDown @bind-Value="@selectedMusicGenres" Data="@musicGenres" Multiple="true" AllowClear="true" Placeholder="Select Music Preferences"
-                                Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
+                </MudStack>
+      
 
+                @if (!_noMusicPreference)
+                {
+                        <RadzenLabel Text="Select Music Preferences" Component="DropDownMultiple" Style="margin-right: 8px; vertical-align: middle;" />
+                        <RadzenDropDown @bind-Value="@selectedMusicGenres" Data="@musicGenres" Multiple="true" AllowClear="true" Placeholder="Select Music Preferences"
+                                        Style="width: 100%; max-width: 400px;" TextProperty="Name" ValueProperty="Id" Name="DropDownMultiple" />
+                }
                 <RadzenLabel Text="Select Car Temperature Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
                 <RadzenDropDown @bind-Value=@InputModelPref.TemperaturePreference Data=@carTempValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
                 <RadzenButton IsBusy=@_busyUpdate Click=@(args => UpdateUserData()) Text="Update Profile Data" ButtonStyle="ButtonStyle.Primary" Style="width:100%;" />
@@ -69,14 +78,14 @@
     private bool _loading = true;
     private string userName = "Not found";
     bool _busyUpdate = false;
+    private bool _noMusicPreference = true;
     // Data for select statments 
     IEnumerable<string> genderValues = new string[] { "No Preference", "Women and Non-binary Only", "Same Gender", "Non-binary Only" };
-    IEnumerable<string> carEatingValues = new string[] { "No Preference", "Vehcile allows eating", "Vehicle does not allow eating" };
-    IEnumerable<string> carSmokingValues = new string[] { "No Preference", "Vehcile allows smoking", "Vehcile does not allow smoking" };
+    IEnumerable<string> carEatingValues = new string[] { "No Preference", "Vehicle allows eating", "Vehicle does not allow eating" };
+    IEnumerable<string> carSmokingValues = new string[] { "No Preference", "Vehicle allows smoking", "Vehicle does not allow smoking" };
     IEnumerable<string> carTempValues = new string[] { "No Preference", "Warmer", "Colder" };
     IEnumerable<MusicGenre> musicGenres = new List<MusicGenre>
     {
-        new MusicGenre { Id = "1", Name = "No Preference" },
         new MusicGenre { Id = "2", Name = "Pop" },
         new MusicGenre { Id = "3", Name = "Rock" },
         new MusicGenre { Id = "4", Name = "Hip Hop" },
@@ -117,6 +126,8 @@
 
                 // Loads the user preferences if they exist 
                 InputModelPref = PrefList.First();
+                // Parse the music genre input 
+                List<string> CurrMusicPrefs = InputModelPref.MusicPreference.Split(',').ToList();
             }
             else
             {
@@ -133,10 +144,32 @@
     async Task UpdateUserData()
     {
         _busyUpdate = true;
-        foreach(String x in selectedMusicGenres)
+        if (_noMusicPreference)
         {
-            Console.WriteLine(x);
+            InputModelPref.MusicPreference = "No Preference";       
         }
+        else
+        {
+            StringBuilder musicPrefs = new StringBuilder();
+
+            foreach (string x in selectedMusicGenres)
+            {
+                int id = Int32.Parse(x);
+                var genreName = musicGenres.FirstOrDefault(g => g.Id == x)?.Name;
+                if (genreName != null)
+                {
+                    musicPrefs.Append($"{genreName}, ");
+                }
+            }
+            // Remove the last comma and space if there are any selected genres
+            if (musicPrefs.Length > 2)
+            {
+                musicPrefs.Remove(musicPrefs.Length - 2, 2);
+            }
+            InputModelPref.MusicPreference = musicPrefs.ToString();
+
+        }
+
         try
         {
             await _dbPrefs.UpdatePreference(InputModelPref);
