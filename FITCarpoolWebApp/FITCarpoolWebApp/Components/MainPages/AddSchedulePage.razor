@@ -4,13 +4,26 @@
 <RadzenTemplateForm TItem="SchedulesModel" Data="@model" Submit=@OnSubmit>
     <div class="row" style="margin-bottom: 16px">
         <div class="col-md-3">
-            <RadzenLabel Text="Text" />
+            <RadzenLabel Text="Add Trip Description" />
         </div>
         <div class="col">
             <RadzenTextBox @bind-Value="@model.Text" Name="Text" />
             <RadzenRequiredValidator Text="Title is required" Component="Text" />
         </div>
     </div>
+
+    <div class="row" style="margin-bottom: 16px">
+        <div class="col-md-3">
+            <RadzenLabel Text="Arival/Depature Time Variance" />
+        </div>
+        <div class="col">
+            <RadzenLabel Text="Earliest Arrival Time" Style="display: block; margin-bottom: 5px;" />
+            <RadzenNumeric Step="5" @bind-Value="@model.EarliestTime" Placeholder="Minutes before desired arrival" Style="width:100%;  margin-bottom:5px;" />
+            <RadzenLabel Text="Latest Departure Time" Style="display: block; margin-bottom: 5px;" />
+            <RadzenNumeric Step="5" @bind-Value="@model.LatestTime" Placeholder="Minutes after desired departure" Style="width:100%;  margin-bottom:5px;" />
+        </div>
+    </div>
+
     <div class="row" style="margin-bottom: 16px">
         <div class="col-md-3">
             <RadzenLabel Text="Start" />
@@ -43,16 +56,24 @@
     [Parameter]
     public DateTime End { get; set; }
 
+    [Parameter]
+    public int EarliestTime { get; set; }
+    [Parameter]
+    public int LatestTime { get; set; }
+
     SchedulesModel model = new SchedulesModel();
 
     protected override void OnParametersSet()
     {
         model.Start = Start;
         model.End = End;
+        model.EarliestTime = EarliestTime;
+        model.LatestTime = LatestTime;
     }
 
     void OnSubmit(SchedulesModel model)
     {
         DialogService.Close(model);
     }
+
 }

@@ -209,6 +209,8 @@
         uploadUrlCar = $"/FileUpload/upload/car/{InputModel.UserId}";
 
     }
+
+
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {
            // 3 days before
@@ -271,7 +273,9 @@
             {
                 Start = args.Data.Start,
                 End = args.Data.End,
-                Text = args.Data.Text
+                Text = args.Data.Text,
+                EarliestTime = args.Data.EarliestTime,
+                LatestTime = args.Data.LatestTime
             };
 
         var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "Appointment", copy } });
@@ -282,6 +286,8 @@
             args.Data.Start = data.Start;
             args.Data.End = data.End;
             args.Data.Text = data.Text;
+            args.Data.EarliestTime = data.EarliestTime;
+            args.Data.LatestTime = data.LatestTime;
         }
 
         await scheduler.Reload();
