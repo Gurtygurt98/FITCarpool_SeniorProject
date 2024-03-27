@@ -109,6 +109,7 @@
                                 <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.LicensePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
                             }
 
+
                             <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="display: block; margin-bottom: 5px;">Vehicle Picture Upload</RadzenText>
                             <RadzenUpload @ref="CarUpload" Auto="false" Multiple="false" Url="@(uploadUrlCar)" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" Style=" margin-bottom:5px;" />
 

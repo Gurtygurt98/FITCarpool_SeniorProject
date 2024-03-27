@@ -43,7 +43,7 @@ namespace FITCarpoolWebApp.Controller
 
 
         [HttpPost("upload/license/{userId}")]
-        public async Task<IActionResult> UploadLicense(IFormFile file, [FromRoute] int userId)
+        public async Task<IActionResult> UploadLicensePicture(IFormFile file, [FromRoute] int userId)
         {
 
             if (file.Length > 0)
@@ -67,7 +67,7 @@ namespace FITCarpoolWebApp.Controller
 
 
         [HttpPost("upload/car/{userId}")]
-        public async Task<IActionResult> UploadCar(IFormFile file, [FromRoute] int userId)
+        public async Task<IActionResult> UploadCarPicture(IFormFile file, [FromRoute] int userId)
         {
 
             if (file.Length > 0)
