@@ -202,7 +202,7 @@
 
     private void PrepareUploadUrl()
     {
-        var userId = InputModel.UserId; // Assuming InputModel.ID holds the user ID you intend to use
+        var userId = InputModel.UserId;
         uploadUrlProfile = $"/FileUpload/upload/{InputModel.UserId}";
         uploadUrlLicense = $"/FileUpload/upload/license/{InputModel.UserId}";
         uploadUrlCar = $"/FileUpload/upload/car/{InputModel.UserId}";
