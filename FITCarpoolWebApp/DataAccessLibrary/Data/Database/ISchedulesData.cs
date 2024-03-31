@@ -6,7 +6,8 @@ namespace DataAccessLibrary.Data.Database
     {
         Task DeleteSchedule(int scheduleId);
         Task<List<SchedulesModel>> GetAllSchedules();
-        Task<SchedulesModel> GetSchedule(int scheduleId);
+        Task<List<SchedulesModel>> GetSchedule(int userID);
         Task UpdateSchedule(SchedulesModel schedule);
+        Task AddSchedule(SchedulesModel schedule);
     }
 }

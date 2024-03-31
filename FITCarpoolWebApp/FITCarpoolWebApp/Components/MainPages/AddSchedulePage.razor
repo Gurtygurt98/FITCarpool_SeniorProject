@@ -2,27 +2,14 @@
 @inject Radzen.DialogService DialogService
 
 <RadzenTemplateForm TItem="SchedulesModel" Data="@model" Submit=@OnSubmit>
-    <div class="row" style="margin-bottom: 16px">
-        <div class="col-md-3">
-            <RadzenLabel Text="Add Trip Description" />
-        </div>
-        <div class="col">
-            <RadzenTextBox @bind-Value="@model.Text" Name="Text" />
-            <RadzenRequiredValidator Text="Title is required" Component="Text" />
-        </div>
+    <div class="col-md-3">
+        <RadzenLabel Text="Is this an arrival or departure time to/from campus" />
+    </div>
+    <div class="col">
+        <RadzenDropDown @bind-Value="@model.Text" Name="ArrivalDepartureSelect" Data="@ArrivalDepartureOptions" Style="width:100%;" />
+        <RadzenRequiredValidator Text="Selection is required" Component="ArrivalDepartureSelect" />
     </div>
 
-    <div class="row" style="margin-bottom: 16px">
-        <div class="col-md-3">
-            <RadzenLabel Text="Arival/Depature Time Variance" />
-        </div>
-        <div class="col">
-            <RadzenLabel Text="Earliest Arrival Time" Style="display: block; margin-bottom: 5px;" />
-            <RadzenNumeric Step="5" @bind-Value="@model.EarliestTime" Placeholder="Minutes before desired arrival" Style="width:100%;  margin-bottom:5px;" />
-            <RadzenLabel Text="Latest Departure Time" Style="display: block; margin-bottom: 5px;" />
-            <RadzenNumeric Step="5" @bind-Value="@model.LatestTime" Placeholder="Minutes after desired departure" Style="width:100%;  margin-bottom:5px;" />
-        </div>
-    </div>
 
     <div class="row" style="margin-bottom: 16px">
         <div class="col-md-3">
@@ -50,16 +37,18 @@
     </div>
 </RadzenTemplateForm>
 @code {
+    List<string> ArrivalDepartureOptions = new List<string>() { "arrival", "departure" };
+
     [Parameter]
     public DateTime Start { get; set; }
 
     [Parameter]
     public DateTime End { get; set; }
+    [Parameter]
+    public int UserID { get; set; }
+    [Parameter]
+    public EventCallback<SchedulesModel> OnAddSchedule { get; set; }
 
-    [Parameter]
-    public int EarliestTime { get; set; }
-    [Parameter]
-    public int LatestTime { get; set; }
 
     SchedulesModel model = new SchedulesModel();
 
@@ -67,13 +56,15 @@
     {
         model.Start = Start;
         model.End = End;
-        model.EarliestTime = EarliestTime;
-        model.LatestTime = LatestTime;
+        model.UserId = UserID;
     }
 
-    void OnSubmit(SchedulesModel model)
+    void OnSubmit()
     {
+        model.Day = model.Start.ToString();
+        OnAddSchedule.InvokeAsync(model);
         DialogService.Close(model);
+        
     }
 
 }

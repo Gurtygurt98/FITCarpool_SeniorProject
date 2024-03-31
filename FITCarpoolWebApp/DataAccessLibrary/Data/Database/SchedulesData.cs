@@ -20,16 +20,15 @@ namespace DataAccessLibrary.Data.Database
             return await _db.LoadData<SchedulesModel, dynamic>(sql, new { });
         }
 
-        public async Task<SchedulesModel> GetSchedule(int scheduleId)
+        public async Task<List<SchedulesModel>> GetSchedule(int userID)
         {
-            string sql = "SELECT * FROM Schedules WHERE ScheduleID = @ScheduleId";
-            var result = await _db.LoadData<SchedulesModel, dynamic>(sql, new { ScheduleId = scheduleId });
-            return result.FirstOrDefault();
+            string sql = "SELECT * FROM Schedules WHERE UserId = @UserId";
+            return await _db.LoadData<SchedulesModel, dynamic>(sql, new { UserId = userID });
         }
 
         public async Task UpdateSchedule(SchedulesModel schedule)
         {
-            string sql = @"UPDATE Schedules SET UserID = @UserId, DayOfWeek = @DayOfWeek, StartTime = @StartTime, EndTime = @EndTime, EarliestTime = @EarliestTime, LatestTime = @LatestTime, Text = @Text WHERE ScheduleID = @ScheduleId";
+            string sql = @"UPDATE Schedules SET UserID = @UserId, Day = @Day, StartTime = @StartTime, EndTime = @EndTime, Text = @Text WHERE ScheduleID = @ScheduleId";
             await _db.SaveData(sql, schedule);
         }
 
@@ -37,6 +36,14 @@ namespace DataAccessLibrary.Data.Database
         {
             string sql = "DELETE FROM Schedules WHERE ScheduleID = @ScheduleId";
             await _db.SaveData(sql, new { ScheduleId = scheduleId });
+        }
+        public async Task AddSchedule(SchedulesModel schedule)
+        {
+            Console.WriteLine("Adding Schedules");
+            string sql = @"INSERT INTO Schedules (UserID, Day, StartTime, EndTime, Text) 
+                   VALUES (@UserId, @Day, @StartTime, @EndTime, @Text)";
+
+            await _db.SaveData(sql, schedule);
         }
     }
 }

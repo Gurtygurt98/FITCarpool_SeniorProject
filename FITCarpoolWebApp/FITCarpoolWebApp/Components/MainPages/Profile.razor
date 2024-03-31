@@ -11,6 +11,7 @@
 @inject Radzen.DialogService DialogService
 @inject HttpClient httpClient
 @inject IUsersData _dbUsers
+@inject ISchedulesData _dbSchedules
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
@@ -130,12 +131,13 @@
 
             @*Schedule Section*@
             <MudText Typo="Typo.h2" Align="Align.Center">Edit Schedule</MudText>
-            <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 768px;" TItem="SchedulesModel" Data=@appointments StartProperty="Start" EndProperty="End"
+            <RadzenScheduler @ref=@scheduler SlotRender=@OnSlotRender style="height: 85vh;" TItem="SchedulesModel" Data=@ListSchedules StartProperty="Start" EndProperty="End"
                                 TextProperty="Text" SelectedIndex="2"
                                 SlotSelect=@OnSlotSelect AppointmentSelect=@OnAppointmentSelect AppointmentRender=@OnAppointmentRender star>
+
+                <RadzenMonthView />
                 <RadzenDayView />
                 <RadzenWeekView />
-                <RadzenMonthView />
             </RadzenScheduler>
         </RadzenCard>
     }else
@@ -152,12 +154,10 @@
     private string uploadUrlProfile = "";
     bool _busyUpdate = false;
     UsersModel InputModel = new();
-    // Logic added for creating user preferences - schedule
-    RadzenScheduler<SchedulesModel> scheduler = new();
+    // Logic added for creating user preference
     RadzenUpload ProfileUpload = null;
     RadzenUpload LicenseUpload = null;
     RadzenUpload CarUpload = null;
-
     Dictionary<DateTime, string> events = new Dictionary<DateTime, string>();
     string gender = "Other";
     private string userName = "Not found";
@@ -168,7 +168,9 @@
     IEnumerable<string> genderData = new string[] { "Male", "Female", "Non-binary", "Genderqueer", "Agender", "Bigender", "Genderfluid", "Two-Spirit", "Other" };
     IEnumerable<string> rolesData = new string[] { "rider", "driver" };
     IEnumerable<string> privacyOptions = new List<string> { "Share With No One", "Share with Friends", "Share with Group Driver", "Share with Other Group Passengers" };
-
+    // Schedule
+    RadzenScheduler<SchedulesModel> scheduler = new();
+    List<SchedulesModel> ListSchedules = new();
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -198,6 +200,9 @@
             {
                 allowEatingDrink = false;
             }
+            // Get Schedule info 
+
+            ListSchedules = await _dbSchedules.GetSchedule(InputModel.UserId);
         }
     }
 
@@ -209,38 +214,41 @@
         uploadUrlCar = $"/FileUpload/upload/car/{InputModel.UserId}";
 
     }
+    IList<SchedulesModel> appointments = new List<SchedulesModel>();
 
-
+    /*
+    * For refrence
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {
-           // 3 days before
-        new SchedulesModel { Start = DateTime.Today.AddDays(-3).AddHours(8), End = DateTime.Today.AddDays(-3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddDays(-3).AddHours(17), End = DateTime.Today.AddDays(-3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+    // 3 days before
+    new SchedulesModel { Start = DateTime.Today.AddDays(-3).AddHours(8), End = DateTime.Today.AddDays(-3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddDays(-3).AddHours(17), End = DateTime.Today.AddDays(-3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
 
-        // 2 days before
-        new SchedulesModel { Start = DateTime.Today.AddDays(-2).AddHours(8), End = DateTime.Today.AddDays(-2).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddDays(-2).AddHours(17), End = DateTime.Today.AddDays(-2).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+    // 2 days before
+    new SchedulesModel { Start = DateTime.Today.AddDays(-2).AddHours(8), End = DateTime.Today.AddDays(-2).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddDays(-2).AddHours(17), End = DateTime.Today.AddDays(-2).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
 
-        // 1 day before
-        new SchedulesModel { Start = DateTime.Today.AddDays(-1).AddHours(8), End = DateTime.Today.AddDays(-1).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddDays(-1).AddHours(17), End = DateTime.Today.AddDays(-1).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+    // 1 day before
+    new SchedulesModel { Start = DateTime.Today.AddDays(-1).AddHours(8), End = DateTime.Today.AddDays(-1).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddDays(-1).AddHours(17), End = DateTime.Today.AddDays(-1).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
 
-        // Today
-        new SchedulesModel { Start = DateTime.Today.AddHours(8), End = DateTime.Today.AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddHours(17), End = DateTime.Today.AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+    // Today
+    new SchedulesModel { Start = DateTime.Today.AddHours(8), End = DateTime.Today.AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddHours(17), End = DateTime.Today.AddHours(17).AddMinutes(30), Text = "Leave Campus" },
 
-        // 1 day after
-        new SchedulesModel { Start = DateTime.Today.AddDays(1).AddHours(8), End = DateTime.Today.AddDays(1).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddDays(1).AddHours(17), End = DateTime.Today.AddDays(1).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+    // 1 day after
+    new SchedulesModel { Start = DateTime.Today.AddDays(1).AddHours(8), End = DateTime.Today.AddDays(1).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddDays(1).AddHours(17), End = DateTime.Today.AddDays(1).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
 
-        // 2 days after
-        new SchedulesModel { Start = DateTime.Today.AddDays(2).AddHours(8), End = DateTime.Today.AddDays(2).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddDays(2).AddHours(17), End = DateTime.Today.AddDays(2).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+    // 2 days after
+    new SchedulesModel { Start = DateTime.Today.AddDays(2).AddHours(8), End = DateTime.Today.AddDays(2).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddDays(2).AddHours(17), End = DateTime.Today.AddDays(2).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
 
-        // 3 days after
-        new SchedulesModel { Start = DateTime.Today.AddDays(3).AddHours(8), End = DateTime.Today.AddDays(3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
-        new SchedulesModel { Start = DateTime.Today.AddDays(3).AddHours(17), End = DateTime.Today.AddDays(3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
-    };
+    // 3 days after
+    new SchedulesModel { Start = DateTime.Today.AddDays(3).AddHours(8), End = DateTime.Today.AddDays(3).AddHours(8).AddMinutes(30), Text = "Arrive on Campus" },
+    new SchedulesModel { Start = DateTime.Today.AddDays(3).AddHours(17), End = DateTime.Today.AddDays(3).AddHours(17).AddMinutes(30), Text = "Leave Campus" },
+     };
+     */
 
     void OnSlotRender(SchedulerSlotRenderEventArgs args)
     {
@@ -253,8 +261,8 @@
 
         if (args.View.Text != "Year")
         {
-            SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Appointment",
-                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End } });
+            SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Schedule ",
+                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End }, { "UserID", InputModel.UserId }, { "OnAddSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(AddSchedule)) } });
 
             if (data != null)
             {
@@ -274,8 +282,6 @@
                 Start = args.Data.Start,
                 End = args.Data.End,
                 Text = args.Data.Text,
-                EarliestTime = args.Data.EarliestTime,
-                LatestTime = args.Data.LatestTime
             };
 
         var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "Appointment", copy } });
@@ -286,8 +292,6 @@
             args.Data.Start = data.Start;
             args.Data.End = data.End;
             args.Data.Text = data.Text;
-            args.Data.EarliestTime = data.EarliestTime;
-            args.Data.LatestTime = data.LatestTime;
         }
 
         await scheduler.Reload();
@@ -342,5 +346,8 @@
         }
 
     }
-
+    public void AddSchedule(SchedulesModel schedule)
+    {
+         _dbSchedules.AddSchedule(schedule);
+    }
 }   
