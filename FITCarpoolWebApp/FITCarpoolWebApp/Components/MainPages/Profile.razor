@@ -117,6 +117,7 @@
                                 <RadzenText Text="Current Vehicle Picture" Style="margin-bottom: 10px;" />
                                 <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.CarPicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
                             }
+
                         </RadzenStack>
                     </MudItem>
                 }
@@ -208,6 +209,8 @@
         uploadUrlCar = $"/FileUpload/upload/car/{InputModel.UserId}";
 
     }
+
+
     IList<SchedulesModel> appointments = new List<SchedulesModel>
     {
            // 3 days before
@@ -270,7 +273,9 @@
             {
                 Start = args.Data.Start,
                 End = args.Data.End,
-                Text = args.Data.Text
+                Text = args.Data.Text,
+                EarliestTime = args.Data.EarliestTime,
+                LatestTime = args.Data.LatestTime
             };
 
         var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "Appointment", copy } });
@@ -281,6 +286,8 @@
             args.Data.Start = data.Start;
             args.Data.End = data.End;
             args.Data.Text = data.Text;
+            args.Data.EarliestTime = data.EarliestTime;
+            args.Data.LatestTime = data.LatestTime;
         }
 
         await scheduler.Reload();
