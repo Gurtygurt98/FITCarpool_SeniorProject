@@ -1,4 +1,4 @@
-﻿@page "/Account/Manage/Privacy"
+﻿@page "/Privacy"
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
@@ -10,7 +10,6 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
 <h3>Privacy</h3>
-<StatusMessage />
 
 <EditForm FormName="profile" Model="Input"  method="post">
     <DataAnnotationsValidator />

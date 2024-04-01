@@ -261,8 +261,9 @@
 
         if (args.View.Text != "Year")
         {
-            SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Schedule ",
-                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End }, { "UserID", InputModel.UserId }, { "OnAddSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(AddSchedule)) } });
+
+            SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Schedule",
+            new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End }, { "UserID", InputModel.UserId }, { "OnAddSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(AddSchedule))  }});
 
             if (data != null)
             {
@@ -283,8 +284,15 @@
                 End = args.Data.End,
                 Text = args.Data.Text,
             };
-
-        var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "Appointment", copy } });
+        var matchingSchedule = ListSchedules.FirstOrDefault(schedule =>
+            schedule.UserId == InputModel.UserId &&
+            schedule.Start == args.Start &&
+            schedule.End == args.End);
+        if(matchingSchedule == null)
+        {
+            return;
+        }
+        var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "CurrSchedule", matchingSchedule }, { "OnDeleteSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(DeleteSchedule)) }, { "OnEditSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(EditSchedule)) } });
 
         if (data != null)
         {
@@ -348,8 +356,27 @@
     }
     public void AddSchedule(SchedulesModel schedule)
     {
-        Console.WriteLine(schedule.ToString());
         _dbSchedules.AddSchedule(schedule);
         ListSchedules.Add(schedule);
+    }
+    public void DeleteSchedule(SchedulesModel schedule)
+    {
+        _dbSchedules.DeleteSchedule(schedule.ScheduleId);
+        ListSchedules.Remove(schedule);
+    }
+    public void EditSchedule(SchedulesModel schedule)
+    {
+        var matchingSchedule = ListSchedules.FirstOrDefault(schedule1 =>
+            schedule1.UserId == InputModel.UserId &&
+            schedule1.Start == schedule.Start &&
+            schedule1.End == schedule.End);
+        if (matchingSchedule != null)
+        {
+            ListSchedules.Remove(matchingSchedule);
+
+        }
+        _dbSchedules.UpdateSchedule(schedule);
+        ListSchedules.Add(schedule);
+
     }
 }   

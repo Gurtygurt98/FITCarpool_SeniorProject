@@ -39,11 +39,8 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task AddSchedule(SchedulesModel schedule)
         {
-            Console.WriteLine("Adding Schedules");
-            Console.WriteLine(schedule.ToString());
             string sql = @"INSERT INTO Schedules (UserID, Day, Start, End, Text) 
                    VALUES (@UserId, @Day, @Start, @End, @Text)";
-
             await _db.SaveData(sql, schedule);
         }
     }
