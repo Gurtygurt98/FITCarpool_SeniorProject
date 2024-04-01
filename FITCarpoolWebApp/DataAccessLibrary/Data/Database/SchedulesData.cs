@@ -28,7 +28,7 @@ namespace DataAccessLibrary.Data.Database
 
         public async Task UpdateSchedule(SchedulesModel schedule)
         {
-            string sql = @"UPDATE Schedules SET UserID = @UserId, Day = @Day, StartTime = @StartTime, EndTime = @EndTime, Text = @Text WHERE ScheduleID = @ScheduleId";
+            string sql = @"UPDATE Schedules SET UserID = @UserId, Day = @Day, Start = @Start, End = @End, Text = @Text WHERE ScheduleID = @ScheduleId";
             await _db.SaveData(sql, schedule);
         }
 
@@ -40,8 +40,9 @@ namespace DataAccessLibrary.Data.Database
         public async Task AddSchedule(SchedulesModel schedule)
         {
             Console.WriteLine("Adding Schedules");
-            string sql = @"INSERT INTO Schedules (UserID, Day, StartTime, EndTime, Text) 
-                   VALUES (@UserId, @Day, @StartTime, @EndTime, @Text)";
+            Console.WriteLine(schedule.ToString());
+            string sql = @"INSERT INTO Schedules (UserID, Day, Start, End, Text) 
+                   VALUES (@UserId, @Day, @Start, @End, @Text)";
 
             await _db.SaveData(sql, schedule);
         }

@@ -25,6 +25,22 @@ namespace DataAccessLibrary.Model
             Start = startTime;
             End = endTime;
         }
+        public override string ToString()
+        {
+            // StringBuilder is used for efficient string concatenation
+            var stringBuilder = new StringBuilder();
+
+            stringBuilder.AppendLine($"ScheduleId: {ScheduleId}");
+            stringBuilder.AppendLine($"UserId: {UserId}");
+
+            // For string properties, check if they are null
+            stringBuilder.AppendLine($"Day: {Day ?? "N/A"}");
+            stringBuilder.AppendLine($"Start: {Start}");
+            stringBuilder.AppendLine($"End: {End}");
+            stringBuilder.AppendLine($"Text: {Text ?? "N/A"}");
+
+            return stringBuilder.ToString();
+        }
     }
 
 }

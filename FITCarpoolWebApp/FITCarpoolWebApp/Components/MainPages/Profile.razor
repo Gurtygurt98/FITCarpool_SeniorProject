@@ -348,6 +348,7 @@
     }
     public void AddSchedule(SchedulesModel schedule)
     {
-         _dbSchedules.AddSchedule(schedule);
+        Console.WriteLine(schedule.ToString());
+        _dbSchedules.AddSchedule(schedule);
     }
 }   
