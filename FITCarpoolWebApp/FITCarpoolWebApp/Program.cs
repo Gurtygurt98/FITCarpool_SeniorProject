@@ -30,6 +30,8 @@ builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuth
 // Services for component libraries 
 builder.Services.AddRadzenComponents();
 builder.Services.AddMudServices();
+builder.Services.AddScoped<Radzen.NotificationService>();
+
 // Data Access Services 
 builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
 

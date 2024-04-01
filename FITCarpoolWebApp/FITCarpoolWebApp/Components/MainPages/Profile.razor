@@ -20,7 +20,7 @@
 <RadzenStack>
     @if (InputModel != null)
     {
-        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:100%">
             @*Profile Information *@
             <MudGrid>
                 <MudItem xs="12" md="6">
@@ -350,5 +350,6 @@
     {
         Console.WriteLine(schedule.ToString());
         _dbSchedules.AddSchedule(schedule);
+        ListSchedules.Add(schedule);
     }
 }   
