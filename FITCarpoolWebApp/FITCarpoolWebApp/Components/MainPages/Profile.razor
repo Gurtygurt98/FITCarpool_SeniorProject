@@ -304,9 +304,8 @@
 
     void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<SchedulesModel> args)
     {
-        // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
 
-        if (args.Data.Text == "Birthday")
+        if (args.Data.Text == "arrival")
         {
             args.Attributes["style"] = "background: red";
         }
