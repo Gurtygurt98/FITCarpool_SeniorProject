@@ -265,8 +265,9 @@
             {
                 appointments.Add(data);
                 // Either call the Reload method or reassign the Data property of the Scheduler
-                await scheduler.Reload();
             }
+            await scheduler.Reload();
+
         }
     }
 
