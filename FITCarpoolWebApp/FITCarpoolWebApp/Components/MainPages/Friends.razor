@@ -22,7 +22,7 @@
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
+        <RadzenStack style="margin-bottom: 50px;">
             <MudText Typo="Typo.h2" Align="Align.Center">Friends List</MudText>
             <MudAutocomplete T="string" @bind-Value="_searchString"
                              SearchFunc="@SearchUser"
@@ -130,17 +130,18 @@
         public string? Status { get; set; }
     }
 
+
+    // Code for searching other users
     private string _searchString = "";
     private List<AccountModel> AccountList = new();
 
     protected override async Task OnInitializedAsync()
     {
-        AccountList = await _dbRoles.GetAccounts(); // Load users
+        AccountList = await _dbRoles.GetAccounts(); 
     }
 
     private async Task<IEnumerable<string>> SearchUser(string value)
     {
-        // Simulate an asynchronous search, e.g., if fetching from an API or database
         await Task.Delay(5);
 
         if (string.IsNullOrEmpty(value))
