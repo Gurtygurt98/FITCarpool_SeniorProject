@@ -4,27 +4,39 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @using Microsoft.AspNetCore.Authorization
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Database_Models
+@inject IUsersData _dbUsers
 @attribute [Authorize]
+
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
-            <MudText Typo="Typo.h2" Align="Align.Center">Groups that meet your preferences</MudText>
+            <RadzenHeading Size="H2" Text="Users" />
         </RadzenStack>
-        <MudDataGrid Items="groups" Bordered="true" T="Group">
+        <RadzenDataGrid Data="@UserList" TItem="UsersModel" AllowSorting="true">
             <Columns>
-                <PropertyColumn Property="x => x.Name" Title="Name" />
-                <PropertyColumn Property="x => x.MaxSize" Title="Max Group Size" />
-                <PropertyColumn Property="x => x.CurrentSize" Title="Current Group Size" />
-                <PropertyColumn Property="x => x.Description" Title="Description" />
-                <TemplateColumn>
-                    <CellTemplate>
-                        <RadzenButton Text="Join Group"  Class="btn btn-primary" />
-                    </CellTemplate>
-                </TemplateColumn>
+                <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" />
+                <RadzenDataGridColumn TItem="UsersModel" Title="Name">
+                    <Template Context="user">
+                        @{
+                            var fullName = $"{user.FirstName} {user.LastName}";
+                            <text>@fullName</text>
+                        }
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="120px">
+                    <Template>
+                        <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" />
+                    </Template>
+                </RadzenDataGridColumn>
             </Columns>
-        </MudDataGrid>
+        </RadzenDataGrid>
     </RadzenCard>
 </RadzenStack>
+
+
 @code {
     private List<Group> groups;
 
@@ -44,5 +56,20 @@
         public int MaxSize { get; set; }
         public int CurrentSize { get; set; }
         public string? Description { get; set; }
+    }
+
+
+    // Code for Testing actual user table
+    private List<UsersModel> UserList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserList = await _dbUsers.GetAllUser();
+        UserList = UserList.Take(4).ToList();
+    }
+
+    private void ViewUser(string userEmail)
+    {
+        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
     }
 }
