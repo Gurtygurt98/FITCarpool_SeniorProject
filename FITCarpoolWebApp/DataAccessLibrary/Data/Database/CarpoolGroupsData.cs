@@ -1,6 +1,7 @@
 ﻿using DataAccessLibrary.Model;
 using DataAccessLibrary.Model.Database_Models;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DataAccessLibrary.Data.Database
@@ -38,6 +39,11 @@ namespace DataAccessLibrary.Data.Database
         {
             string sql = @"DELETE FROM CarpoolGroups WHERE GroupID = @GroupId";
             await _db.SaveData(sql, new { group.GroupId });
+        }
+        public async Task<List<CarpoolGroupsModel>> GetDriverGroups(int driverId)
+        {
+            string sql = @"select * from CarpoolGroups where DriverID = @DriverID";
+            return await _db.LoadData<CarpoolGroupsModel, dynamic>(sql, new { DriverID = driverId });
         }
     }
 }

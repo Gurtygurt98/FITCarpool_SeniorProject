@@ -20,7 +20,6 @@
             <PropertyColumn Property="x => x.GroupName" Title="Name" />
             <PropertyColumn Property="x => x.DriverId" Title="Loc" IsEditable="false" />
             <PropertyColumn Property="x => x.Destination" Title="Destination" IsEditable="false" />
-            <PropertyColumn Property="x => x.MeetingPoint" Title="Meeting Point" IsEditable="false" />
              <TemplateColumn Title="Actions">
                  <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="@(() => DeleteGroup(context.Item))" />

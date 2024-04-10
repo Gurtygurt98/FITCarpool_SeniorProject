@@ -8,6 +8,7 @@ namespace DataAccessLibrary.Data.Database
         Task<List<CarpoolGroupsModel>> GetAllCarpoolGroups();
         Task<List<CarpoolGroupsModel>> GetCarpoolGroup(int groupId);
         Task UpdateCarpoolGroup(CarpoolGroupsModel group);
+        Task<List<CarpoolGroupsModel>> GetDriverGroups(int driverId);
 
     }
 }

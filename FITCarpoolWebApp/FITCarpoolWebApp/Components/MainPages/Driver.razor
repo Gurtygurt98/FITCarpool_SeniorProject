@@ -1,7 +1,53 @@
 ﻿@page "/Driver"
+@using DataAccessLibrary.Model
 @using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model.Database_Models
+@using FITCarpoolWebApp.Components.MainPages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using FITCarpoolWebApp.Data
+@inject Radzen.DialogService DialogService
+@inject HttpClient httpClient
+@inject IUsersData _dbUsers
+@inject IGroupMemberLocationsData _dbLocation
 
+@inject ICarpoolGroupsData _dbGroups
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @attribute [Authorize]
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
+            @if (!carpoolInProgress && GroupList.Any())
+            {
+                // Display Data Grid to allow user to start trips based on GroupList Retrivied in Intialization Method
+                <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
+                                WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)" 
+                                Data="@GroupList" TItem="CarpoolGroupsModel" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
+                    <Template Context="group">
+                        <RadzenCard Style="width: 100%; padding: 0;">
+                            <RadzenRow Gap="1">
+                                    <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-secondary">@(group.GroupName)</RadzenText>
+                                    <RadzenButton Text="Order now" Style="width: 100%" />
+                            </RadzenRow>
+                        </RadzenCard>
+                    </Template>
+                </RadzenDataList>
+
+
+            }
+            else if (!carpoolInProgress && !GroupList.Any())
+            {
+                
+            }
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
@@ -21,6 +67,49 @@
 </RadzenStack>
 
 @code {
+    List<CarpoolGroupsModel> GroupList = new();
+    GroupMemberLocationsModel DriverLocation = null;
+    UsersModel InputModel = new();
+    private string userName = "Not found";
+    string overallFinishTime = "6:00 PM";
+    bool carpoolInProgress = false;
+    bool allowVirtualization = true;
+    protected override async Task OnInitializedAsync()
+    {
+        // Get user profile information 
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name;
+        } else
+        {
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        List<UsersModel> UserList = await _dbUsers.GetUser(userName);
+        if (UserList.Any())
+        {
+            InputModel = UserList.First();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        // Check if the user is already in progress of route 
+        List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
+        carpoolInProgress = DriverLocationList.Any();
+        // Get what Groups the user is a driver of since they dont have any routes in progress
+        if (!carpoolInProgress)
+        {
+            // Query to get the Groups the user is apart of so that the driver can start the route 
+            GroupList = await _dbGroups.GetDriverGroups(InputModel.UserId);
+        }  
+        else
+        {
+            DriverLocation = DriverLocationList.First();
+        }
+    }
     List<string> pickupAddresses = new List<string>
     {
         "123 Main St, City, State, Zip",
@@ -28,7 +117,6 @@
         "789 Oak St, City, State, Zip"
     };
 
-    string overallFinishTime = "6:00 PM";
 
     private string GetETA(string address)
     {
