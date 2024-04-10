@@ -1,4 +1,9 @@
 ﻿@inject NavigationManager NavigationManager
+@inject IUsersData _dbUsers
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Database_Models
+
 
 @page "/User-Details"
 
@@ -18,7 +23,25 @@
         <RadzenRow RowGap="0">
             <RadzenColumn SizeSM="3" Class="d-flex align-items-center justify-content-center">
                 <RadzenButton Click="@(() => NavigateTo("Profile"))" ButtonStyle="ButtonStyle.Light" Style="width: 150px; height: 150px; border-radius: 50%;">
-                    <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
+
+                    @if (selectedUser == null)
+                    {
+                     <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
+                    }
+
+                    @if (selectedUser != null)
+                    {
+                        @if (selectedUser.ProfilePicture == null)
+                        {
+                            <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
+                        }
+
+                        @if (selectedUser.ProfilePicture != null)
+                        {
+                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(selectedUser.ProfilePicture)}")" AlternateText="binary image" Style="width:100%" />
+                        }
+                    }                   
+                
                 </RadzenButton>
             </RadzenColumn>
             <RadzenColumn SizeSM="6" Class="d-flex align-items-center justify-content-center">
@@ -29,15 +52,23 @@
             </RadzenColumn>
         </RadzenRow>
 
+        <MudAutocomplete T="UsersModel"
+                         @bind-Value="selectedUser"
+                         SearchFunc="@SearchUser"
+                         Placeholder="Select a user..."
+                         Dense="true"
+                         ResetValueOnEmptyText="true"
+                         ToStringFunc="@((UsersModel u) => u == null ? "" : $"{u.Email}")" />
+
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Name</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">John Doe</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Name'..." class="rz-display-flex rz-mt-2 rz-my-0">
+            @selectedUserName
+        </RadzenText>
+
+    
 
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
-
-        
-
-
 
         @if(role == 1)
         {
@@ -137,6 +168,29 @@
         public int miles { get; set; }
         public int CurrentSize { get; set; }
         public string? Description { get; set; }
+    }
+
+
+    // Code for displaying other users' profile
+    private UsersModel selectedUser; 
+    private string selectedUserName => selectedUser?.FirstName + " " + selectedUser?.LastName ?? "No user selected";
+    private List<UsersModel> UserList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserList = await _dbUsers.GetAllUser();
+    }
+
+    private async Task<IEnumerable<UsersModel>> SearchUser(string value)
+    {
+        await Task.Delay(5);
+
+        if (string.IsNullOrEmpty(value))
+            return Enumerable.Empty<UsersModel>();
+
+        return UserList.Where(user =>
+            $"{user.Email}".Contains(value, StringComparison.InvariantCultureIgnoreCase))
+            .ToList();
     }
 
 }
