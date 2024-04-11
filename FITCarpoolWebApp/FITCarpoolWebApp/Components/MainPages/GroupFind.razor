@@ -12,23 +12,57 @@
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
-            <RadzenHeading Size="H2" Text="Users" />
-        </RadzenStack>
-        <RadzenDataGrid Data="@UserList" TItem="UsersModel" AllowSorting="true">
+        <RadzenHeading Size="H2" Text="First Carpooling Group" />
+        <RadzenDataGrid Data="@FirstRecommendationUserList" TItem="UsersModel" AllowSorting="true" Style="margin-bottom: 20px;">
             <Columns>
-                <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" />
-                <RadzenDataGridColumn TItem="UsersModel" Title="Name">
+                <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" Width="200px" />
+                <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="200px">
                     <Template Context="user">
                         @{
                             var fullName = $"{user.FirstName} {user.LastName}";
-                            <text>@fullName</text>
                         }
+                        <text>@fullName</text>
                     </Template>
                 </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="120px">
+                <RadzenDataGridColumn TItem="UsersModel" Title="Role" Width="100px">
+                    <Template Context="user">
+                        @{
+                            var role = $"{user.UserType}";
+                        }
+                        <text>@role</text>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
                     <Template>
-                        <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" />
+                        <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%;" />
+                    </Template>
+                </RadzenDataGridColumn>
+            </Columns>
+        </RadzenDataGrid>
+
+        <RadzenHeading Size="H2" Text="Second Carpooling Group" />
+        <RadzenDataGrid Data="@SecondRecommendationUserList" TItem="UsersModel" AllowSorting="true">
+            <Columns>
+                <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" Width="200px" />
+                <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="200px">
+                    <Template Context="user">
+                        @{
+                            var fullName = $"{user.FirstName} {user.LastName}";
+                        }
+                        <text>@fullName</text>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UsersModel" Title="Role" Width="100px">
+                    <Template Context="user">
+                        @{
+                            var role = $"{user.UserType}";
+                        }
+                        <text>@role</text>
+                    </Template>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
+                    <Template>
+                        <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%;" />
                     </Template>
                 </RadzenDataGridColumn>
             </Columns>
@@ -36,36 +70,15 @@
     </RadzenCard>
 </RadzenStack>
 
-
 @code {
-    private List<Group> groups;
-
-    protected override void OnInitialized()
-    {
-        groups = new List<Group>
-        {
-            new Group { Name = "Group 1", MaxSize = 10, CurrentSize = 5, Description = "Sample Group 1" },
-            new Group { Name = "Group 2", MaxSize = 8, CurrentSize = 6, Description = "Sample Group 2" },
-            new Group { Name = "Group 3", MaxSize = 15, CurrentSize = 10, Description = "Sample Group 3" }
-        };
-    }
-
-    public class Group
-    {
-        public string? Name { get; set; }
-        public int MaxSize { get; set; }
-        public int CurrentSize { get; set; }
-        public string? Description { get; set; }
-    }
-
-
-    // Code for Testing actual user table
-    private List<UsersModel> UserList = new();
+    private List<UsersModel> FirstRecommendationUserList = new();
+    private List<UsersModel> SecondRecommendationUserList = new();
 
     protected override async Task OnInitializedAsync()
     {
-        UserList = await _dbUsers.GetAllUser();
-        UserList = UserList.Take(4).ToList();
+        var allUsers = await _dbUsers.GetAllUser();
+        FirstRecommendationUserList = allUsers.Take(4).ToList();
+        SecondRecommendationUserList = allUsers.Skip(4).Take(4).ToList(); 
     }
 
     private void ViewUser(string userEmail)
