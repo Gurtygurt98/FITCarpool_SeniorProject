@@ -20,11 +20,11 @@
                     <Template Context="user">
                         @if (user.ProfilePicture != null)
                         {
-                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 100%; height: auto; border-radius: 50%;" />
+                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
                         }
                         else
                         {
-                            <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 100%; height: auto; border-radius: 50%;" />
+                            <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
                         }
                     </Template>
                 </RadzenDataGridColumn>
@@ -62,11 +62,11 @@
                     <Template Context="user">
                         @if (user.ProfilePicture != null)
                         {
-                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 100%; height: auto; border-radius: 50%;" />
+                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
                         }
                         else
                         {
-                            <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 100%; height: auto; border-radius: 50%;" />
+                            <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
                         }
                     </Template>
                 </RadzenDataGridColumn>
