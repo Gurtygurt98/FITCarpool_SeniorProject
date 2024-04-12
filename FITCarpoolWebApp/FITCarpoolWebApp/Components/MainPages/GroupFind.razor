@@ -12,11 +12,12 @@
 @inject IJSRuntime JSRuntime
 @inject IUsersData _dbUsers
 @inject ISchedulesData _dbSchedules
-@inject IGMapsAPI _GmapKey // Inject your service to access the Google Maps API key
+@inject IGMapsAPI _GmapKey 
 @attribute [Authorize]
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
+        <RadzenHeading Size="H2" Text="Group Recommendation (Test Users)" Style="text-align: center; margin-bottom: 20px;" />
         @foreach (var group in GroupRecommendations.Keys)
         {
             if (GroupRecommendations[group])
@@ -63,7 +64,7 @@
                         </RadzenDataGridColumn>
                         <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
                             <Template>
-                                <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                                <RadzenButton Text="View User" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
                             </Template>
                         </RadzenDataGridColumn>
                     </Columns>
@@ -220,7 +221,7 @@
         if (GroupRecommendations.ContainsKey(groupIndex))
         {
             GroupRecommendations[groupIndex] = false;
-            StateHasChanged(); // Ensure UI refresh
+            StateHasChanged(); 
         }
     }
 

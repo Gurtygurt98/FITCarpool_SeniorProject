@@ -1,77 +1,229 @@
 ﻿@page "/rider"
 @using DataAccessLibrary.Data.API
+@using DataAccessLibrary.Model
 @using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model.Database_Models
+@using FITCarpoolWebApp.Components.MainPages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using FITCarpoolWebApp.Data
+@inject Radzen.DialogService DialogService
+@inject HttpClient httpClient
+@inject IUsersData _dbUsers
+@inject IGroupMemberLocationsData _dbLocation
 @inject IGMapsAPI _GmapKey
 @inject IJSRuntime JSRuntime
+@inject ICarpoolGroupsData _dbGroups
 
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @attribute [Authorize]
 <RadzenStack>
-    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
-            <MudText Typo="Typo.h3">Driver Location:</MudText>
-            <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@userLocationInfo</MudText>
-        </RadzenStack>
-        <MudCardContent>
-            <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
-                                Center="new GoogleMapPosition() { Lat = userLocation.Latitude, Lng = userLocation.Longitude }" Zoom="12">
-                <Markers>
-                    <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @userLocation.Latitude, Lng = @userLocation.Longitude }) />
-                </Markers>
-            </RadzenGoogleMap>
-        </MudCardContent>
-    </RadzenCard>
+
+</RadzenStack>
+<RadzenStack>
+    @if (!carpoolInProgress && GroupList.Any())
+    {
+        // Display Data Grid to allow user to start trips based on GroupList Retrivied in Intialization Method
+        <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You're trip has not started, please view your groups below (add contact info)</RadzenText>
+        <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
+                        WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)"
+                        Data="@GroupList" TItem="CarpoolGroupsModel" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
+            <Template Context="group">
+                <RadzenCard Style="width: 100%; padding: 0;">
+                    <RadzenStack Gap="1">
+                        <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-primary">Group: @(group.GroupName)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Driver: @(group.DriverName)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Destination: @(group.Destination)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Riders: @(group.ListRiderNames())</RadzenText>
+                    </RadzenStack>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+
+
+    }
+    else if (!carpoolInProgress && !GroupList.Any())
+    {
+        <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You aren't a rider for any group!</RadzenText>
+
+    }
+    else
+    {
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+            <MudText Typo="Typo.h3" style="cursor:pointer;" @onclick="UserClickDriverLocInfo">View Driver Location Information</MudText>
+            <MudCollapse Expanded="driverLocationCollapsable">
+                <RadzenStack>
+                    <RadzenText Style="font-size: 16px;" Tag="h5" Class="text-primary">
+                        Group Name: @CurrentGroup?.GroupName
+                    </RadzenText>
+                    <MudText Typo="Typo.h3">Driver Location @@ @DriverLocation.Timestamp:</MudText>
+                </RadzenStack>
+                <MudCardContent>
+                    <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
+                                     Center="new GoogleMapPosition() { Lat = DriverLocation.Latitude, Lng = DriverLocation.Longitude }" Zoom="12">
+                        <Markers>
+                            <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @DriverLocation.Latitude, Lng = @DriverLocation.Longitude }) />
+                        </Markers>
+                    </RadzenGoogleMap>
+                </MudCardContent>
+            </MudCollapse>
+            <MudText Typo="Typo.h3" style="cursor:pointer;" @onclick="UserClickDriverInfo">View Driver Information</MudText>
+            <MudCollapse Expanded="driverInfoCollapsable">
+                <MudCardContent>
+                    <MudGrid>
+                        @if (DriverProfile.ProfilePicture != null)
+                        {
+                            <MudItem xs="12" md="4">
+                            <RadzenText Text="Driver Picture" Style="margin-bottom: 10px;" />
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(DriverProfile.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                            </MudItem>
+                        }
+                        @if (DriverProfile.CarPicture != null)
+                        {
+                            <MudItem xs="12" md="4">
+                                <RadzenText Text="Pickup Vehicle Picture" Style="margin-bottom: 10px;" />
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(DriverProfile.CarPicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                            </MudItem>
+                        }
+                        @if (DriverProfile.LicensePicture != null)
+                        {
+                            <MudItem xs="12" md="4">
+                                <RadzenText Text="Pickup Vehicle License Plate" Style="margin-bottom: 10px;" />
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(DriverProfile.LicensePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudCardContent>
+            </MudCollapse>
+
+
+        </RadzenCard>
+
+    }
+
+
 </RadzenStack>
 
-
 @code {
+    private bool driverLocationCollapsable = true;
+    private bool driverInfoCollapsable = true;
+
     private string? MapApi = null;
     private bool IsLocationAvailable = false;
     private Location userLocation = new Location();
     private string userLocationInfo = "Your Location";
     private RadzenGoogleMap googleMap;
-
+    bool carpoolInProgress = false;
+    List<CarpoolGroupsModel> GroupList = new();
+    GroupMemberLocationsModel DriverLocation = new();
+    List<GroupMembersModel> GroupMembersList = new();
+    CarpoolGroupsModel CurrentGroup = new();
+    List<GroupMemberLocationsModel> DriverLocationList = new();
+    UsersModel InputModel = new();
+    private string userName = "Not found";
+    bool allowVirtualization = true;
+    private int LocationRefreshRate = 10;
+    private System.Threading.Timer? locationRefreshTimer;
+    private UsersModel DriverProfile = new();
     protected override async Task OnInitializedAsync()
     {
+        // Get google maps api key for location services later 
         MapApi = _GmapKey.MapAPI;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
+        // Get user profile information
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
         {
-            await GetUserLocation();
-            StateHasChanged();
+            userName = user.Identity.Name;
+        }
+        else
+        {
+            // Force the user back to the home page if no authentication is present 
+            // Program should never arrive here but added to avoid errors
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        List<UsersModel> UserList = await _dbUsers.GetUser(userName);
+        if (UserList.Any())
+        {
+            InputModel = UserList.First();
+        }
+        else
+        {
+            // Force the user back to the home page if no authentication is present
+            // Program should never arrive here but added to avoid errors
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        // Check if the user is part of trip that has started 
+        DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
+        carpoolInProgress = DriverLocationList.Any();
+        GroupList = await _dbGroups.GetRiderGroups(InputModel.UserId);
+
+        if (carpoolInProgress)
+        {
+            GetDriverLocation();
+            // Current driver location object, send this along with updated location to the database for riders to grab
+            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
+            DriverProfile = (await _dbUsers.GetUser(DriverLocation.UserId)).FirstOrDefault();
+            OnRefreshRateChanged(30);
+
         }
     }
-
-    private async Task GetUserLocation()
+    private async Task GetDriverLocation()
     {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", "Allow this site to access your location?"))
+        DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
+        DriverLocation = DriverLocationList.FirstOrDefault();
+        if(DriverLocation == null)
         {
-            await JSRuntime.InvokeVoidAsync("requestUserLocation", DotNetObjectReference.Create(this));
-        }
-    }
+            NavigationManager.NavigateTo("/rider", forceLoad: true);
 
-    [JSInvokable]
-    public async void HandleSuccess(double latitude, double longitude)
-    {
-        userLocation.Latitude = latitude;
-        userLocation.Longitude = longitude;
+        }
+        //userLocationInfo = await _GmapKey.GetLocationInfoAsync(DriverLocation.Longitude, DriverLocation.Latitude);
+        //Console.WriteLine("Current User info " + userLocationInfo);
         IsLocationAvailable = true;
-        userLocationInfo = await _GmapKey.GetLocationInfoAsync(latitude, longitude);
         InvokeAsync(StateHasChanged); // Ensure UI is updated with new location
-    }
 
-    [JSInvokable]
-    public void HandleError(string error)
-    {
-        Console.WriteLine($"Error getting location: {error}");
-        // Handle error here
     }
-
     private class Location
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+    }
+    private async Task OnRefreshRateChanged(int value)
+    {
+        LocationRefreshRate = value;
+        // Convert refresh rate from seconds to milliseconds
+        int period = LocationRefreshRate * 1000;
+
+        if (locationRefreshTimer != null)
+        {
+            locationRefreshTimer.Change(0, period);
+        }
+        else
+        {
+            locationRefreshTimer = new System.Threading.Timer(async _ =>
+            {
+                await GetDriverLocation();
+            }, null, 0, period);
+        }
+    }
+    public void Dispose()
+    {
+        locationRefreshTimer?.Dispose();
+    }
+    public void UserClickDriverLocInfo()
+    {
+        driverLocationCollapsable = !driverLocationCollapsable;
+        StateHasChanged();
+    }
+    public void UserClickDriverInfo()
+    {
+        driverInfoCollapsable = !driverInfoCollapsable;
+        StateHasChanged();
     }
 }

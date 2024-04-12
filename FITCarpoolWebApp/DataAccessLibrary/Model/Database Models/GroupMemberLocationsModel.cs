@@ -26,6 +26,18 @@ namespace DataAccessLibrary.Model.Database_Models
             Longitude = longitude;
             Timestamp = timestamp;
         }
+        public GroupMemberLocationsModel(int userId, int groupId, double latitude, double longitude, DateTime timestamp)
+        {
+            UserId = userId;
+            GroupId = groupId;
+            Latitude = latitude;
+            Longitude = longitude;
+            Timestamp = timestamp;
+        }
+        public override string ToString()
+        {
+            return $"LocationId: {LocationId}, UserId: {UserId}, GroupId: {GroupId}, Latitude: {Latitude}, Longitude: {Longitude}, Timestamp: {Timestamp}";
+        }
     }
 
 }

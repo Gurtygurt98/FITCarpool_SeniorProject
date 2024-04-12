@@ -1,4 +1,5 @@
 ﻿@page "/Driver"
+@using DataAccessLibrary.Data.API
 @using DataAccessLibrary.Model
 @using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
@@ -14,11 +15,13 @@
 @inject HttpClient httpClient
 @inject IUsersData _dbUsers
 @inject IGroupMemberLocationsData _dbLocation
-
+@inject IGMapsAPI _GmapKey
+@inject IJSRuntime JSRuntime
 @inject ICarpoolGroupsData _dbGroups
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@implements IDisposable
 @attribute [Authorize]
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
@@ -26,15 +29,20 @@
             @if (!carpoolInProgress && GroupList.Any())
             {
                 // Display Data Grid to allow user to start trips based on GroupList Retrivied in Intialization Method
+                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H5" class="rz-color-primary">Please Select a Group to Start</RadzenText>
                 <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
                                 WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)" 
                                 Data="@GroupList" TItem="CarpoolGroupsModel" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
                     <Template Context="group">
                         <RadzenCard Style="width: 100%; padding: 0;">
-                            <RadzenRow Gap="1">
-                                    <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-secondary">@(group.GroupName)</RadzenText>
-                                    <RadzenButton Text="Order now" Style="width: 100%" />
-                            </RadzenRow>
+                            <RadzenStack Gap="1">
+                            
+                                <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-primary">Group: @(group.GroupName)</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Destination: @(group.Destination)</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Riders: @(group.ListRiderNames())</RadzenText>
+
+                                <RadzenButton Text="Start Trip" Click="@(() => StartTrip(group))" Style="width: 100%" />
+                            </RadzenStack>
                         </RadzenCard>
                     </Template>
                 </RadzenDataList>
@@ -43,6 +51,38 @@
             }
             else if (!carpoolInProgress && !GroupList.Any())
             {
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You aren't a driver for any group!</RadzenText>
+
+            } else
+            {
+                <RadzenText Style="font-size: 16px;" Tag="h5" Class="text-primary">
+                    Group Name: @CurrentGroup?.GroupName
+                </RadzenText>                
+                @if (!locationAvailable)
+                {
+                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Please click below to allow location services</RadzenText>
+                    // A button that prompts the user for their location to start the and is labeled Start Trip
+                    <MudButton OnClick="@GetUserLocation" Style="margin-top: 20px;">Prompt for User Location</MudButton>
+                }
+                else
+                {
+                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Select your location refresh rate</RadzenText>
+                    <MudSelect T="int" Value="LocationRefreshRate" MultiSelection="false" ValueChanged="@(value =>OnRefreshRateChanged(value))">
+                        <MudSelectItem T="int" Value="10"> 10 </MudSelectItem>
+                        <MudSelectItem T="int" Value="30"> 30 </MudSelectItem>
+                        <MudSelectItem T="int" Value="60"> 60 </MudSelectItem>
+                    </MudSelect>
+                    <div>
+                        <RadzenText>Current Location:</RadzenText>
+                        <RadzenText>Latitude: @userLocation.Latitude, Longitude: @userLocation.Longitude</RadzenText>
+                        <MudButton OnClick="@EndRoute" Style="margin-top: 20px;">End Route</MudButton>
+                    </div>
+                }
+
+                // Need to make calls to get the users location in this 
+
+                // A button that allows the user to cancel starting this trip, this sets carpoolInProgress back to false which brings the user to the if statement 
+                // Once the user allows location and the trip starts every 30 seconds ( possibly add a dial for this) this page will update the database with the drivers current location
                 
             }
         </RadzenStack>
@@ -68,14 +108,24 @@
 
 @code {
     List<CarpoolGroupsModel> GroupList = new();
-    GroupMemberLocationsModel DriverLocation = null;
+    GroupMemberLocationsModel DriverLocation =  new();
+    List<GroupMembersModel> GroupMembersList = new();
+    CarpoolGroupsModel CurrentGroup = new();
+    private string? MapApi = null;
     UsersModel InputModel = new();
     private string userName = "Not found";
     string overallFinishTime = "6:00 PM";
     bool carpoolInProgress = false;
     bool allowVirtualization = true;
+    private bool IsTripStarted = false;
+    private Location userLocation = new Location();
+    private bool locationAvailable = false;
+    private int LocationRefreshRate = 30;
+    private System.Threading.Timer? locationRefreshTimer;
     protected override async Task OnInitializedAsync()
     {
+        // Retrive the google maps api key 
+        MapApi = _GmapKey.MapAPI;
         // Get user profile information 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -91,6 +141,7 @@
         if (UserList.Any())
         {
             InputModel = UserList.First();
+            Console.WriteLine(InputModel.FirstName + " " + InputModel.UserId);
         }
         else
         {
@@ -100,15 +151,14 @@
         List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
         carpoolInProgress = DriverLocationList.Any();
         // Get what Groups the user is a driver of since they dont have any routes in progress
-        if (!carpoolInProgress)
+        GroupList = await _dbGroups.GetDriverGroups(InputModel.UserId);
+
+        if (carpoolInProgress)
         {
-            // Query to get the Groups the user is apart of so that the driver can start the route 
-            GroupList = await _dbGroups.GetDriverGroups(InputModel.UserId);
-        }  
-        else
-        {
+            // Current driver location object, send this along with updated location to the database for riders to grab
             DriverLocation = DriverLocationList.First();
-        }
+            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
+        }  
     }
     List<string> pickupAddresses = new List<string>
     {
@@ -116,12 +166,69 @@
         "456 Elm St, City, State, Zip",
         "789 Oak St, City, State, Zip"
     };
+    private async Task GetUserLocation()
+    {
+        if (locationAvailable)
+        {
+            await JSRuntime.InvokeVoidAsync("requestUserLocation", DotNetObjectReference.Create(this));
+        }
+        else{
+            locationAvailable = await JSRuntime.InvokeAsync<bool>("confirm", "Allow this site to access your location, please exit page if you don't want to allow?");
+            OnRefreshRateChanged(LocationRefreshRate);
 
+            GetUserLocation();
+        }
+    }
+    private async Task EndRoute()
+    {
+        carpoolInProgress = false;
+        _dbLocation.DeleteGroupMemberLocation(DriverLocation.LocationId);
+        NavigationManager.NavigateTo("/Driver", forceLoad: true);
 
+    }
+    [JSInvokable]
+    public async void HandleSuccess(double latitude, double longitude)
+    {
+        userLocation.Latitude = latitude;
+        userLocation.Longitude = longitude;
+        DateTime currentTime = DateTime.Now;
+        Console.WriteLine($"Updated Location - Latitude: {latitude}, Longitude: {longitude}, Time: {currentTime.ToString("HH:mm:ss")}");
+        // Carpool is not started yet, meaning no entry in the database was created
+        if (DriverLocation.LocationId == 0)
+        {
+            //GroupMemberLocationsModel(int locationId, int userId, int groupId, double latitude, double longitude, DateTime timestamp)
+            DriverLocation = new GroupMemberLocationsModel(InputModel.UserId,CurrentGroup.GroupId,latitude,longitude,currentTime);
+            await _dbLocation.AddGroupMemberLocation(DriverLocation);
+            List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
+            DriverLocation = DriverLocationList.FirstOrDefault();
+
+        } else
+        {
+            DriverLocation.Latitude = latitude;
+            DriverLocation.Longitude = longitude;
+            DriverLocation.Timestamp = currentTime;
+            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
+            await _dbLocation.UpdateGroupMemberLocation(DriverLocation);
+        }
+        // Need to create call to either add or update user location in database 
+        InvokeAsync(StateHasChanged); // Ensure UI is updated with new location
+    }
+
+    [JSInvokable]
+    public void HandleError(string error)
+    {
+        Console.WriteLine($"Error getting location: {error}");
+        // Handle error here
+    }
+
+    private class Location
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
     private string GetETA(string address)
     {
-        // Sample method to calculate ETA (replace with actual implementation)
-        // For demonstration purposes, we'll just return a random ETA between 15 and 30 minutes
+
         Random rnd = new Random();
         int minutes = rnd.Next(15, 31);
         return DateTime.Now.AddMinutes(minutes).ToString("h:mm tt");
@@ -129,7 +236,37 @@
 
     private void GenerateDirections()
     {
-        // Sample method to generate directions
-        // You can implement your logic here
+
+    }
+    private void StartTrip(CarpoolGroupsModel group)
+    {
+        CurrentGroup = group;
+        Console.WriteLine("Group " + group.GroupName);
+        carpoolInProgress = true;
+    }
+    private void OnRefreshRateChanged(int value)
+    {
+        LocationRefreshRate = value;
+        // Convert refresh rate from seconds to milliseconds
+        int period = LocationRefreshRate * 1000;
+
+        if (locationRefreshTimer != null)
+        {
+            locationRefreshTimer.Change(0, period);
+        }
+        else
+        {
+            locationRefreshTimer = new System.Threading.Timer(async _ =>
+            {
+                await InvokeAsync(() =>
+                {
+                    GetUserLocation();
+                });
+            }, null, 0, period);
+        }
+    }
+    public void Dispose()
+    {
+        locationRefreshTimer?.Dispose();
     }
 }
