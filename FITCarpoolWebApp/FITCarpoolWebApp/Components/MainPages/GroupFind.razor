@@ -241,12 +241,14 @@
         foreach (Member m in members)
         {
             a.Members[a.CurrentSize] = m;
+            a.CurrentSize++;
             double currScore = GroupScore(a);
             if (currScore < bestScore)
             {
                 bestA = m;
                 bestScore = currScore;
             }
+            a.CurrentSize--;
             a.Members[a.CurrentSize] = null;
         }
         a.Members[a.CurrentSize] = bestA;
@@ -257,8 +259,8 @@
 
     public double GroupScore(Group g)
     {
-        //return LocationScore(g) + TimeScore(g) + 3 * PreferenceScore(g);
-        return TimeScore(g) + 3 * PreferenceScore(g);
+        return LocationScore(g) + TimeScore(g) + 3 * PreferenceScore(g);
+        //return TimeScore(g) + 3 * PreferenceScore(g);
     }
     // Calculates the difference between the earliest necessary arrival and the latest acceptable arrival
     private double TimeScore(Group g)
@@ -289,7 +291,7 @@
     private double LocationScore(Group g)
     {
         // List of Addresses
-        String[] spots = new String[g.Members.Length + 1];
+        String[] spots = new String[g.CurrentSize + 1];
         spots[0] = "150 W University Blvd, Melbourne, FL 32901";
 
         int count = 0;
@@ -309,12 +311,11 @@
             distances[i, i] = 0;
             for (int j = i + 1; j < visited.Length; j++)
             {
-                double dist = DistanceBtwn(spots[i], spots[j]).GetAwaiter().GetResult();
+                double dist = DistBtwn(spots[i], spots[j]);
                 distances[i, j] = dist;
                 distances[j, i] = dist;
             }
         }
-
         visited[0] = true;
         return TSP(distances, visited, 0, 1, 0, Double.MaxValue);
     }
@@ -368,14 +369,15 @@
         return conflictCount;
     }
     // Placeholder for Google Maps API integ. Input parameters are addresses in text form. Outputs distance in Time.
-    private async Task<double> DistanceBtwn(string loc1, string loc2)
+    public double DistBtwn(string loc1, string loc2)
     {
-        HttpClient client = new HttpClient();
-        string mapUrl = $"https://maps.googleapis.com/maps/api/distancematrix/json?key={MapApi}&origin={loc1}&destination={loc2}&mode=driving";
-        // Problem with GOOGLE MAPS API
-        HttpResponseMessage resp = await client.GetAsync(mapUrl);
-        String reply = await resp.Content.ReadAsStringAsync();
-        request rq = JsonSerializer.Deserialize<request>(reply);
+        string url = "https://maps.googleapis.com/maps/api/distancematrix/json?destinations=" + Uri.EscapeDataString(loc2) + "&origins=" + Uri.EscapeDataString(loc1) + "&key=" + MapApi;
+        System.Net.WebClient wc = new System.Net.WebClient();
+
+        byte[] resp = wc.DownloadData(url);
+        string raw = System.Text.Encoding.ASCII.GetString(resp);
+
+        request rq = JsonSerializer.Deserialize<request>(raw);
 
         if (rq.rows[0].elements[0].status != "NOT_FOUND" && rq.rows[0].elements[0].status != "ZERO_RESULTS")
         {
