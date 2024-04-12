@@ -29,13 +29,30 @@ namespace DataAccessLibrary.Data.Database
         public async Task UpdateGroupMemberLocation(GroupMemberLocationsModel location)
         {
             string sql = @"UPDATE GroupMemberLocations SET UserID = @UserId, GroupID = @GroupId, Latitude = @Latitude, Longitude = @Longitude, Timestamp = @Timestamp WHERE LocationID = @LocationId";
-            await _db.SaveData(sql, location);
+            await _db.SaveData(sql,location );
+            //new { UserId = location.UserId, GroupId = location.GroupId, Latitude = location.Latitude, Longitude = location.Longitude, TimeStap = location.Timestamp }
         }
 
         public async Task DeleteGroupMemberLocation(int locationId)
         {
             string sql = "DELETE FROM GroupMemberLocations WHERE LocationID = @LocationId";
             await _db.SaveData(sql, new { LocationId = locationId });
+        }
+        public async Task AddGroupMemberLocation(GroupMemberLocationsModel location)
+        {
+            string sql = @"INSERT INTO GroupMemberLocations (UserID, GroupID, Latitude, Longitude, Timestamp) 
+                   VALUES (@UserId, @GroupId, @Latitude, @Longitude, @Timestamp);";
+            await _db.SaveData(sql, location);
+        }
+
+        public async Task<List<GroupMemberLocationsModel>> GetDriverLocations(int userID)
+        {
+            string sql = @"SELECT GML.UserID, GM.GroupID, GML.Latitude, GML.Longitude, GML.Timestamp, GML.LocationID
+                            FROM GroupMembers GM
+                            JOIN GroupMemberLocations GML ON GM.GroupID = GML.GroupID
+                            WHERE GM.UserId = @UserId;";
+            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = userID });
+
         }
     }
 }

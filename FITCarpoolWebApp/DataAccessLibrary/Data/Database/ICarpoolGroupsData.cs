@@ -1,4 +1,5 @@
 ﻿using DataAccessLibrary.Model;
+using static DataAccessLibrary.Model.CarpoolGroupsModel;
 
 namespace DataAccessLibrary.Data.Database
 {
@@ -9,6 +10,7 @@ namespace DataAccessLibrary.Data.Database
         Task<List<CarpoolGroupsModel>> GetCarpoolGroup(int groupId);
         Task UpdateCarpoolGroup(CarpoolGroupsModel group);
         Task<List<CarpoolGroupsModel>> GetDriverGroups(int driverId);
+        Task<List<RiderModel>> GetRiders(int groupId, int driverID);
 
     }
 }
