@@ -3,7 +3,13 @@
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@using DataAccessLibrary.Data.API
+@using DataAccessLibrary.Model
 @using Microsoft.AspNetCore.Authorization
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
+@inject IGMapsAPI _GmapKey // Inject your service to access the Google Maps API key
+
 @attribute [Authorize]
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
@@ -26,16 +32,233 @@
     </RadzenCard>
 </RadzenStack>
 @code {
+    private string MapApi = "";
     private List<Group> groups;
 
     protected override void OnInitialized()
     {
+        /*
         groups = new List<Group>
         {
-            new Group { Name = "Group 1", MaxSize = 10, CurrentSize = 5, Description = "Sample Group 1" },
-            new Group { Name = "Group 2", MaxSize = 8, CurrentSize = 6, Description = "Sample Group 2" },
-            new Group { Name = "Group 3", MaxSize = 15, CurrentSize = 10, Description = "Sample Group 3" }
+        new Group { Name = "Group 1", MaxSize = 10, CurrentSize = 5, Description = "Sample Group 1" },
+        new Group { Name = "Group 2", MaxSize = 8, CurrentSize = 6, Description = "Sample Group 2" },
+        new Group { Name = "Group 3", MaxSize = 15, CurrentSize = 10, Description = "Sample Group 3" }
         };
+        */
+        MapApi = _GmapKey.MapAPI;
+        groups = TestGrouping();
+    }
+    private List<Group> TestGrouping()
+    {
+        List<Member> members = new List<Member>
+    {
+            new Member {Name = "Abby", ArrivalH = 8, ArrivalM = 30, Early = 60,
+                        Preferences = new int[] { 0, 1, 2, 0, 2 }, Location = "1810 Elizabeth St, Melbourne, FL 32901" },
+            new Member {Name = "Brad", ArrivalH = 7, ArrivalM = 30, Early = 0,
+                        Preferences = new int[] {0, 0, 2, 0, 2 }, Location = "1511 Hedrick Dr, Melbourne, FL 32901" },
+            new Member {Name = "Cass", ArrivalH = 10, ArrivalM = 45, Early = 30,
+                        Preferences = new int[] {1, 1, 1, 0, 2 }, Location = "507 Tucker St, Melbourne, FL 32901" },
+            new Member {Name = "Dave", ArrivalH = 8, ArrivalM = 45, Early = 45,
+                        Preferences = new int[] {0, 2, 1, 2, 1 }, Location = "3464 Florida Palm Ave, Melbourne, FL 32901" },
+            new Member {Name = "Ella", ArrivalH = 11, ArrivalM = 15, Early = 60,
+                        Preferences = new int[] {0, 0, 0, 0, 0 }, Location = "1011 Brothers Ave, Melbourne, FL 32901" },
+            new Member {Name = "Fred", ArrivalH = 9, ArrivalM = 30, Early = 30,
+                        Preferences = new int[] {2, 0, 0, 0, 2 }, Location = "3006 Alice St, Melbourne, FL 32904" },
+            new Member {Name = "Georgia", ArrivalH = 10, ArrivalM = 0, Early = 45,
+                        Preferences = new int[] {0, 0, 0, 2, 0 }, Location = "173 Rachel St, Melbourne, FL 32901" },
+            new Member {Name = "Hugh", ArrivalH = 12, ArrivalM = 0, Early = 60,
+                        Preferences = new int[] {0, 0, 0, 2, 2 }, Location = "402 W Cornell Ave, Melbourne, FL 32901" }
+    };
+        // Get latest and earliest times, make them group creators.
+        Member earliest = members.First();
+        Member latest = members.First();
+        foreach (Member m in members)
+        {
+            if (m.ArrivalH * 60 + m.ArrivalM < earliest.ArrivalH * 60 + earliest.ArrivalM)
+            {
+                earliest = m;
+            }
+            if (m.ArrivalH * 60 + m.ArrivalM - m.Early >= latest.ArrivalH * 60 + latest.ArrivalM)
+            {
+                latest = m;
+            }
+        }
+        members.Remove(earliest);
+        members.Remove(latest);
+
+        // Instantiate New Groups
+        Group a = new Group
+            {
+                Name = "Group 1",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 1",
+                Members = new Member[4] { earliest, null, null, null }
+            };
+        Group b = new Group
+            {
+                Name = "Group 3",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 2",
+                Members = new Member[4] { latest, null, null, null }
+            };
+
+        // Greedily adds the least damaging group member
+        while (a.CurrentSize < a.MaxSize || b.CurrentSize < b.MaxSize)
+        {
+            TestAdd(a, members);
+            TestAdd(b, members);
+        }
+        List<Group> output = new List<Group> { a, b };
+        output.Sort((x, y) => GroupScore(x).CompareTo(GroupScore(y)));
+        return output; 
+    }
+    // Adds members to groups for the test;
+    public Group TestAdd (Group a, List<Member> members)
+    {
+        if (a.CurrentSize == a.MaxSize)
+        {
+            return a;
+        }
+
+        double bestScore = Double.MaxValue;
+        Member bestA = members.First();
+        foreach (Member m in members)
+        {
+            a.Members[a.CurrentSize] = m;
+            if (GroupScore(a) < bestScore)
+            {
+                bestA = m;
+            }
+            a.Members[a.CurrentSize] = null;
+        }
+        a.Members[a.CurrentSize] = bestA;
+        members.Remove(bestA);
+        a.CurrentSize++;
+        return a;
+    }
+    // Uses the three scores to compute an overall score. The constants will need to be tuned and adjusted.
+    public double GroupScore(Group g)
+    {
+        return TimeScore(g) + LocationScore(g) + 2 * PreferenceScore(g);
+    }
+    // Calculates the difference between the earliest necessary arrival and the latest acceptable arrival
+    private double TimeScore(Group g)
+    {
+        int earliestH = g.Members[0].ArrivalH;
+        int earliestM = g.Members[0].ArrivalM;
+        int latestH = g.Members[0].ArrivalH;
+        int latestM = g.Members[0].ArrivalM;
+
+        for (int i = 1; i < g.Members.Length; i++)
+        {
+            Member m = g.Members[i];
+            if (m.ArrivalH * 60 + m.ArrivalM < earliestH * 60 + earliestM)
+            {
+                earliestH = m.ArrivalH;
+                earliestM = m.ArrivalM;
+            }
+            if (m.ArrivalH * 60 + m.ArrivalM - m.Early > latestH * 60 + latestM)
+            {
+                latestH = (m.ArrivalH * 60 + m.ArrivalM - m.Early) / 60;
+                latestM = (m.ArrivalH * 60 + m.ArrivalM - m.Early) % 60;
+            }
+        }
+        return (latestH - earliestH) * 60 + latestM - earliestM;
+    }
+    private double LocationScore(Group g)
+    {
+        // List of Addresses
+        String[] spots = new String[g.Members.Length + 1];
+        spots[0] = "150 W University Blvd, Melbourne, FL 32901";
+        for (int i = 0; i < g.Members.Length; i++)
+        {
+            spots[i + 1] = g.Members[i].Location;
+        }
+
+        // Sets Distances
+        // Limit API calls as much as possible
+        double[,] distances = new double[spots.Length, spots.Length];
+        bool[] visited = new bool[spots.Length];
+        for (int i = 0; i < visited.Length; i++)
+        {
+            visited[i] = false;
+            distances[i, i] = 0;
+            for (int j = i + 1; j < visited.Length; j++)
+            {
+                double dist = DistanceBtwn(spots[i], spots[j]).GetAwaiter().GetResult();
+                distances[i, j] = dist;
+                distances[j, i] = dist;
+            }
+        }
+
+        visited[0] = true;
+        return TSP(distances, visited, 0, 1, 0, Double.MaxValue);
+    }
+    private double TSP(double[,] distances, bool[] visited, int curr, int depth, double cost, double answer)
+    {
+        // If every location is visited and the current is faster than the current optimal path, return the current path
+        if (depth == visited.Length)
+        {
+            if (answer > cost + distances[curr, 0] && curr != 0)
+            {
+                return cost + distances[curr, 0];
+            }
+            return answer;
+        }
+
+        // Visits every unvisited location
+        for(int i = 0; i < visited.Length; i++)
+        {
+            if (curr != i && visited[i] == false)
+            {
+                visited[i] = true;
+                answer = TSP(distances, visited, i, depth + 1, cost + distances[curr, i], answer);
+                visited[i] = false;
+            }
+        }
+        return answer;
+    }
+    // Counts every preference disagreemetn between members
+    private double PreferenceScore(Group g)
+    {
+        int no_preference = 0;
+        int conflictCount = 0;
+
+        for (int i = 0; i < g.Members.Length; i++)
+        {
+            for (int j = i + 1; j < g.Members.Length; j++)
+            {
+                for (int k = 0; k < g.Members[i].Preferences.Length; k++)
+                {
+                    if (g.Members[i].Preferences[k] != g.Members[j].Preferences[k] && g.Members[i].Preferences[k] != no_preference && g.Members[j].Preferences[k] != no_preference)
+                    {
+                        conflictCount++;
+                    }
+                }
+            }
+        }
+        return conflictCount;
+    }
+    // Placeholder for Google Maps API integ. Input parameters are addresses in text form. Outputs distance in Time.
+    private async Task<double> DistanceBtwn(string loc1, string loc2)
+    {
+        HttpClient client = new HttpClient();
+        string mapUrl = $"https://maps.googleapis.com/maps/api/distancematrix/json?key={MapApi}&origin={Uri.EscapeDataString(loc1)}&destination={Uri.EscapeDataString(loc2)}&mode=driving";
+        HttpResponseMessage resp = await client.GetAsync(mapUrl);
+
+        String reply = await resp.Content.ReadAsStringAsync();
+        request rq = JsonSerializer.Deserialize<request>(reply);
+
+        if (rq.rows[0].elements[0].status != "NOT_FOUND" && rq.rows[0].elements[0].status != "ZERO_RESULTS")
+        {
+            return rq.rows[0].elements[0].duration.value / 60;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public class Group
@@ -44,5 +267,50 @@
         public int MaxSize { get; set; }
         public int CurrentSize { get; set; }
         public string? Description { get; set; }
+        public Member[] Members { get; set; }
+    }
+    public class Member
+    {
+        public string? Name { get; set; }
+        public string? Location { get; set; }
+        public int[] Preferences { get; set; }
+        public int ArrivalH { get; set; }
+        public int ArrivalM { get; set; }
+        public int Early { get; set; }
+    }
+
+    public class request
+    {
+
+        public class distance
+        {
+            public string text { get; set; }
+            public int value { get; set; }
+        }
+
+        public class duration
+        {
+            public string text { get; set; }
+            public int value { get; set; }
+        }
+
+        public class element
+        {
+            public distance distance { get; set; }
+            public duration duration { get; set; }
+            public string status { get; set; }
+
+        }
+        public class row
+        {
+            public element[] elements { get; set; }
+        }
+
+
+        public string[] destination_addresses { get; set; }
+        public string[] origin_addresses { get; set; }
+        public row[] rows { get; set; }
+        public string status { get; set; }
+
     }
 }
