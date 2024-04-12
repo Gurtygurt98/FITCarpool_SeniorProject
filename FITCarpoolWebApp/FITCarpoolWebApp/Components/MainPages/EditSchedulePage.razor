@@ -1,55 +1,71 @@
 ﻿@using DataAccessLibrary.Model
 @inject Radzen.DialogService DialogService
-
+@inject Radzen.NotificationService NotificationService
 <RadzenTemplateForm TItem="SchedulesModel" Data="@model" Submit=@OnSubmit>
-    <div class="row" style="margin-bottom: 16px">
-        <div class="col-md-3">
-            <RadzenLabel Text="Edit Trip Description" />
-        </div>
-        <div class="col">
-            <RadzenTextBox @bind-Value="@model.Text" Name="Text" />
-            <RadzenRequiredValidator Text="Title is required" Component="Text" />
-        </div>
-    </div>
+    <MudGrid>
+        <MudItem xs = "12">
+            <MudStack>
 
-    <div class="row" style="margin-bottom: 16px">
-        <div class="col-md-3">
-            <RadzenLabel Text="Start" />
-        </div>
-        <div class="col">
-            <RadzenDatePicker @bind-Value="@model.Start" Name="Start" ShowTime="true" />
-            <RadzenRequiredValidator Text="Start is required" Component="Start" />
-        </div>
-    </div>
-    <div class="row" style="margin-bottom: 16px">
-        <div class="col-md-3">
-            <RadzenLabel Text="End" />
-        </div>
-        <div class="col">
-            <RadzenDatePicker Name="End" @bind-Value="@model.End" ShowTime="true" />
-            <RadzenRequiredValidator Component="End" Text="End is required" />
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-3"></div>
-        <div class="col">
-            <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Save" />
-        </div>
-    </div>
+            </MudStack>
+            <RadzenLabel>Is this an arrival or departure time to/from campus</RadzenLabel>
+            <RadzenDropDown @bind-Value="@model.Text" Name="ArrivalDepartureSelect" Data="@ArrivalDepartureOptions" Style="width:100%;" />
+            <RadzenRequiredValidator Text="Selection is required" Component="ArrivalDepartureSelect" />
+        </MudItem>
+        @if (!model.Text.Equals(""))
+        {
+            <MudItem xs="12">
+                <MudStack>
+                    <RadzenLabel Text="@($"Please Enter {model.Text} time range")" />
+                    <RadzenDatePicker @bind-Value="@model.Start" Name="Start" ShowTime="true" />
+                    <RadzenRequiredValidator Text="Start is required" Component="Start" />
+                    <RadzenDatePicker Name="End" @bind-Value="@model.End" ShowTime="true" />
+                    <RadzenRequiredValidator Component="End" Text="End is required" />
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12">
+                <MudStack Row="true">
+                    <RadzenButton ButtonType="Radzen.ButtonType.Submit" Text="Save" Size="ButtonSize.Medium" />
+                    <RadzenButton Text="Delete" Size="ButtonSize.Medium" Style="color: white; background-color: red;" Click="@(() => OnDelete(model))" />
+                </MudStack>
+            </MudItem>
+        }
+
+    </MudGrid>
 </RadzenTemplateForm>
+
 @code {
     [Parameter]
-    public SchedulesModel Appointment { get; set; }
+    public SchedulesModel CurrSchedule { get; set; }
+    [Parameter]
+    public EventCallback<SchedulesModel> OnDeleteSchedule { get; set; }
+    [Parameter]
+    public EventCallback<SchedulesModel> OnEditSchedule { get; set; }
+    List<string> ArrivalDepartureOptions = new List<string>() { "arrival", "departure" };
 
     SchedulesModel model = new SchedulesModel();
 
     protected override void OnParametersSet()
     {
-        model = Appointment;
+        model = CurrSchedule;
     }
 
     void OnSubmit(SchedulesModel model)
     {
+        TimeSpan timeDifference = model.End - model.Start;
+        if (timeDifference > TimeSpan.FromHours(2) || model.Start > model.End)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Time Range Error", "The start and end time must be within 2 hours of each other. Please modify the dates and times.", 7000);
+        } else
+        {
+            OnEditSchedule.InvokeAsync(model);
+            DialogService.Close(model);
+        }
+
+    }
+    void OnDelete(SchedulesModel model)
+    {
+        OnDeleteSchedule.InvokeAsync(model);
         DialogService.Close(model);
     }
+
 }

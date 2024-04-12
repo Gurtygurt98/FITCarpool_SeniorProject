@@ -63,6 +63,8 @@ namespace DataAccessLibrary.Data.Database
         // Add a new user
         public async Task AddUser(UsersModel user)
         {
+
+
             string sql = @"INSERT INTO Users (Email, FirstName, LastName, Phone, UserType, UserLocation, 
                                                PickupLocation, DropoffLocation, DrivingDistance, PhonePrivacy, Gender, 
                                                ProfilePicture, AddressPrivacy, BeltCount, MakeModel, VehicleColor, 
@@ -75,18 +77,20 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task UpdateUserProfilePicture(int userId, byte[] profilePicture)
         {
+            Console.WriteLine(userId + " " + profilePicture);
 
             string sql = "UPDATE Users SET ProfilePicture = @ProfilePicture WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, ProfilePicture = profilePicture });
         }
         public async Task UpdateUserLicensePicture(int userId, byte[] licensePicture)
         {
-
+            Console.WriteLine($"{userId} {licensePicture}");
             string sql = "UPDATE Users SET LicensePicture = @LicensePic WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, LicensePic = licensePicture });
         }
         public async Task UpdateUserCarPicture(int userId, byte[] carPicture)
         {
+            Console.WriteLine($"{userId} {carPicture}");
 
             string sql = "UPDATE Users SET CarPicture = @CarPic WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, CarPic = carPicture });

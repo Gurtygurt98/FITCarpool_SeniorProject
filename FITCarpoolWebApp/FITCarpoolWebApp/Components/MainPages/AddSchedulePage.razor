@@ -20,7 +20,7 @@
                     <RadzenRequiredValidator Text="Start is required" Component="Start" />
                     <RadzenDatePicker Name="End" @bind-Value="@model.End" ShowTime="true" />
                     <RadzenRequiredValidator Component="End" Text="End is required" />
-                    <RadzenLabel Text="Music Preferences" Component="RepeatC" />
+                    <RadzenLabel Text="Is this a repeating schedule?" Component="RepeatC" />
                     <RadzenCheckBox Name="RepeatC" TValue="bool" Change=@(args => _repeatBool = args) Value=_repeatBool></RadzenCheckBox>
                 </MudStack>
             </MudItem>
@@ -69,7 +69,7 @@
 
     SchedulesModel model = new SchedulesModel();
     bool _repeatBool = false;
-    public DateTime? RepeatUntil { get; set; }
+    public DateTime RepeatUntil { get; set; }
     public Dictionary<string, bool> RepeatDays { get; set; } = Enum.GetNames(typeof(DayOfWeek)).ToDictionary(day => day, day => false);
     List<string> selectedRepeatDays = new List<string>();
 
@@ -101,13 +101,12 @@
     void OnSubmit()
     {
         TimeSpan timeDifference = model.End - model.Start;
-        Console.WriteLine(Start.DayOfWeek);
         string dayID = days.FirstOrDefault(g => g.Name == model.Start.DayOfWeek.ToString())?.Id;
-        if (timeDifference > TimeSpan.FromHours(2))
+        if (timeDifference > TimeSpan.FromHours(2) || model.Start > model.End)
         {
             NotificationService.Notify(NotificationSeverity.Error, "Time Range Error", "The start and end time must be within 2 hours of each other. Please modify the dates and times.", 7000);
         }
-        else if (!selectedRepeatDays.Contains(dayID))
+        else if (_repeatBool && (RepeatUntil == null || RepeatUntil == DateTime.MinValue))
         {
             NotificationService.Notify(NotificationSeverity.Error, "Schedule Repeat Error", "The selected date must be selected in the repeat schedule drop down.", 7000);
         }
@@ -117,18 +116,20 @@
             {
                 // For repeats
                 DateTime WalkDate = model.Start;
-                while (WalkDate < RepeatUntil)
+
+                RepeatUntil = RepeatUntil.AddDays(1);
+                while (WalkDate <= RepeatUntil)
                 {
                     dayID = days.FirstOrDefault(g => g.Name == WalkDate.DayOfWeek.ToString())?.Id;
                     @if (selectedRepeatDays.Contains(dayID))
                     {
                         model.Day = WalkDate.DayOfWeek.ToString();
-                        //OnAddSchedule.InvokeAsync(model);
-                        Console.WriteLine(model);
+                        OnAddSchedule.InvokeAsync(model);
                     }
-                    WalkDate.AddDays(1);
-                    model.Start.AddDays(1);
-                    model.End.AddDays(1);
+                    WalkDate = WalkDate.AddDays(1);
+                    model.Start = model.Start.AddDays(1);
+                    model.End = model.End.AddDays(1);
+
                 }
             } else
             {

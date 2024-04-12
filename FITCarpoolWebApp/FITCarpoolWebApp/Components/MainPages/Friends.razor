@@ -5,15 +5,34 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NotificationService NotificationService
 @using Microsoft.AspNetCore.Authorization
+@using DataAccessLibrary.Model.Database_Models
+@using Microsoft.EntityFrameworkCore
+@using MudBlazor
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using System.Net.Http.Json
+@inject HttpClient httpClient
+@inject IRolesData _dbRoles
+@inject IDialogService DialogService
+
 @attribute [Authorize]
+
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
+        <RadzenStack style="margin-bottom: 50px;">
             <MudText Typo="Typo.h2" Align="Align.Center">Friends List</MudText>
-            <RadzenTextBox Placeholder="Search for friends..." Style="width:100%; margin-bottom:15px;" />
-            
+            <MudAutocomplete T="string" @bind-Value="_searchString"
+                             SearchFunc="@SearchUser"
+                             Placeholder="Search for other users..."
+                             Dense="true"
+                             ResetValueOnEmptyText="true"
+                             ToStringFunc="@((string s) => s)" />
         </RadzenStack>
+
+
         @foreach (var row in friends)
         {
             <RadzenRow>
@@ -109,5 +128,28 @@
     {
         public string? Name { get; set; }
         public string? Status { get; set; }
+    }
+
+
+    // Code for searching other users
+    private string _searchString = "";
+    private List<AccountModel> AccountList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        AccountList = await _dbRoles.GetAccounts(); 
+    }
+
+    private async Task<IEnumerable<string>> SearchUser(string value)
+    {
+        await Task.Delay(5);
+
+        if (string.IsNullOrEmpty(value))
+            return Enumerable.Empty<string>();
+
+        return AccountList
+            .Where(a => a.UserName.Contains(value, StringComparison.InvariantCultureIgnoreCase))
+            .Select(a => a.UserName)
+            .ToList();
     }
 }

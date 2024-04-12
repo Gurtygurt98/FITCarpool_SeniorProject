@@ -36,8 +36,7 @@
                         <RadzenLabel Text="Phone Number" Style="display: block; margin-bottom: 5px;" />
                         <RadzenTextBox @bind-Value="@InputModel.Phone" Placeholder="Phone Number" Style="width:100%;  margin-bottom:5px;" />
 
-                        <RadzenLabel Text="Phone Number Privacy Setting" Style="display: block; margin-bottom: 5px;" />
-                        <RadzenDropDown @bind-Value="@InputModel.PhonePrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting" Style="width:100%;  margin-bottom:5px;" />
+          
 
                         <RadzenLabel Text="Select Gender" Style="display: block; margin-bottom: 5px;" />
                         <RadzenDropDown @bind-Value=@InputModel.Gender Data=@genderData Style="width:100%;  margin-bottom:5px;" />
@@ -61,9 +60,6 @@
                             <RadzenLabel Text="Driving Distance (in miles)" Style="display: block; margin-bottom: 5px;" />
                             <RadzenNumeric @bind-Value="@InputModel.DrivingDistance" Placeholder="Driving Distance (in miles)" Style="width: 100%;  margin-bottom:5px;" Min="0" Step="1" />
                         }
-
-                        <RadzenLabel Text="Address Privacy Setting" Style="display: block; margin-bottom: 5px;" />
-                        <RadzenDropDown @bind-Value="@InputModel.AddressPrivacy" Data="@privacyOptions" Placeholder="Select Privacy Setting" Style="width:100%;  margin-bottom:5px;" />
 
                         <RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3" Style="display: block; margin-bottom: 5px;">Profile Picture Upload</RadzenText>
                         <RadzenUpload @ref="ProfileUpload" Auto="false" Multiple="false" Url="@(uploadUrlProfile)" InputAttributes="@(new Dictionary<string,object>(){ { "aria-label", "select file" }})" class="w-100" Accept="image/*" Style=" margin-bottom:5px;" />
@@ -261,15 +257,17 @@
 
         if (args.View.Text != "Year")
         {
-            SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Schedule ",
-                new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End }, { "UserID", InputModel.UserId }, { "OnAddSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(AddSchedule)) } });
+
+            SchedulesModel data = await DialogService.OpenAsync<AddSchedulePage>("Add Schedule",
+            new Dictionary<string, object> { { "Start", args.Start }, { "End", args.End }, { "UserID", InputModel.UserId }, { "OnAddSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(AddSchedule))  }});
 
             if (data != null)
             {
                 appointments.Add(data);
                 // Either call the Reload method or reassign the Data property of the Scheduler
-                await scheduler.Reload();
             }
+            await scheduler.Reload();
+
         }
     }
 
@@ -283,8 +281,15 @@
                 End = args.Data.End,
                 Text = args.Data.Text,
             };
-
-        var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "Appointment", copy } });
+        var matchingSchedule = ListSchedules.FirstOrDefault(schedule =>
+            schedule.UserId == InputModel.UserId &&
+            schedule.Start == args.Start &&
+            schedule.End == args.End);
+        if(matchingSchedule == null)
+        {
+            return;
+        }
+        var data = await DialogService.OpenAsync<EditSchedulePage>("Edit Appointment", new Dictionary<string, object> { { "CurrSchedule", matchingSchedule }, { "OnDeleteSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(DeleteSchedule)) }, { "OnEditSchedule", new EventCallbackFactory().Create(this, new Action<SchedulesModel>(EditSchedule)) } });
 
         if (data != null)
         {
@@ -299,9 +304,8 @@
 
     void OnAppointmentRender(SchedulerAppointmentRenderEventArgs<SchedulesModel> args)
     {
-        // Never call StateHasChanged in AppointmentRender - would lead to infinite loop
 
-        if (args.Data.Text == "Birthday")
+        if (args.Data.Text == "arrival")
         {
             args.Attributes["style"] = "background: red";
         }
@@ -348,8 +352,27 @@
     }
     public void AddSchedule(SchedulesModel schedule)
     {
-        Console.WriteLine(schedule.ToString());
         _dbSchedules.AddSchedule(schedule);
         ListSchedules.Add(schedule);
+    }
+    public void DeleteSchedule(SchedulesModel schedule)
+    {
+        _dbSchedules.DeleteSchedule(schedule.ScheduleId);
+        ListSchedules.Remove(schedule);
+    }
+    public void EditSchedule(SchedulesModel schedule)
+    {
+        var matchingSchedule = ListSchedules.FirstOrDefault(schedule1 =>
+            schedule1.UserId == InputModel.UserId &&
+            schedule1.Start == schedule.Start &&
+            schedule1.End == schedule.End);
+        if (matchingSchedule != null)
+        {
+            ListSchedules.Remove(matchingSchedule);
+
+        }
+        _dbSchedules.UpdateSchedule(schedule);
+        ListSchedules.Add(schedule);
+
     }
 }   

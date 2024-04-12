@@ -12,17 +12,15 @@ namespace DataAccessLibrary.Model
         public string GroupName { get; set; }
         public int DriverId { get; set; }
         public string Destination { get; set; }
-        public string MeetingPoint { get; set; }
 
         public CarpoolGroupsModel() { }
 
-        public CarpoolGroupsModel(int groupId, string groupName, int driverId, string destination, string meetingPoint)
+        public CarpoolGroupsModel(int groupId, string groupName, int driverId, string destination)
         {
             GroupId = groupId;
             GroupName = groupName;
             DriverId = driverId;
             Destination = destination;
-            MeetingPoint = meetingPoint;
         }
     }
 
