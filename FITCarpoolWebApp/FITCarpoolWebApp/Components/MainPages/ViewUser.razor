@@ -1,0 +1,168 @@
+﻿@inject NavigationManager NavigationManager
+@inject IUsersData _dbUsers
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Database_Models
+
+
+@page "/Other-User-Details/{UserName}"
+
+
+<div class="col-auto p-2 justify-content-end bd-highlight">
+    <RadzenSelectBar class="bg-white rounded-pill my-auto" TValue="int" Size="ButtonSize.Small" @bind-Value="@role">
+        <Items>
+            <RadzenSelectBarItem Value="1" Text="Driver  " />
+            <RadzenSelectBarItem Value="2" Text="Rider " />
+        </Items>
+    </RadzenSelectBar>
+</div>
+
+
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenRow RowGap="0">
+            <RadzenColumn SizeSM="3" Class="d-flex align-items-center justify-content-center">
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Style="width: 150px; height: 150px; border-radius: 50%;">
+
+                    @if (selectedUser == null)
+                    {
+                     <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
+                    }
+
+                    @if (selectedUser != null)
+                    {
+                        @if (selectedUser.ProfilePicture == null)
+                        {
+                            <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
+                        }
+
+                        @if (selectedUser.ProfilePicture != null)
+                        {
+                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(selectedUser.ProfilePicture)}")" AlternateText="binary image" Style="width:100%" />
+                        }
+                    }                   
+                
+                </RadzenButton>
+            </RadzenColumn>
+            <RadzenColumn SizeSM="6" Class="d-flex align-items-center justify-content-center">
+                <RadzenButton Text="13" class="p-1 rz-background-color-primary rz-color-on-primary rz-text-align-center rz-p-2" Style="height: 80px; width:80px;display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 10px;"  Click="@(() => NavigateTo("Friends"))" />
+                <RadzenText TextStyle="TextStyle.Button" class="rz-display-flex rz-mt-2 rz-my-0">Friends</RadzenText>
+                <RadzenButton Text="24" class="p-1 rz-background-color-primary rz-color-on-primary rz-text-align-center rz-p-2" Style="height: 80px; width:80px;display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 10px;"  Click="@(() => NavigateTo("Group"))" />
+                <RadzenText TextStyle="TextStyle.Button" class="rz-display-flex rz-mt-2 rz-my-0">Completed Rides</RadzenText>
+            </RadzenColumn>
+        </RadzenRow>
+
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Name</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Name'..." class="rz-display-flex rz-mt-2 rz-my-0">
+            @selectedUserName
+        </RadzenText>
+
+    
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
+
+        @if(role == 1)
+        {
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Role</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Driver/Rider</RadzenText>
+        }
+        else if(role == 2)
+        {
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Role</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Rider Only</RadzenText>
+        }
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Bio</RadzenText>
+        <RadzenTextArea class="w-60" aria-label="TextArea" />
+        
+        <RadzenStack>
+            <MudText Typo="Typo.h6" Align="Align.Center">Rider/Driver Statistics</MudText>
+        </RadzenStack>
+        <MudDataGrid Items="stats" Bordered="true" T="Statistics">
+            <Columns>
+                <PropertyColumn Property="x => x.title" Title="Description" />
+                <PropertyColumn Property="x => x.miles" Title="Miles" />
+            </Columns>
+        </MudDataGrid>
+            
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
+        <RadzenRating @bind-Value=@value ReadOnly=true />
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Wrap="FlexWrap.Wrap" ChildrenAlign="ChildrenAlign.Start">
+            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
+            <RadzenCheckBox @bind-Value=@show Name="Show" />
+        </RadzenStack>
+
+        @if (show == true)
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
+        }
+
+    </RadzenCard>
+</RadzenStack>
+
+
+@code {
+    int value = 3;
+
+    bool show;
+
+    public int role { get; private set; }
+
+    
+    
+    private void NavigateTo(string page)
+    {
+        NavigationManager.NavigateTo($"/{page}");
+    }
+
+
+    private List<Statistics> stats;
+
+    protected override void OnInitialized()
+    {
+        stats = new List<Statistics>
+        {
+            new Statistics { title = "Total Driving Miles", miles = 3},
+            new Statistics { title = "Total Riding Miles", miles = 8},
+            new Statistics { title = "Net Driving Miles", miles = 15},
+            new Statistics { title = "Net Driving Miles Per Week", miles = 6}
+
+        };
+    }
+
+    public class Statistics
+    {
+        public string? title { get; set; }
+        public int miles { get; set; }
+        public int CurrentSize { get; set; }
+        public string? Description { get; set; }
+    }
+
+
+    // Code for displaying other users' profile
+    [Parameter]
+    public string UserName { get; set; } 
+
+    private UsersModel selectedUser;
+    private string selectedUserName => selectedUser?.FirstName + " " + selectedUser?.LastName ?? "No user selected";
+    private List<UsersModel> UserList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserList = await _dbUsers.GetAllUser(); 
+
+        selectedUser = UserList.FirstOrDefault(user => user.Email.Equals(UserName, StringComparison.OrdinalIgnoreCase));
+
+        if (selectedUser == null)
+        {
+            NavigationManager.NavigateTo("/Group");
+        }
+    }
+}
+
+

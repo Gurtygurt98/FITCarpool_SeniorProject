@@ -21,9 +21,10 @@ namespace FITCarpoolWebApp.Controller
         [HttpPost("upload/{userId}")]
         public async Task<IActionResult> UploadProfilePicture(IFormFile file, [FromRoute] int userId)
         {
-
+            Console.WriteLine("Entered Profile Picture");
             if (file.Length > 0)
             {
+                Console.WriteLine(file.Length.ToString());
                 using (var memoryStream = new MemoryStream())
                 {
                     await file.CopyToAsync(memoryStream);

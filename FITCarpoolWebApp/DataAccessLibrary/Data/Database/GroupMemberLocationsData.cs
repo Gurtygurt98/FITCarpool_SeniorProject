@@ -20,11 +20,10 @@ namespace DataAccessLibrary.Data.Database
             return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { });
         }
 
-        public async Task<GroupMemberLocationsModel> GetGroupMemberLocation(int locationId)
+        public async Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId)
         {
-            string sql = "SELECT * FROM GroupMemberLocations WHERE LocationID = @LocationId";
-            var result = await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { LocationId = locationId });
-            return result.FirstOrDefault();
+            string sql = "SELECT * FROM GroupMemberLocations WHERE  UserID = @UserId";
+            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = userId });
         }
 
         public async Task UpdateGroupMemberLocation(GroupMemberLocationsModel location)

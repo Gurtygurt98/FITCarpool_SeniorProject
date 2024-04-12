@@ -6,7 +6,7 @@ namespace DataAccessLibrary.Data.Database
     {
         Task DeleteGroupMemberLocation(int locationId);
         Task<List<GroupMemberLocationsModel>> GetAllGroupMemberLocations();
-        Task<GroupMemberLocationsModel> GetGroupMemberLocation(int locationId);
+        Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId);
         Task UpdateGroupMemberLocation(GroupMemberLocationsModel location);
     }
 }
