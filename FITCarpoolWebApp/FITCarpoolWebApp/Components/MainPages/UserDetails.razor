@@ -3,6 +3,14 @@
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
+@using FITCarpoolWebApp.Components.MainPages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using FITCarpoolWebApp.Data
+@inject Radzen.DialogService DialogService
+@inject HttpClient httpClient
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
 
 
 @page "/User-Details"
@@ -24,23 +32,16 @@
             <RadzenColumn SizeSM="3" Class="d-flex align-items-center justify-content-center">
                 <RadzenButton Click="@(() => NavigateTo("Profile"))" ButtonStyle="ButtonStyle.Light" Style="width: 150px; height: 150px; border-radius: 50%;">
 
-                    @if (selectedUser == null)
+                @if (InputModel.ProfilePicture == null)
                     {
                         <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
                     }
 
-                    @if (selectedUser != null)
+                @if (InputModel.ProfilePicture != null)
                     {
-                        @if (selectedUser.ProfilePicture == null)
-                        {
-                            <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
-                        }
-
-                        @if (selectedUser.ProfilePicture != null)
-                        {
-                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(selectedUser.ProfilePicture)}")" AlternateText="binary image" Style="width:100%" />
-                        }
+                        <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="width:100%" />
                     }
+                    
 
                 </RadzenButton>
             </RadzenColumn>
@@ -52,19 +53,10 @@
             </RadzenColumn>
         </RadzenRow>
 
-        <MudAutocomplete T="UsersModel"
-                         @bind-Value="selectedUser"
-                         SearchFunc="@SearchUser"
-                         Placeholder="Select a user..."
-                         Dense="true"
-                         ResetValueOnEmptyText="true"
-                         ToStringFunc="@((UsersModel u) => u == null ? "" : $"{u.Email}")" />
-
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Name</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Name'..." class="rz-display-flex rz-mt-2 rz-my-0">
-            @selectedUserName
+            @userFullName
         </RadzenText>
-
 
 
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
@@ -172,13 +164,34 @@
 
 
     // Code for displaying other users' profile
+
     private UsersModel selectedUser;
-    private string selectedUserName => selectedUser?.FirstName + " " + selectedUser?.LastName ?? "No user selected";
-    private List<UsersModel> UserList = new();
+    private string userFullName => InputModel?.FirstName + " " + InputModel?.LastName ?? "No user selected";
+    //private List<UsersModel> UserList = new();
+    UsersModel InputModel = new();
+    private List<UsersModel> UserList = null;
+    private string userName = "Not found";
 
     protected override async Task OnInitializedAsync()
     {
-        UserList = await _dbUsers.GetAllUser();
+        //UserList = await _dbUsers.GetAllUser();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            userName = user.Identity.Name;
+        }
+        else
+        {
+            userName = "Not found";
+        }
+        UserList = await _dbUsers.GetUser(userName);
+        if (UserList.Any())
+        {
+            InputModel = UserList.First();
+        }
     }
 
     private async Task<IEnumerable<UsersModel>> SearchUser(string value)

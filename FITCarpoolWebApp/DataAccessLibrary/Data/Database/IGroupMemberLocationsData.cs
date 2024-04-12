@@ -8,5 +8,7 @@ namespace DataAccessLibrary.Data.Database
         Task<List<GroupMemberLocationsModel>> GetAllGroupMemberLocations();
         Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId);
         Task UpdateGroupMemberLocation(GroupMemberLocationsModel location);
+        Task AddGroupMemberLocation(GroupMemberLocationsModel location);
+        Task<List<GroupMemberLocationsModel>> GetDriverLocations(int userID);
     }
 }

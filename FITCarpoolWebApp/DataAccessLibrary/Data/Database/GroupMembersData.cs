@@ -19,7 +19,6 @@ namespace DataAccessLibrary.Data.Database
             return await _db.LoadData<GroupMembersModel, dynamic>(sql, new { });
         }
 
-        // Assuming GroupID and UserID uniquely identify a GroupMember
         public async Task<List<GroupMembersModel>> GetGroupMember(int groupId, int userId)
         {
             string sql = @"SELECT * FROM GroupMembers WHERE GroupID = @GroupId AND UserID = @UserId";
@@ -31,5 +30,6 @@ namespace DataAccessLibrary.Data.Database
             string sql = @"DELETE FROM GroupMembers WHERE GroupID = @GroupId AND UserID = @UserId";
             await _db.SaveData(sql, new { GroupId = groupId, UserId = userId });
         }
+
     }
 }

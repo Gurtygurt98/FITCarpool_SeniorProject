@@ -84,14 +84,14 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task UpdateUserLicensePicture(int userId, byte[] licensePicture)
         {
+            Console.WriteLine("hELP?");
+
             Console.WriteLine($"{userId} {licensePicture}");
             string sql = "UPDATE Users SET LicensePicture = @LicensePic WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, LicensePic = licensePicture });
         }
         public async Task UpdateUserCarPicture(int userId, byte[] carPicture)
         {
-            Console.WriteLine($"{userId} {carPicture}");
-
             string sql = "UPDATE Users SET CarPicture = @CarPic WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, CarPic = carPicture });
         }
