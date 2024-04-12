@@ -31,7 +31,7 @@ namespace DataAccessLibrary.Data.Database
         {
             string sql = @"SELECT 
                                GroupID, GroupName,DriverID,Destination,
-                                Users.FirstName || "" "" || Users.LastName
+                                Users.FirstName || "" "" || Users.LastName as DriverName
                             FROM CarpoolGroups
                             JOIN Users on CarpoolGroups.DriverID = Users.UserId
                             WHERE GroupID = @GroupId";
@@ -60,7 +60,7 @@ namespace DataAccessLibrary.Data.Database
         {
             string sql = @"SELECT 
                                GroupID, GroupName,DriverID,Destination,
-                                Users.FirstName || "" "" || Users.LastName
+                                Users.FirstName || '""' || Users.LastName as DriverName
                             FROM CarpoolGroups
                             JOIN Users on CarpoolGroups.DriverID = Users.UserId
                             WHERE DriverID = @DriverID";
@@ -79,6 +79,23 @@ namespace DataAccessLibrary.Data.Database
                             JOIN Users U on GM.UserID = U.UserId
                             WHERE G.GroupID = @groupId";
             return await _db.LoadData<RiderModel, dynamic>(sql, new { groupId, driverID });
+        }
+        public async Task<List<CarpoolGroupsModel>> GetRiderGroups(int userID)
+        {
+            string sql = @"select 
+                                  CG.GroupID, CG.GroupName,CG.DriverID,CG.Destination,
+                                   Users.FirstName || ' ' ||  Users.LastName as DriverName
+                            from GroupMembers GM 
+                            JOIN CarpoolGroups CG on GM.GroupID = CG.GroupID
+                            JOIN Users on CG.DriverID = Users.UserId
+                            where GM.UserId = @userID";
+            var result = await _db.LoadData<CarpoolGroupsModel, dynamic>(sql, new { userID });
+            foreach (var item in result)
+            {
+                item.Riders = await GetRiders(item.GroupId, item.DriverId);
+            }
+            return result;
+
         }
     }
 }

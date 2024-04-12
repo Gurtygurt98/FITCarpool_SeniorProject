@@ -38,6 +38,8 @@
                 <RadzenCard Style="width: 100%; padding: 0;">
                     <RadzenStack Gap="1">
                         <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-primary">Group: @(group.GroupName)</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Driver: @(group.DriverName)</RadzenText>
+
                         <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Destination: @(group.Destination)</RadzenText>
                         <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Riders: @(group.ListRiderNames())</RadzenText>
                     </RadzenStack>
@@ -125,11 +127,12 @@
         // Check if the user is part of trip that has started 
         DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
         carpoolInProgress = DriverLocationList.Any();
+        GroupList = await _dbGroups.GetRiderGroups(InputModel.UserId);
+
         if (carpoolInProgress)
         {
             GetDriverLocation();
             // Current driver location object, send this along with updated location to the database for riders to grab
-            GroupList = await _dbGroups.GetCarpoolGroup(DriverLocation.GroupId);
             CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
             OnRefreshRateChanged(30);
 
@@ -138,7 +141,12 @@
     private async Task GetDriverLocation()
     {
         DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
-        DriverLocation = DriverLocationList.First();
+        DriverLocation = DriverLocationList.FirstOrDefault();
+        if(DriverLocation == null)
+        {
+            NavigationManager.NavigateTo("/rider", forceLoad: true);
+
+        }
         //userLocationInfo = await _GmapKey.GetLocationInfoAsync(DriverLocation.Longitude, DriverLocation.Latitude);
         //Console.WriteLine("Current User info " + userLocationInfo);
         IsLocationAvailable = true;

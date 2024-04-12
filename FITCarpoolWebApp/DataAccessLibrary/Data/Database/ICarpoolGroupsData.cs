@@ -11,6 +11,6 @@ namespace DataAccessLibrary.Data.Database
         Task UpdateCarpoolGroup(CarpoolGroupsModel group);
         Task<List<CarpoolGroupsModel>> GetDriverGroups(int driverId);
         Task<List<RiderModel>> GetRiders(int groupId, int driverID);
-
+        Task<List<CarpoolGroupsModel>> GetRiderGroups(int userID);
     }
 }
