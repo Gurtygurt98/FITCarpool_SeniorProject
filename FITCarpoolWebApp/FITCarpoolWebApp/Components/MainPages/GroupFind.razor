@@ -12,18 +12,18 @@
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
-        @for (int i = 0; i < GroupRecommendations.Count; i++)
+        @foreach (var group in GroupRecommendations.Keys)
         {
-            if (groupVisibilities[i])
+            if (GroupRecommendations[group])
             {
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                    <RadzenHeading Size="H2" Text=@($"Group Recommendation {i + 1}") />
+                    <RadzenHeading Size="H2" Text=@($"Group Recommendation {group + 1}") />
                     <div>
                         <RadzenButton Text="Join Group" Style="margin-right: 10px;" Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" />
-                        <RadzenButton Text="Deny Recommendation" Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Click="() => DenyGroup(i)" />
+                        <RadzenButton Text="Deny Recommendation" Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Click="() => DenyGroup(group)" />
                     </div>
                 </div>
-                <RadzenDataGrid Data="@GroupRecommendations[i]" TItem="UsersModel" AllowSorting="true">
+                <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
                     <Columns>
 
                         <RadzenDataGridColumn TItem="UsersModel" Width="60px">
@@ -69,27 +69,28 @@
 </RadzenStack>
 
 
-
-
 @code {
-    private List<List<UsersModel>> GroupRecommendations = new();
-    private List<bool> groupVisibilities;
+    private Dictionary<int, bool> GroupRecommendations = new();
+    private Dictionary<int, List<UsersModel>> RecommendationData = new();
 
     protected override async Task OnInitializedAsync()
     {
         var allUsers = await _dbUsers.GetAllUser();
-        GroupRecommendations.Add(allUsers.Take(3).ToList());
-        GroupRecommendations.Add(allUsers.Skip(3).Take(3).ToList());
+        RecommendationData.Add(0, allUsers.Take(3).ToList());
+        RecommendationData.Add(1, allUsers.Skip(3).Take(3).ToList());
 
-        groupVisibilities = new List<bool>(new bool[GroupRecommendations.Count].Select(_ => true).ToArray());
+        foreach (var key in RecommendationData.Keys)
+        {
+            GroupRecommendations[key] = true;
+        }
     }
 
     private void DenyGroup(int groupIndex)
     {
-        if (groupIndex < groupVisibilities.Count)
+        if (GroupRecommendations.ContainsKey(groupIndex))
         {
-            groupVisibilities[groupIndex] = false;
-            StateHasChanged();
+            GroupRecommendations[groupIndex] = false;
+            StateHasChanged(); // Ensure UI refresh
         }
     }
 

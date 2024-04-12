@@ -22,7 +22,7 @@
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenRow RowGap="0">
             <RadzenColumn SizeSM="3" Class="d-flex align-items-center justify-content-center">
-                <RadzenButton Click="@(() => NavigateTo("Profile"))" ButtonStyle="ButtonStyle.Light" Style="width: 150px; height: 150px; border-radius: 50%;">
+                <RadzenButton ButtonStyle="ButtonStyle.Light" Style="width: 150px; height: 150px; border-radius: 50%;">
 
                     @if (selectedUser == null)
                     {
@@ -100,26 +100,6 @@
             <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
             <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
             <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
-        }
-
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Find a group!</RadzenText>
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
-            <RadzenButton Click="@(() => NavigateTo("Group-Find"))" Text="Find Group" ButtonStyle="ButtonStyle.Primary" />
-        </RadzenStack>
-
-        @if(role == 1)
-        {
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Ready to drive?</RadzenText>
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
-            <RadzenButton Click="@(() => NavigateTo("Directions"))" Text="Get Directions" ButtonStyle="ButtonStyle.Primary" />
-            </RadzenStack>
-        }
-        else if (role == 2)
-        {
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Ready for a ride? Find your driver!</RadzenText>
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
-                <RadzenButton Click="@(() => NavigateTo("Rider"))" Text="Find Driver" ButtonStyle="ButtonStyle.Primary" />
-            </RadzenStack>
         }
 
     </RadzenCard>
