@@ -4,50 +4,388 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @using Microsoft.AspNetCore.Authorization
+@using DataAccessLibrary.Data.API
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
 @inject IUsersData _dbUsers
+@inject ISchedulesData _dbSchedules
+@inject IGMapsAPI _GmapKey 
 @attribute [Authorize]
 
 <RadzenStack>
-    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
-            <RadzenHeading Size="H2" Text="Users" />
-        </RadzenStack>
-        <RadzenDataGrid Data="@UserList" TItem="UsersModel" AllowSorting="true">
-            <Columns>
-                <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" />
-                <RadzenDataGridColumn TItem="UsersModel" Title="Name">
-                    <Template Context="user">
-                        @{
-                            var fullName = $"{user.FirstName} {user.LastName}";
-                            <text>@fullName</text>
-                        }
-                    </Template>
-                </RadzenDataGridColumn>
-                <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="120px">
-                    <Template>
-                        <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" />
-                    </Template>
-                </RadzenDataGridColumn>
-            </Columns>
-        </RadzenDataGrid>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
+        <RadzenHeading Size="H2" Text="Group Recommendation (Test Users)" Style="text-align: center; margin-bottom: 20px;" />
+        @foreach (var group in GroupRecommendations.Keys)
+        {
+            if (GroupRecommendations[group])
+            {
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                    <RadzenHeading Size="H2" Text=@($"Group Recommendation {group + 1}") />
+                    <div>
+                        <RadzenButton Text="Join Group" Style="margin-right: 10px;" Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" />
+                        <RadzenButton Text="Deny Recommendation" Shade="Shade.Light" ButtonStyle="ButtonStyle.Danger" Click="() => DenyGroup(group)" />
+                    </div>
+                </div>
+                <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
+                    <Columns>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Width="60px">
+                            <Template Context="user">
+                                @if (user.ProfilePicture != null)
+                                {
+                                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" Width="200px" />
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="200px">
+                            <Template Context="user">
+                                @{
+                                    var fullName = $"{user.FirstName} {user.LastName}";
+                                }
+                                <text>@fullName</text>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Role" Width="100px">
+                            <Template Context="user">
+                                @{
+                                    var role = $"{user.UserType}";
+                                }
+                                <text>@role</text>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
+                            <Template>
+                                <RadzenButton Text="View User" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
+        }
     </RadzenCard>
 </RadzenStack>
 
 
 @code {
-    private List<Group> groups;
+    private string MapApi = "";
+    private Dictionary<int, bool> GroupRecommendations = new();
+    private Dictionary<int, List<UsersModel>> RecommendationData = new();
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        groups = new List<Group>
+        MapApi = _GmapKey.MapAPI;
+        List<Member> members = new List<Member>();
+
+        // var allUsers = await _dbUsers.GetAllUser();
+
+        // Test Code with Fake Users
+        List<UsersModel> allUsers = new List<UsersModel>
         {
-            new Group { Name = "Group 1", MaxSize = 10, CurrentSize = 5, Description = "Sample Group 1" },
-            new Group { Name = "Group 2", MaxSize = 8, CurrentSize = 6, Description = "Sample Group 2" },
-            new Group { Name = "Group 3", MaxSize = 15, CurrentSize = 10, Description = "Sample Group 3" }
+            new UsersModel {UserId = 0, UserType = "Driver", Email = "Ally@my.fit.edu", FirstName = "Ally", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "1810 Elizabeth St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 1, UserType = "Driver", Email = "Bill@my.fit.edu", FirstName = "Bill", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
+            PickupLocation = "1511 Hedrick Dr, Melbourne, FL 32901" },
+            new UsersModel {UserId = 2, UserType = "Driver", Email = "Cass@my.fit.edu", FirstName = "Cass", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "507 Tucker St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 3, UserType = "Driver", Email = "Dave@my.fit.edu", FirstName = "Dave", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "3464 Florida Palm Ave, Melbourne, FL 32901" },
+            new UsersModel {UserId = 4, UserType = "Driver", Email = "Ella@my.fit.edu", FirstName = "Ella", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "true",
+            PickupLocation = "1011 Brothers Ave, Melbourne, FL 32901" },
+            new UsersModel {UserId = 5, UserType = "Driver", Email = "Fred@my.fit.edu", FirstName = "Fred", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "true",
+            PickupLocation = "3006 Alice St, Melbourne, FL 32904" },
+            new UsersModel {UserId = 6, UserType = "Driver", Email = "Gail@my.fit.edu", FirstName = "Gail", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
+            PickupLocation = "173 Rachel St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 7, UserType = "Driver", Email = "Hugh@my.fit.edu", FirstName = "Hugh", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "402 W Cornell Ave, Melbourne, FL 32901" }
         };
+
+        List<SchedulesModel> s = new List<SchedulesModel>
+        {
+            new SchedulesModel {UserId = 0, Start = new DateTime(2024, 4, 12, 8, 30, 0) },
+            new SchedulesModel {UserId = 1, Start = new DateTime(2024, 4, 12, 7, 30, 0) },
+            new SchedulesModel {UserId = 2, Start = new DateTime(2024, 4, 12, 8, 45, 0) },
+            new SchedulesModel {UserId = 3, Start = new DateTime(2024, 4, 12, 8, 15, 0) },
+            new SchedulesModel {UserId = 4, Start = new DateTime(2024, 4, 12, 7, 45, 0) },
+            new SchedulesModel {UserId = 5, Start = new DateTime(2024, 4, 12, 8, 30, 0) },
+            new SchedulesModel {UserId = 6, Start = new DateTime(2024, 4, 12, 8, 0, 0) },
+            new SchedulesModel {UserId = 7, Start = new DateTime(2024, 4, 12, 9, 0, 0) }
+        };
+        foreach(UsersModel u in allUsers)
+        {
+            //List<SchedulesModel> schedules = await _dbSchedules.GetSchedule(u.UserId);
+            //SchedulesModel s = schedules.First();
+
+            Member m = new Member
+                {
+                    UserID = u.UserId,
+                    Name = u.FirstName + u.LastName,
+                    Location = u.PickupLocation,
+                    ArrivalH = s.First(sch => sch.UserId == u.UserId).Start.Hour,
+                    ArrivalM = s.First(sch => sch.UserId == u.UserId).Start.Minute,
+                    Early = 0,
+                    Preferences = new int[] { prefParser(u.AllowEatDrink), prefParser(u.AllowSmokeVape) }
+                };
+            members.Add(m);
+        }
+
+        // CREATE PREDEFINED GROUPS FOR TESTING
+        // Get latest and earliest times, make them group creators.
+        Member earliest = members.First();
+        Member latest = members.First();
+        foreach (Member m in members)
+        {
+            if (m.ArrivalH * 60 + m.ArrivalM < earliest.ArrivalH * 60 + earliest.ArrivalM)
+            {
+                earliest = m;
+            }
+            if (m.ArrivalH * 60 + m.ArrivalM - m.Early >= latest.ArrivalH * 60 + latest.ArrivalM)
+            {
+                latest = m;
+            }
+        }
+        members.Remove(earliest);
+        members.Remove(latest);
+
+        // Instantiate New Groups
+        Group a = new Group
+            {
+                Name = "Group 1",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 1",
+                Members = new Member[4] { earliest, null, null, null }
+            };
+        Group b = new Group
+            {
+                Name = "Group 3",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 2",
+                Members = new Member[4] { latest, null, null, null }
+            };
+
+        // Greedily adds the least damaging group member
+        while (a.CurrentSize < a.MaxSize || b.CurrentSize < b.MaxSize)
+        {
+            TestAdd(a, members);
+            TestAdd(b, members);
+        }
+        List<Group> output = new List<Group> { a, b };
+        output.Sort((x, y) => GroupScore(x).CompareTo(GroupScore(y)));
+
+        int count = 0;
+        foreach (Group g in output)
+        {
+            List<UsersModel> temp = new List<UsersModel>();
+            for (int i = 0; i < g.Members.Length; i++)
+            {
+                temp.Add(allUsers.First(u => u.UserId == g.Members[i].UserID));
+            }
+
+            RecommendationData.Add(count, temp);
+            count++;
+        }
+
+
+
+        //RecommendationData.Add(0, allUsers.Take(3).ToList());
+        //RecommendationData.Add(1, allUsers.Skip(3).Take(3).ToList());
+        foreach (var key in RecommendationData.Keys)
+        {
+            GroupRecommendations[key] = true;
+        }
+    }
+    private int prefParser(string input)
+    {
+        if (input.Equals("true")) {
+            return 1;
+        }
+        else if (input.Equals("false"))
+        {
+            return 2;
+        }
+        return 0;
+    }
+
+    private void DenyGroup(int groupIndex)
+    {
+        if (GroupRecommendations.ContainsKey(groupIndex))
+        {
+            GroupRecommendations[groupIndex] = false;
+            StateHasChanged(); 
+        }
+    }
+
+    private void ViewUser(string userEmail)
+    {
+        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
+    }
+
+    public Group TestAdd(Group a, List<Member> members)
+    {
+        if (a.CurrentSize == a.MaxSize)
+        {
+            return a;
+        }
+
+        double bestScore = Double.MaxValue;
+        Member bestA = members.First();
+        foreach (Member m in members)
+        {
+            a.Members[a.CurrentSize] = m;
+            double currScore = GroupScore(a);
+            if (currScore < bestScore)
+            {
+                bestA = m;
+                bestScore = currScore;
+            }
+            a.Members[a.CurrentSize] = null;
+        }
+        a.Members[a.CurrentSize] = bestA;
+        members.Remove(bestA);
+        a.CurrentSize++;
+        return a;
+    }
+
+    public double GroupScore(Group g)
+    {
+        //return LocationScore(g) + TimeScore(g) + 3 * PreferenceScore(g);
+        return TimeScore(g) + 3 * PreferenceScore(g);
+    }
+    // Calculates the difference between the earliest necessary arrival and the latest acceptable arrival
+    private double TimeScore(Group g)
+    {
+        int earliestH = g.Members[0].ArrivalH;
+        int earliestM = g.Members[0].ArrivalM;
+        int latestH = g.Members[0].ArrivalH;
+        int latestM = g.Members[0].ArrivalM;
+
+        int i = 1;
+        while (i < g.Members.Length && g.Members[i] != null)
+        {
+            Member m = g.Members[i];
+            if (m.ArrivalH * 60 + m.ArrivalM < earliestH * 60 + earliestM)
+            {
+                earliestH = m.ArrivalH;
+                earliestM = m.ArrivalM;
+            }
+            if (m.ArrivalH * 60 + m.ArrivalM - m.Early > latestH * 60 + latestM)
+            {
+                latestH = (m.ArrivalH * 60 + m.ArrivalM - m.Early) / 60;
+                latestM = (m.ArrivalH * 60 + m.ArrivalM - m.Early) % 60;
+            }
+            i++;
+        }
+        return (latestH - earliestH) * 60 + latestM - earliestM;
+    }
+    private double LocationScore(Group g)
+    {
+        // List of Addresses
+        String[] spots = new String[g.Members.Length + 1];
+        spots[0] = "150 W University Blvd, Melbourne, FL 32901";
+
+        int count = 0;
+        while (count < g.Members.Length && g.Members[count] != null)
+        {
+            spots[count + 1] = g.Members[count].Location;
+            count++;
+        }
+
+        // Sets Distances
+        // Limit API calls as much as possible
+        double[,] distances = new double[spots.Length, spots.Length];
+        bool[] visited = new bool[spots.Length];
+        for (int i = 0; i < visited.Length; i++)
+        {
+            visited[i] = false;
+            distances[i, i] = 0;
+            for (int j = i + 1; j < visited.Length; j++)
+            {
+                double dist = DistanceBtwn(spots[i], spots[j]).GetAwaiter().GetResult();
+                distances[i, j] = dist;
+                distances[j, i] = dist;
+            }
+        }
+
+        visited[0] = true;
+        return TSP(distances, visited, 0, 1, 0, Double.MaxValue);
+    }
+    private double TSP(double[,] distances, bool[] visited, int curr, int depth, double cost, double answer)
+    {
+        // If every location is visited and the current is faster than the current optimal path, return the current path
+        if (depth == visited.Length)
+        {
+            if (answer > cost + distances[curr, 0] && curr != 0)
+            {
+                return cost + distances[curr, 0];
+            }
+            return answer;
+        }
+
+        // Visits every unvisited location
+        for (int i = 0; i < visited.Length; i++)
+        {
+            if (curr != i && visited[i] == false)
+            {
+                visited[i] = true;
+                answer = TSP(distances, visited, i, depth + 1, cost + distances[curr, i], answer);
+                visited[i] = false;
+            }
+        }
+        return answer;
+    }
+    // Counts every preference disagreemetn between members
+    private double PreferenceScore(Group g)
+    {
+        int no_preference = 0;
+        int conflictCount = 0;
+
+        int i = 0;
+        while(i < g.Members.Length && g.Members[i] != null)
+        {
+            int j = i + 1;
+            while (j < g.Members.Length && g.Members[j] != null)
+            {
+                for (int k = 0; k < g.Members[i].Preferences.Length; k++)
+                {
+                    if (g.Members[i].Preferences[k] != g.Members[j].Preferences[k] && g.Members[i].Preferences[k] != no_preference && g.Members[j].Preferences[k] != no_preference)
+                    {
+                        conflictCount++;
+                    }
+                }
+                j++;
+            }
+            i++;
+        }
+        return conflictCount;
+    }
+    // Placeholder for Google Maps API integ. Input parameters are addresses in text form. Outputs distance in Time.
+    private async Task<double> DistanceBtwn(string loc1, string loc2)
+    {
+        HttpClient client = new HttpClient();
+        string mapUrl = $"https://maps.googleapis.com/maps/api/distancematrix/json?key={MapApi}&origin={loc1}&destination={loc2}&mode=driving";
+        // Problem with GOOGLE MAPS API
+        HttpResponseMessage resp = await client.GetAsync(mapUrl);
+        String reply = await resp.Content.ReadAsStringAsync();
+        request rq = JsonSerializer.Deserialize<request>(reply);
+
+        if (rq.rows[0].elements[0].status != "NOT_FOUND" && rq.rows[0].elements[0].status != "ZERO_RESULTS")
+        {
+            return rq.rows[0].elements[0].duration.value / 60;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public class Group
@@ -56,20 +394,52 @@
         public int MaxSize { get; set; }
         public int CurrentSize { get; set; }
         public string? Description { get; set; }
+        public Member[] Members { get; set; }
     }
-
-
-    // Code for Testing actual user table
-    private List<UsersModel> UserList = new();
-
-    protected override async Task OnInitializedAsync()
+    public class Member
     {
-        UserList = await _dbUsers.GetAllUser();
-        UserList = UserList.Take(4).ToList();
+        public int UserID { get; set; }
+        public string? Name { get; set; }
+        public string? Location { get; set; }
+        public int[] Preferences { get; set; }
+        public int ArrivalH { get; set; }
+        public int ArrivalM { get; set; }
+        public int Early { get; set; }
     }
 
-    private void ViewUser(string userEmail)
+    public class request
     {
-        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
+
+        public class distance
+        {
+            public string text { get; set; }
+            public int value { get; set; }
+        }
+
+        public class duration
+        {
+            public string text { get; set; }
+            public int value { get; set; }
+        }
+
+        public class element
+        {
+            public distance distance { get; set; }
+            public duration duration { get; set; }
+            public string status { get; set; }
+
+        }
+        public class row
+        {
+            public element[] elements { get; set; }
+        }
+
+
+        public string[] destination_addresses { get; set; }
+        public string[] origin_addresses { get; set; }
+        public row[] rows { get; set; }
+        public string status { get; set; }
+
     }
+}
 }
