@@ -66,7 +66,7 @@
                 </RadzenStack>
                 <MudCardContent>
                     <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
-                                     Center="new GoogleMapPosition() { Lat = DriverLocation.Latitude, Lng = DriverLocation.Longitude }" Zoom="12">
+                                         Center="new GoogleMapPosition() { Lat = DriverLocation.Latitude, Lng = DriverLocation.Longitude }" Zoom="zoom">
                         <Markers>
                             <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @DriverLocation.Latitude, Lng = @DriverLocation.Longitude }) />
                         </Markers>
@@ -113,7 +113,7 @@
 @code {
     private bool driverLocationCollapsable = true;
     private bool driverInfoCollapsable = true;
-
+    private int zoom = 16;
     private string? MapApi = null;
     private bool IsLocationAvailable = false;
     private Location userLocation = new Location();
