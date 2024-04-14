@@ -8,16 +8,6 @@
 @page "/Other-User-Details/{UserName}"
 
 
-<div class="col-auto p-2 justify-content-end bd-highlight">
-    <RadzenSelectBar class="bg-white rounded-pill my-auto" TValue="int" Size="ButtonSize.Small" @bind-Value="@role">
-        <Items>
-            <RadzenSelectBarItem Value="1" Text="Driver  " />
-            <RadzenSelectBarItem Value="2" Text="Rider " />
-        </Items>
-    </RadzenSelectBar>
-</div>
-
-
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenRow RowGap="0">
@@ -63,44 +53,24 @@
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
 
-        @if(role == 1)
-        {
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Role</RadzenText>
-            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Driver/Rider</RadzenText>
-        }
-        else if(role == 2)
-        {
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Role</RadzenText>
-            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">Rider Only</RadzenText>
-        }
+        
 
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Bio</RadzenText>
         <RadzenTextArea class="w-60" aria-label="TextArea" />
         
-        <RadzenStack>
-            <MudText Typo="Typo.h6" Align="Align.Center">Rider/Driver Statistics</MudText>
-        </RadzenStack>
-        <MudDataGrid Items="stats" Bordered="true" T="Statistics">
-            <Columns>
-                <PropertyColumn Property="x => x.title" Title="Description" />
-                <PropertyColumn Property="x => x.miles" Title="Miles" />
-            </Columns>
-        </MudDataGrid>
-            
+
+
+
+
+        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
+
 
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
         <RadzenRating @bind-Value=@value ReadOnly=true />
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Wrap="FlexWrap.Wrap" ChildrenAlign="ChildrenAlign.Start">
-            <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
-            <RadzenCheckBox @bind-Value=@show Name="Show" />
-        </RadzenStack>
-
-        @if (show == true)
-        {
-            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
-            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
-            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
-        }
 
     </RadzenCard>
 </RadzenStack>
