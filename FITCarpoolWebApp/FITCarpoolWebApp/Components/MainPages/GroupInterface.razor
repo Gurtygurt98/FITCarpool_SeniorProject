@@ -12,13 +12,13 @@
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
-        <RadzenHeading Size="H2" Text="Group Interface" Style="text-align: center; margin-bottom: 20px;" />
+        <RadzenHeading Size="H2" Text="Group Recommendations" Style="text-align: center; margin-bottom: 20px;" />
 
         @foreach (var group in GroupRecommendations.Keys)
         {
             if (GroupRecommendations[group])
             {
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; margin-top: 20px;">
                     <RadzenHeading Size="H2" Text=@($"Group Recommendation {group + 1}") />
                     <div>
                         <RadzenButton Text="Join Group" Style="margin-right: 10px;" Shade="Shade.Light" ButtonStyle="ButtonStyle.Success" />
@@ -28,7 +28,7 @@
                 <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
                     <Columns>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Width="60px">
+                        <RadzenDataGridColumn TItem="UsersModel" Width="80px">
                             <Template Context="user">
                                 @if (user.ProfilePicture != null)
                                 {

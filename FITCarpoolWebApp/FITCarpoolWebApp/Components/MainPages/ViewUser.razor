@@ -1,11 +1,17 @@
 ﻿@inject NavigationManager NavigationManager
 @inject IUsersData _dbUsers
+@inject NotificationService NotificationService
+
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
 
 
 @page "/Other-User-Details/{UserName}"
+
+        <RadzenColumn>
+            <RadzenButton Click=@(args => OnClick("Friend Request Sent")) Text="Send Friend Request" ButtonStyle="ButtonStyle.Primary" />
+        </RadzenColumn>
 
 
 <RadzenStack>
@@ -83,7 +89,10 @@
 
     public int role { get; private set; }
 
-    
+    private void OnClick(string message)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message });
+    }
     
     private void NavigateTo(string page)
     {
