@@ -21,19 +21,19 @@
         @if (InputModelPref != null && !_loading)
         {
             <RadzenStack>
-                <MudText Typo="Typo.h2" Align="Align.Center">Safety Preferences</MudText>
+                <MudText Typo="Typo.h3" Align="Align.Left">Safety Preferences</MudText>
 
                 <RadzenLabel Text="Select Rider Gender Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
                 <RadzenDropDown @bind-Value=@InputModelPref.GenderPreference Data=@genderValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
-                <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Cleanliness Preferences</MudText>
+                <MudText Typo="Typo.h3" Align="Align.Left" Style="padding-top: 15px;">Cleanliness Preferences</MudText>
 
                 <RadzenLabel Text="Select Car Eating Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
                 <RadzenDropDown @bind-Value=@InputModelPref.EatingPreference Data=@carEatingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
                 <RadzenLabel Text="Select Car Smoking Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
                 <RadzenDropDown @bind-Value=@InputModelPref.SmokingPreference Data=@carSmokingValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
 
-                <MudText Typo="Typo.h2" Align="Align.Center" Style="padding-top: 15px;">Comfort Preferences</MudText>
+                <MudText Typo="Typo.h3" Align="Align.Left" Style="padding-top: 15px;">Comfort Preferences</MudText>
                 <RadzenLabel Text="Music Preferences" Component="MusicCheck" Style="margin-right: 8px; vertical-align: middle;" />
                 <MudStack Row="true">
                     <RadzenCheckBox Name="MusicCheck" TValue="bool" Change=@(args => _noMusicPreference = args) Value=_noMusicPreference></RadzenCheckBox>
@@ -50,7 +50,9 @@
                 }
                 <RadzenLabel Text="Select Car Temperature Preference" Component="DropDownBindValue" Style="margin-right: 8px; vertical-align: middle;" />
                 <RadzenDropDown @bind-Value=@InputModelPref.TemperaturePreference Data=@carTempValues Style="width: 100%; max-width: 400px;" Name="DropDownBindValue" />
-                <RadzenButton IsBusy=@_busyUpdate Click=@(args => UpdateUserData()) Text="Update Profile Data" ButtonStyle="ButtonStyle.Primary" Style="width:100%;" />
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; margin-top: 20px;">
+                    <RadzenButton IsBusy=@_busyUpdate Click=@(args => UpdateUserData()) Text="Update Profile Data" ButtonStyle="ButtonStyle.Primary" Style="margin-right: 10px;" />
+                </div>
 
             </RadzenStack>
         } else if(_loading)
