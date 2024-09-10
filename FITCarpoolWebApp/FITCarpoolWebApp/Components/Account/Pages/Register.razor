@@ -95,6 +95,7 @@
     string PickupLocation = "";
     string DropLocation = "";
     int DrivingDistance = 30;
+    int Rating;
 
     private IEnumerable<IdentityError>? identityErrors;
 
@@ -134,7 +135,8 @@
             Input.UserLocation,
             Input.PickupLocation,
             Input.DropLocation,
-            Input.DrivingDistance);
+            Input.DrivingDistance,
+            Input.Rating);
         await _dbUsers.AddUser(createdUser);
         // Procceed with normal user creation using .net authentication 
         var userId = await UserManager.GetUserIdAsync(user);
@@ -226,6 +228,8 @@
         [Range(0, int.MaxValue, ErrorMessage = "Driving Distance must be a positive number.")]
         [Display(Name = "Driving Distance (miles)")]
         public int DrivingDistance { get; set; } = 30;
+
+        public int Rating { get; set; }
     }
     public class EmailDomainAttribute : ValidationAttribute
     {

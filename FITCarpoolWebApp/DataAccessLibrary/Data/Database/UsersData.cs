@@ -43,7 +43,7 @@ namespace DataAccessLibrary.Data.Database
                                DropoffLocation = @DropoffLocation, DrivingDistance = @DrivingDistance, PhonePrivacy = @PhonePrivacy, 
                                Gender = @Gender, AddressPrivacy = @AddressPrivacy, 
                                BeltCount = @BeltCount, MakeModel = @MakeModel, VehicleColor = @VehicleColor, 
-                               LicensePlate = @LicensePlate, AllowEatDrink = @AllowEatDrink, AllowSmokeVape = @AllowSmokeVape
+                               LicensePlate = @LicensePlate, AllowEatDrink = @AllowEatDrink, AllowSmokeVape = @AllowSmokeVape, Rating = @Rating
                            WHERE UserId = @UserId";
             await _db.SaveData(sql, user);
         }
@@ -68,11 +68,11 @@ namespace DataAccessLibrary.Data.Database
             string sql = @"INSERT INTO Users (Email, FirstName, LastName, Phone, UserType, UserLocation, 
                                                PickupLocation, DropoffLocation, DrivingDistance, PhonePrivacy, Gender, 
                                                ProfilePicture, AddressPrivacy, BeltCount, MakeModel, VehicleColor, 
-                                               LicensePlate, LicensePicture, CarPicture, AllowEatDrink, AllowSmokeVape) 
+                                               LicensePlate, LicensePicture, CarPicture, AllowEatDrink, AllowSmokeVape, Rating) 
                            VALUES (@Email, @FirstName, @LastName, @Phone, @UserType, @UserLocation, 
                                    @PickupLocation, @DropoffLocation, @DrivingDistance, @PhonePrivacy, @Gender, 
                                    @ProfilePicture, @AddressPrivacy, @BeltCount, @MakeModel, @VehicleColor, 
-                                   @LicensePlate, @LicensePicture, @CarPicture, @AllowEatDrink, @AllowSmokeVape)";
+                                   @LicensePlate, @LicensePicture, @CarPicture, @AllowEatDrink, @AllowSmokeVape, @Rating)";
             await _db.SaveData(sql, user);
         }
         public async Task UpdateUserProfilePicture(int userId, byte[] profilePicture)
