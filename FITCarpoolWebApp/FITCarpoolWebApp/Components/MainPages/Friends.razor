@@ -16,6 +16,8 @@
 @inject HttpClient httpClient
 @inject IRolesData _dbRoles
 @inject IDialogService DialogService
+@inject IUsersData _dbUsers
+
 
 @attribute [Authorize]
 
@@ -33,26 +35,47 @@
         </RadzenStack>
 
 
-        @foreach (var row in friends)
+        @foreach (var group in GroupRecommendations.Keys)
         {
-            <RadzenRow>
-                <RadzenColumn>
-                    @row.Name
-                </RadzenColumn>
-                <RadzenColumn>
-                    @row.Status
-                </RadzenColumn>
-                <RadzenColumn>
-                    <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
-                </RadzenColumn>
-                <RadzenColumn>
-                    <RadzenButton Click=@(args => RemoveFriend(row, "Friend Removed")) Text="Remove Friend" ButtonStyle="ButtonStyle.Danger" />
-                </RadzenColumn>
-            </RadzenRow>
+            if (GroupRecommendations[group])
+            {
+                <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
+                    <Columns>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Width="80px">
+                            <Template Context="user">
+                                @if (user.ProfilePicture != null)
+                                {
+                                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="200px">
+                            <Template Context="user">
+                                @{
+                                    var fullName = $"{user.FirstName} {user.LastName}";
+                                }
+                                <text>@fullName</text>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        
+                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
+                            <Template>
+                                <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            }
         }
     </RadzenCard>
 </RadzenStack>
-<RadzenStack>
+@*<RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
             <MudText Typo="Typo.h2" Align="Align.Center">Incoming Friend Requests</MudText>
@@ -76,7 +99,7 @@
         }
     </RadzenCard>
 </RadzenStack>
-
+*@
 @code {
 
     private void OnClick(string message)
@@ -88,7 +111,7 @@
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
 
-    private void RemoveFriend(Friend f, string message)
+    /*private void RemoveFriend(Friend f, string message)
     {
         friends.Remove(f);
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
@@ -101,28 +124,10 @@
     private void DeclineFriendRequest(Friend f)
     {
         requests.Remove(f);
-    }
+    }*/
 
-    private List<Friend> friends;
-    private List<Friend> requests;
-
-    protected override void OnInitialized()
-    {
-        friends = new List<Friend>
-        {
-            new Friend { Name = "Friend 1", Status = "Recently Online"},
-            new Friend { Name = "Friend 2", Status = "Recently Online"},
-            new Friend { Name = "Friend 3", Status = "Offline"},
-            new Friend { Name = "Friend 4", Status = "Recently Online"},
-            new Friend { Name = "Friend 5", Status = "Offline"}
-        };
-        requests = new List<Friend>
-        {
-            new Friend { Name = "Friend 6", Status = "Recently Online"},
-            new Friend { Name = "Friend 7", Status = "Recently Online"},
-            new Friend { Name = "Friend 8", Status = "Offline"},
-        };
-    }
+    private Dictionary<int, bool> GroupRecommendations = new();
+    private Dictionary<int, List<UsersModel>> RecommendationData = new();
 
     public class Friend
     {
@@ -135,9 +140,23 @@
     private string _searchString = "";
     private List<AccountModel> AccountList = new();
 
+    private void ViewUser(string userEmail)
+    {
+        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        AccountList = await _dbRoles.GetAccounts(); 
+        AccountList = await _dbRoles.GetAccounts();
+
+        var allUsers = await _dbUsers.GetAllUser();
+        RecommendationData.Add(0, allUsers.Take(3).ToList());
+        RecommendationData.Add(1, allUsers.Skip(3).Take(3).ToList());
+
+        foreach (var key in RecommendationData.Keys)
+        {
+            GroupRecommendations[key] = true;
+        }
     }
 
     private async Task<IEnumerable<string>> SearchUser(string value)
