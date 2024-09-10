@@ -1,4 +1,5 @@
-﻿using DataAccessLibrary.Model;
+﻿using DataAccessLibrary.Data.API;
+using DataAccessLibrary.Model;
 using DataAccessLibrary.Model.Database_Models;
 using System;
 using System.Collections.Generic;
@@ -11,10 +12,16 @@ namespace DataAccessLibrary.Data.Database
     public class UsersData : IUsersData
     {
         private readonly ISQLDataAccess _db;
+        private readonly IGMapsAPI _googleAPI;
+        private readonly ILocationData _dbLocation;
 
-        public UsersData(ISQLDataAccess db)
+
+
+        public UsersData(ISQLDataAccess db, IGMapsAPI gMapsAPI, ILocationData locationData)
         {
             _db = db;
+            _googleAPI = gMapsAPI;
+            _dbLocation = locationData;
         }
 
         public async Task<List<UsersModel>> GetAllUser()
@@ -45,7 +52,13 @@ namespace DataAccessLibrary.Data.Database
                                BeltCount = @BeltCount, MakeModel = @MakeModel, VehicleColor = @VehicleColor, 
                                LicensePlate = @LicensePlate, AllowEatDrink = @AllowEatDrink, AllowSmokeVape = @AllowSmokeVape, Rating = @Rating
                            WHERE UserId = @UserId";
+            (double latitude, double longitude) = await _googleAPI.GetCoordinatesAsync(user.PickupLocation);
+            (double dropLat, double dropLon) = await _googleAPI.GetCoordinatesAsync(user.DropoffLocation);
+            await _dbLocation.UpdatePickupLocation(user.UserId, longitude, latitude);
+            await _dbLocation.UpdateDropoffLocation(user.UserId, dropLon, dropLat);
+
             await _db.SaveData(sql, user);
+
         }
 
         public async Task DeleteUser(int id)

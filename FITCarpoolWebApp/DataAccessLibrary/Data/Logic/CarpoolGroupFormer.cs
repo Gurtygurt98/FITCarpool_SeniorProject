@@ -40,12 +40,14 @@ namespace DataAccessLibrary.Data.Logic
         // Main method to get and form the carpool groups based on the criteria
         public async Task<List<List<UserInfoModel>>> GetGroups(int GoalUserID, bool IsArriving, bool IsDeparting, List<string> Days)
         {
+            List<List<UserInfoModel>> finalGroups = new List<List<UserInfoModel>>();
+
             // Retrieve users matching the goal user's schedule
             List<UserInfoModel> remainingUsers = await _dbSchedule.GetMatchingSchedules(GoalUserID, IsArriving, IsDeparting, Days);
             if (!remainingUsers.Any())
             {
                 Console.WriteLine("No groups found - no matching schedules");
-                return null;
+                return finalGroups;
             }
 
             // Retrieve the goal user
@@ -53,8 +55,6 @@ namespace DataAccessLibrary.Data.Logic
 
             int MAX_GROUP_SIZE = 4; // need to find a way to calculate this 
 
-            // List to store the final groups of users
-            List<List<UserInfoModel>> finalGroups = new List<List<UserInfoModel>>();
 
             // Cluster the users based on proximity to the goal user
             while (remainingUsers.Any())

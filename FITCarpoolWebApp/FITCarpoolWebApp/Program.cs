@@ -46,12 +46,15 @@ builder.Services.AddTransient<ISchedulesData, SchedulesData>();
 builder.Services.AddTransient<IRolesData, RolesData>();
 builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
 builder.Services.AddTransient<IUsersData, UsersData>();
+builder.Services.AddTransient<ILocationData, LocationData>();
 
 // Geolocation Services
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<LocationService>();
 // services to allow database connection 
 builder.Services.AddTransient<ISQLDataAccess, SQLDataAccess>();
+// Services to allow groups to former 
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;
