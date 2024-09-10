@@ -83,7 +83,6 @@
 
 
 @code {
-    int value = 3;
 
     bool show;
 
@@ -93,7 +92,7 @@
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message });
     }
-    
+
     private void NavigateTo(string page)
     {
         NavigationManager.NavigateTo($"/{page}");
@@ -125,11 +124,25 @@
 
     // Code for displaying other users' profile
     [Parameter]
-    public string UserName { get; set; } 
+    public string UserName { get; set; }
 
     private UsersModel selectedUser;
     private string selectedUserName => selectedUser?.FirstName + " " + selectedUser?.LastName ?? "No user selected";
     private List<UsersModel> UserList = new();
+
+    private int noValue;
+    public int value
+    {
+        get => selectedUser?.Rating ?? noValue;
+        set
+        {
+            if (selectedUser != null)
+            {
+                selectedUser.Rating = value;
+            }
+            noValue = value;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
