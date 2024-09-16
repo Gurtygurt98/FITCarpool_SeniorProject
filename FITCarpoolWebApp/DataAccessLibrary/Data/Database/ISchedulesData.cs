@@ -10,7 +10,7 @@ namespace DataAccessLibrary.Data.Database
         Task UpdateSchedule(SchedulesModel schedule);
         Task AddSchedule(SchedulesModel schedule);
         Task<List<UserInfoModel>> GetMatchingSchedules(int GoalUserID, bool IsArriving, bool IsDeparting, List<string> Days);
-        Task<UserInfoModel> GetGoalUser(int GoalUserID);
+        Task<UserInfoModel> GetUserInfoModel(int GoalUserID);
 
     }
 }

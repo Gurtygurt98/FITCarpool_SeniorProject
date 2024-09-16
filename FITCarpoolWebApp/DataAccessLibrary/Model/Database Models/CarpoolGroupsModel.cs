@@ -14,14 +14,19 @@ namespace DataAccessLibrary.Model
         public string Destination { get; set; }
         public string DriverName {  get; set; }
         public List<RiderModel> Riders { get; set; }
+        public int CreatorID { get; set; }
+        public double DestinationLatitude { get; set; }
+        public double DestinationLongitude { get; set; }
+
         public CarpoolGroupsModel() { }
 
-        public CarpoolGroupsModel(int groupId, string groupName, int driverId, string destination)
+        public CarpoolGroupsModel(int groupId, string groupName, int driverId, string destination, int CreatorId)
         {
             GroupId = groupId;
             GroupName = groupName;
             DriverId = driverId;
             Destination = destination;
+            CreatorID = CreatorId;
         }
         public string ListRiderNames()
         {

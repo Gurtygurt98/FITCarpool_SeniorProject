@@ -12,7 +12,7 @@ namespace DataAccessLibrary.Data.Database
         private readonly ISQLDataAccess _db;
 
         public CarpoolGroupsData(ISQLDataAccess db)
-        {
+            {
             _db = db;
         }
 

@@ -168,8 +168,8 @@
         {
             GetDriverLocation();
             // Current driver location object, send this along with updated location to the database for riders to grab
-            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
-            DriverProfile = (await _dbUsers.GetUser(DriverLocation.UserId)).FirstOrDefault();
+            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
+            DriverProfile = (await _dbUsers.GetUser(DriverLocation.UserID)).FirstOrDefault();
             OnRefreshRateChanged(30);
 
         }

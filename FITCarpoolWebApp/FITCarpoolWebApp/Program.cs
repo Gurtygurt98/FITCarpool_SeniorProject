@@ -12,6 +12,7 @@ using AspNetMonsters.Blazor.Geolocation;
 using DataAccessLibrary;
 using Serilog;
 using DataAccessLibrary.Data.Database;
+using DataAccessLibrary.Data.Logic;
 
 
 
@@ -47,7 +48,6 @@ builder.Services.AddTransient<IRolesData, RolesData>();
 builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
 builder.Services.AddTransient<IUsersData, UsersData>();
 builder.Services.AddTransient<ILocationData, LocationData>();
-
 // Geolocation Services
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<LocationService>();
