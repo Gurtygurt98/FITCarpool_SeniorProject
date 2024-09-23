@@ -6,6 +6,7 @@
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
+@inject NotificationService NotificationService
 @inject IUsersData _dbUsers
 @attribute [Authorize]
 
@@ -46,7 +47,8 @@
 
                         <RadzenDataGridColumn TItem="UsersModel" Title="Rating" Width="200px">
                             <Template Context="user">
-                                <RadzenRating @bind-Value="@user.Rating" Max="5" />
+
+                                <RadzenRating @bind-Value="@user.Rating" Max="5" Change="@(args => UpdateRatings(args, user))" />
                             </Template>
                         </RadzenDataGridColumn>
 
@@ -77,7 +79,36 @@
         }
     }
 
-    private int ratingValue;
+    // Store rating for each user when they select stars
+    private void OnRatingChanged(int rating, UsersModel user)
+    {
+        // Store the selected rating in user.Rating
+        user.Rating = rating;
+
+        // Optional: You can add code here to handle any other operations when the rating changes
+        // For example, preparing the value to be sent to the database, etc.
+        //await _dbUsers.UpdateRating(user, rating);
+    }
+
+    bool _busyUpdate = false;
+    UsersModel InputModel = new();
+    async Task UpdateRatings(int rating, UsersModel user)
+    {       
+        _busyUpdate = true;
+        
+        try
+        {
+            await _dbUsers.UpdateUser(user);
+        }
+
+        finally
+        {
+            NavigationManager.NavigateTo("/After-Trip", forceLoad: true);
+        }
+
+    }
+
+
 
     private void ViewUser(string userEmail)
     {
