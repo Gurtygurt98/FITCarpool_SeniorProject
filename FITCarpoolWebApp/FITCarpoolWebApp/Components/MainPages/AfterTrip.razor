@@ -51,12 +51,19 @@
                                 <RadzenRating @bind-Value="@user.Rating" Max="5" Change="@(args => UpdateRatings(args, user))" />
                             </Template>
                         </RadzenDataGridColumn>
-
+                
                         <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
                             <Template>
                                 <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
                             </Template>
                         </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
+                            <Template>
+                                <RadzenButton Text="Report" Click="@(() => ReportUser(user.Email))" Style="width: 100%; background-color: tomato; color: white;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+
                     </Columns>
                 </RadzenDataGrid>
             }
@@ -79,16 +86,6 @@
         }
     }
 
-    // Store rating for each user when they select stars
-    private void OnRatingChanged(int rating, UsersModel user)
-    {
-        // Store the selected rating in user.Rating
-        user.Rating = rating;
-
-        // Optional: You can add code here to handle any other operations when the rating changes
-        // For example, preparing the value to be sent to the database, etc.
-        //await _dbUsers.UpdateRating(user, rating);
-    }
 
     bool _busyUpdate = false;
     UsersModel InputModel = new();
@@ -108,7 +105,10 @@
 
     }
 
-
+    private void ReportUser(string userEmail)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "User Reported" });
+    }
 
     private void ViewUser(string userEmail)
     {
