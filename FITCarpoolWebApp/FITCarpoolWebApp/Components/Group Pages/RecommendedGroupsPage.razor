@@ -32,7 +32,7 @@
                         {
                             <MudListItem>
                                 <MudListItemContent>
-                                    <MudText>@group.GroupName</MudText>
+                                    <MudText>@group.Item2</MudText>
                                 </MudListItemContent>
                                 <MudListItemIcon>
                                     <MudIconButton OnClick="@(async () => await LeaveGroup(group))" Color="Color.Error" Icon="@Icons.Material.Filled.ExitToApp" />
@@ -95,7 +95,7 @@
 @code {
     UsersModel CurrentUser = null;
     List<RecomendedGroup> RecommendedGroupsList = new();
-    List<RecomendedGroup> MyGroups = new();
+    List<(int,string,int,int)> MyGroups = new();
     string SelectedSortOption = "DistanceScore";
     List<string> DaysOfTheWeek = new() { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
@@ -111,7 +111,7 @@
             CurrentUser = UserList.First();
         }
 
-        // MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
+        MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
         RecommendedGroupsList = await _dbSchedules.GetMatchingSchedules(CurrentUser.UserId, DaysOfTheWeek);
         SortRecommendedGroups();
     }
@@ -136,15 +136,21 @@
 
     private async Task AddGroup(RecomendedGroup group)
     {
-        // TODO: Implement logic to add the user to the group in the database
+        await _dbSchedules.JoinGroup(CurrentUser.UserId, group.GroupID);
         NotificationService.Notify(NotificationSeverity.Success, "Group Added", $"You have been added to group {group.GroupName}");
+        MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
     }
 
-    private async Task LeaveGroup(RecomendedGroup group)
+    private async Task LeaveGroup((int, string, int,int) group)
     {
-        // TODO: Implement logic to remove the user from the group in the database
+        if(group.Item4 == group.Item3)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Failed Operation", $"You can't leave group {group.Item2}");
+            return;
+        }
         MyGroups.Remove(group);
-        NotificationService.Notify(NotificationSeverity.Success, "Group Left", $"You have left group {group.GroupName}");
+        await _dbSchedules.RemoveGroupMember(CurrentUser.UserId, group.Item1);
+        NotificationService.Notify(NotificationSeverity.Success, "Group Left", $"You have left group {group.Item2}");
     }
 
     private void ShowGroupDetails(RecomendedGroup group)

@@ -11,6 +11,8 @@ namespace DataAccessLibrary.Data.Database
         Task AddSchedule(SchedulesModel schedule);
         Task<List<RecomendedGroup>> GetMatchingSchedules(int GoalUserID, List<string> Days);
         Task<UserInfoModel> GetUserInfoModel(int GoalUserID);
-
+        Task JoinGroup(int GoalUserID, int GoalGroupID);
+        Task RemoveGroupMember(int GoalUserID, int GoalGroupID);
+        Task<List<(int, string, int, int)>> GetCurrentGroups(int GoalUserID);
     }
 }

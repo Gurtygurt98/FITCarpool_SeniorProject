@@ -26,12 +26,16 @@ namespace DataAccessLibrary.Model.Logic_Models
             Direction = direction;
 
             DistanceScore = CalculateDistanceScore();
+            Console.WriteLine("DistanceScore " + GroupName);
+
             PreferenceScore = CalculateTotalMatchScore();
+            Console.WriteLine("PreferenceScore " + PreferenceScore);
+
         }
 
         private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
-            const double R = 6371e3;
+            double R = 6371e3;
             double lat1Rad = lat1 * Math.PI / 180;
             double lat2Rad = lat2 * Math.PI / 180;
             double deltaLat = (lat2 - lat1) * Math.PI / 180;

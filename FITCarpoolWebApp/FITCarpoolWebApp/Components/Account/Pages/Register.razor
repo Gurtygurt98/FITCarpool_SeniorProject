@@ -27,6 +27,7 @@
 @inject IUsersData _dbUsers;
 @inject IPreferencesData _dbPreferences
 @inject ITripStatisticsData _dbTripStat
+@inject IPreferencesData _dbPrefs
 
 
 
@@ -146,6 +147,8 @@
         double dropLon = -80.623032;
         UsersModel currUser = (await _dbUsers.GetUser(createdUser.Email)).FirstOrDefault();
         await _dbLocation.AddPickupandDropOff(currUser.UserId, longitude, latitude, dropLon, dropLat);
+        PreferencesModel InputModelPref = new PreferencesModel(currUser.UserId);
+        await _dbPrefs.AddUser(InputModelPref.UserId);
         // Procceed with normal user creation using .net authentication 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);

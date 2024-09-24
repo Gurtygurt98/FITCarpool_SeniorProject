@@ -55,9 +55,10 @@ namespace DataAccessLibrary.Data.Database
                         AND s1.Text = s2.Direction
                         AND (s1.Start <= s2.End AND s1.End >= s2.Start)
                     JOIN Users u on s1.UserID = u.UserID
+                    LEFT JOIN GroupMembers GM on GM.GroupID = s2.GroupID AND GM.UserID = s1.UserID
                     JOIN CarpoolGroups CG on s2.GroupID = CG.GroupID
                     WHERE s1.UserID = @UserId
-                    AND s1.Day IN @Days;";
+                    AND s1.Day IN @Days AND GM.UserID IS NULL;";
 
             List<(int,string, string)> MatchingScheduleGroupIDs = await _db.LoadData<(int,string,string), dynamic>(sql, new { UserId = GoalUserID, Days });
 
@@ -78,6 +79,8 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task<UserInfoModel> GetUserInfoModel(int GoalUserID)
         {
+            Console.WriteLine("Checking for " + GoalUserID);
+
             string sql = $@"SELECT 
                 u.UserID, 
                            u.FirstName, 
@@ -115,7 +118,7 @@ namespace DataAccessLibrary.Data.Database
             List<UserInfoModel> FoundUsers = await _db.LoadData<UserInfoModel, dynamic>(sql, new { UserId = GoalUserID });
             if (!FoundUsers.Any())
             {
-                Console.WriteLine("Goal user not found");
+                Console.WriteLine("Goal user not found " + GoalUserID);
                 return new UserInfoModel();
 
             }
@@ -129,16 +132,16 @@ namespace DataAccessLibrary.Data.Database
 
         }
         // Get the current groups a user is apart of 
-        public async Task<List<(int,string)>> GetCurrentGroups(int GoalUserID)
+        public async Task<List<(int,string,int,int)>> GetCurrentGroups(int GoalUserID)
         {
             // Query to get all the matching groups 
             string sql = $@"
-                    SELECT GM.GroupID, CG.GroupName
+                    SELECT GM.GroupID, CG.GroupName, CG.CreatorID,GM.UserID
                     FROM GroupMembers GM
                     JOIN CarpoolGroups CG on GM.GroupID = CG.GroupID
                     WHERE GM.UserID = @UserId;";
 
-            return await _db.LoadData<(int, string), dynamic>(sql, new { UserId = GoalUserID });
+            return await _db.LoadData<(int, string,int,int), dynamic>(sql, new { UserId = GoalUserID });
             
         }
         public async Task JoinGroup(int GoalUserID, int GoalGroupID)
@@ -149,6 +152,15 @@ namespace DataAccessLibrary.Data.Database
 
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
+        public async Task RemoveGroupMember(int GoalUserID, int GoalGroupID)
+        {
+            string sql = @"
+                DELETE FROM GroupMembers
+                WHERE UserID = @UserId AND GroupID = @GroupId;";
+
+            await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
+        }
+
 
     }
 }
