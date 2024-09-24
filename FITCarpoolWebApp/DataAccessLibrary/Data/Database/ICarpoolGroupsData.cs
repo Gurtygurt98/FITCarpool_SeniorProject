@@ -12,5 +12,7 @@ namespace DataAccessLibrary.Data.Database
         Task<List<CarpoolGroupsModel>> GetDriverGroups(int driverId);
         Task<List<RiderModel>> GetRiders(int groupId, int driverID);
         Task<List<CarpoolGroupsModel>> GetRiderGroups(int userID);
+        Task CreateNewGroup(CarpoolGroupsModel carpoolGroup);
+        Task<int> GetGroupNumber(string GroupName, int CreatorID);
     }
 }

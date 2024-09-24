@@ -3,14 +3,6 @@
 @inject Radzen.NotificationService NotificationService
 <RadzenTemplateForm TItem="SchedulesModel" Data="@model" Submit=@OnSubmit>
     <MudGrid>
-        <MudItem xs = "12">
-            <MudStack>
-
-            </MudStack>
-            <RadzenLabel>Is this an arrival or departure time to/from campus</RadzenLabel>
-            <RadzenDropDown @bind-Value="@model.Text" Name="ArrivalDepartureSelect" Data="@ArrivalDepartureOptions" Style="width:100%;" />
-            <RadzenRequiredValidator Text="Selection is required" Component="ArrivalDepartureSelect" />
-        </MudItem>
         @if (!model.Text.Equals(""))
         {
             <MudItem xs="12">
@@ -53,7 +45,6 @@
 
 </RadzenTemplateForm>
 @code {
-    List<string> ArrivalDepartureOptions = new List<string>() { "arrival", "departure" };
 
     [Parameter]
     public DateTime Start { get; set; }
@@ -64,6 +55,8 @@
     public int UserID { get; set; }
     [Parameter]
     public EventCallback<SchedulesModel> OnAddSchedule { get; set; }
+    [Parameter]
+    public string Direction{ get; set; }
 
 
     SchedulesModel model = new SchedulesModel();
@@ -95,6 +88,7 @@
         model.End = End;
         model.UserId = UserID;
         model.Text = "";
+        model.Text = Direction;
     }
 
     void OnSubmit()

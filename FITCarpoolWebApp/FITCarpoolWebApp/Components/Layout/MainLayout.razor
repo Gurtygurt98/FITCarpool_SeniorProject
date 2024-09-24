@@ -4,37 +4,49 @@
 @inject TooltipService tooltipService
 @using Microsoft.AspNetCore.Components.Authorization
 @using Radzen.Blazor
-<RadzenDialog />
-<RadzenNotification />
+
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
-<RadzenLayout>
-    <RadzenHeader>
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-            <RadzenLabel Text="FIT Carpool Group Finder" />
-            <MudSpacer></MudSpacer>
-            <AuthorizeView Roles="Admin">
-                <Authorized>
-                    <MudIconButton Href="/Admin" Icon="@Icons.Material.Filled.AdminPanelSettings"></MudIconButton>
-                </Authorized>
-            </AuthorizeView>
-        </RadzenStack>
-    </RadzenHeader>
-    <RadzenSidebar Responsive="false" Style="width: max-content; position: absolute">
-        <RadzenPanelMenu DisplayStyle="@(sidebarExpanded ? MenuItemDisplayStyle.IconAndText : MenuItemDisplayStyle.Icon)" ShowArrow="false" >
-            @*Need two because of overlap issues*@
-            <RadzenPanelMenuItem Text="Home" Path="/" Icon="home" />
-            <RadzenPanelMenuItem Text="Home" Path="/" Icon="home" />
+
+<RadzenDialog />
+<RadzenNotification />
+
+<MudLayout>
+    <MudAppBar Color="Color.Primary" Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6">FIT Carpool Group Finder</MudText>
+        <MudSpacer />
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <MudIconButton Href="/Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Inherit"></MudIconButton>
+            </Authorized>
+        </AuthorizeView>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Never" Elevation="1" Variant="DrawerVariant.Responsive" Anchor="Anchor.Start">
+        <MudNavMenu>
+            <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             <AuthorizeView>
                 <Authorized>
+                    <MudNavLink Href="Profile" Icon="@Icons.Material.Filled.AccountCircle">Profile</MudNavLink>
+                    <MudNavLink Href="Preferences" Icon="@Icons.Material.Filled.PsychologyAlt">Preferences</MudNavLink>
+                    <MudNavLink Href="Rider" Icon="@Icons.Material.Filled.LocalTaxi">Rider View</MudNavLink>
+                    <MudNavLink Href="Driver" Icon="@Icons.Material.Filled.DirectionsCarFilled">Driver View</MudNavLink>
+                    <MudNavLink Href="Group-Find" Icon="@Icons.Material.Filled.GroupWork">Find Groups</MudNavLink>
+                    <MudNavLink Href="Group-Interface" Icon="@Icons.Material.Filled.Workspaces">Group Interface</MudNavLink>
+                    <MudNavLink Href="Friends" Icon="@Icons.Material.Filled.SupervisedUserCircle">Friends List</MudNavLink>
+                    <MudNavLink Href="Directions" Icon="@Icons.Material.Filled.Directions">Directions</MudNavLink>
+                    <MudNavLink Href="User-Details" Icon="@Icons.Material.Filled.AccountBox">User Details</MudNavLink>
+                    <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.ManageAccounts">@context.User.Identity?.Name</MudNavLink>
+                    <MudNavLink Href="#" Icon="@Icons.Material.Filled.Logout" OnClick="InvokeLogout">Logout</MudNavLink>
                     <RadzenPanelMenuItem Text="Profile" Path="Profile" Icon="account_circle" />
                     <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
                     <RadzenPanelMenuItem Text="Rider View" Path="Rider" Icon="local_taxi" />
                     <RadzenPanelMenuItem Text="Driver View" Path="Driver" Icon="directions_car_filled" />
                     <RadzenPanelMenuItem Text="Find Groups" Path="Group-Find" Icon="group_work" />
                     <RadzenPanelMenuItem Text="Group Interface" Path="Group-Interface" Icon="workspaces" />
+                    <RadzenPanelMenuItem Text="After Trip" Path="After-Trip" Icon="no_crash" />
                     <RadzenPanelMenuItem Text="Friends List" Path="Friends" Icon="supervised_user_circle" />
                     <RadzenPanelMenuItem Text="Directions" Path="Directions" Icon="directions" />
                     <RadzenPanelMenuItem Text="User Details" Path="User-Details" Icon="account_box" />
@@ -42,61 +54,59 @@
                     <RadzenPanelMenuItem Text="Logout" Icon="logout" Click="@InvokeLogout" />
                 </Authorized>
                 <NotAuthorized>
-                    <RadzenPanelMenuItem Text="Register" Path="Account/Register" Icon="edit" />
-                    <RadzenPanelMenuItem Text="Login" Path="Account/Login" Icon="login" />
+                    <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.Edit">Register</MudNavLink>
+                    <MudNavLink Href="Account/Login" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
                 </NotAuthorized>
             </AuthorizeView>
             <AuthorizeView Roles="Admin">
                 <Authorized>
-                    <RadzenPanelMenuItem Text="Admin Home Page" Path="Admin" Icon="admin_panel_settings" />
+                    <MudNavLink Href="Admin" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin Home Page</MudNavLink>
                 </Authorized>
             </AuthorizeView>
+        </MudNavMenu>
+    </MudDrawer>
 
-
-        </RadzenPanelMenu>
-    </RadzenSidebar>
-    <RadzenBody>
-        <div class="rz-p-4" style="margin-left:5vh; margin-right:5vh" >
+    <MudMainContent>
+        <div class="mud-main-content" >
             @Body
+        </div>
+    </MudMainContent>
 
+    <footer style="flex: 0 1 40px;">
+        <div >
+            This site is currently under construction by Austin Phillips, Hunter Smith, Jason Smith, and Jacqueline Torres.
         </div>
-    </RadzenBody>
-    <RadzenFooter>
-        <div class="rz-p-4" style="margin-left:5vh; margin-right:5vh">
-            This site is currently under construction by Austin Phillips, Hunter Smith, Jason Smith and Jacqueline Torres.
-        </div>
-    </RadzenFooter>
-</RadzenLayout>
+    </footer >
+</MudLayout>
+
 <form id="logoutForm" method="post" action="Account/Logout" style="display:none">
     <AntiforgeryToken />
     <input type="hidden" name="returnUrl" value="@currentUrl" />
-    @* Include antiforgery token if necessary *@
 </form>
-@code {
-    bool sidebarExpanded = false;
-    private string? currentUrl;
-    void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "Some content", options);
 
-    // Runs on the page intialization, to get current user page and keep track of where they navigate to
+@code {
+    private bool _drawerOpen = false;
+    private string? currentUrl;
+
     protected override void OnInitialized()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
     }
-    // Used to keep track of the current user page
+
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
         StateHasChanged();
     }
-    // Method to
+
     private async Task InvokeLogout()
     {
         await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('logoutForm').submit();");
-
     }
-    private void NavigateTo(string page)
+
+    private void ToggleDrawer()
     {
-        NavigationManager.NavigateTo($"/{page}");
+        _drawerOpen = !_drawerOpen;
     }
 }

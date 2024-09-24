@@ -5,6 +5,7 @@
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
 @using FITCarpoolWebApp.Components.MainPages
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using FITCarpoolWebApp.Data
@@ -15,6 +16,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@attribute [Authorize]
 @page "/Profile"
 <h3>Update User Profile</h3>
 <RadzenStack>
@@ -246,7 +248,7 @@
                 End = args.Data.End,
                 Text = args.Data.Text,
             };
-        var matchingSchedule = ListSchedules.FirstOrDefault(schedule =>
+        var matchingSchedule = ListSchedules.FirstOrDefault(schedule => 
             schedule.UserId == InputModel.UserId &&
             schedule.Start == args.Start &&
             schedule.End == args.End);

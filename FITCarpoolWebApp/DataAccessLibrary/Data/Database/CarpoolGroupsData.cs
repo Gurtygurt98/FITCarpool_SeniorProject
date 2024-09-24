@@ -97,5 +97,18 @@ namespace DataAccessLibrary.Data.Database
             return result;
 
         }
+        public async Task CreateNewGroup(CarpoolGroupsModel carpoolGroup)
+        {
+
+            string sql = @"INSERT INTO CarpoolGroups (GroupName, DriverID, Destination, CreatorID) 
+                   VALUES (@GroupName, @DriverId, @Destination, @CreatorID)";
+            await _db.SaveData(sql, carpoolGroup);
+        }
+        public async Task<int> GetGroupNumber(string GroupName, int CreatorID)
+        {
+            string sql = @"select GroupID from CarpoolGroups where GroupName = @GroupName and CreatorID = @CreatorID ";
+            var data =  await _db.LoadData<int, dynamic>(sql, new { GroupName, CreatorID });
+            return data.FirstOrDefault();
+        }
     }
 }

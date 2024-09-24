@@ -11,7 +11,7 @@ namespace DataAccessLibrary.Model
         public int GroupId { get; set; }
         public string GroupName { get; set; }
         public int DriverId { get; set; }
-        public string Destination { get; set; }
+        public string Destination { get; set; } = "";
         public string DriverName {  get; set; }
         public List<RiderModel> Riders { get; set; }
         public int CreatorID { get; set; }
