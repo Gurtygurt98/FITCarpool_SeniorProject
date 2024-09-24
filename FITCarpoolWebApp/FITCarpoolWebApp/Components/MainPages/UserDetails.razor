@@ -15,7 +15,7 @@
 
 @page "/User-Details"
 
-
+@*
 <div class="col-auto p-2 justify-content-end bd-highlight">
     <RadzenSelectBar class="bg-white rounded-pill my-auto" TValue="int" Size="ButtonSize.Small" @bind-Value="@view">
         <Items>
@@ -36,42 +36,82 @@
     </div>
 
 }
+*@
 
 
-<RadzenStack>
-    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenRow RowGap="0">
-            <RadzenColumn SizeSM="3" Class="d-flex align-items-center justify-content-center">
-                <RadzenButton Click="@(() => NavigateTo("Profile"))" ButtonStyle="ButtonStyle.Light" Style="width: 150px; height: 150px; border-radius: 50%;">
+
+
+<RadzenRow RowGap="0">
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.Center" Wrap="FlexWrap.Wrap" >
+
+
+   
+            <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.End" JustifyContent="Radzen.JustifyContent.End"  Wrap="FlexWrap.Wrap" >
+
 
                 @if (InputModel.ProfilePicture == null)
                     {
-                        <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width:100%" />
+
+                <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Click="@(() => NavigateTo("Profile"))" Style="width: 150px; height: 150px; border-radius: 50%;" />
+
                     }
 
                 @if (InputModel.ProfilePicture != null)
                     {
-                        <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" AlternateText="binary image" Style="width:100%" />
+                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(InputModel.ProfilePicture)}")" Click="@(() => NavigateTo("Profile"))" AlternateText="binary image" Style="width: 150px; height: 150px; border-radius: 50%;" />
                     }
-                    
 
-                </RadzenButton>
-            </RadzenColumn>
-            <RadzenColumn SizeSM="6" Class="d-flex align-items-center justify-content-center">
-                <RadzenButton Text="13" class="p-1 rz-background-color-primary rz-color-on-primary rz-text-align-center rz-p-2" Style="height: 80px; width:80px;display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 10px;" Click="@(() => NavigateTo("Friends"))" />
-                <RadzenText TextStyle="TextStyle.Button" class="rz-display-flex rz-mt-2 rz-my-0">Friends</RadzenText>
-                <RadzenButton Text="24" class="p-1 rz-background-color-primary rz-color-on-primary rz-text-align-center rz-p-2" Style="height: 80px; width:80px;display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 10px;" Click="@(() => NavigateTo("Group"))" />
-                <RadzenText TextStyle="TextStyle.Button" class="rz-display-flex rz-mt-2 rz-my-0">Completed Rides</RadzenText>
-            </RadzenColumn>
-        </RadzenRow>
+         
+            </RadzenStack>
 
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Name</RadzenText>
-        <RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Name'..." class="rz-display-flex rz-mt-2 rz-my-0">
-            @userFullName
-        </RadzenText>
+        <RadzenStack Orientation="Radzen.Orientation.Vertical" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.Center" Wrap="FlexWrap.Wrap" >
 
 
-        <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="Radzen.JustifyContent.Center" Wrap="FlexWrap.Wrap" >
+		    <RadzenText TextStyle="TextStyle.H4" Placeholder="User's Name'..." class="rz-display-flex  rz-my-0">
+			    @userFullName
+		    </RadzenText>
+            <RadzenButton Click=@(args => NavigateTo("Profile")) Text="Edit profile" ButtonStyle="ButtonStyle.Primary" />
+        </RadzenStack>
+
+
+        <RadzenColumn SizeSM="6" Class="d-flex align-items-center justify-content-center">
+                <RadzenText TextStyle="TextStyle.Button" Click="@(() => NavigateTo("Friends"))" Style=" font-size: 26px;" class="rz-display-flex rz-m-2">13 </RadzenText>
+                <RadzenText TextStyle="TextStyle.Button" class="rz-display-flex rz-m-2">Friends</RadzenText>
+
+                
+                <RadzenText TextStyle="TextStyle.Button" Style="font-size: 26px;" class="rz-display-flex rz-m-2">24</RadzenText>
+
+                <RadzenText TextStyle="TextStyle.Button" Click="@(() => NavigateTo("Group"))" class="rz-display-flex rz-m-2">Completed Rides</RadzenText>
+
+	    </RadzenColumn>
+        </RadzenStack>
+
+        </RadzenStack>
+
+</RadzenRow>
+
+
+
+<RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Address</RadzenText>
+
+<RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Name'..." class="rz-display-flex  rz-my-0">
+    @userAddress
+</RadzenText>
+<RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Phone Number</RadzenText>
+<RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Phone Number'..." class="rz-display-flex  rz-my-0">
+    @userPhone
+</RadzenText>
+
+<RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Email</RadzenText>
+<RadzenText TextStyle="TextStyle.Subtitle1" Placeholder="User's Email'..." class="rz-display-flex  rz-my-0">
+    @userEmail
+</RadzenText>
+
+
+
+
+<RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
         <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
 
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Bio</RadzenText>
@@ -90,8 +130,7 @@
         <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
         <RadzenRating @bind-Value=@ratingValue ReadOnly=true />
 
-        @if (view == 1)
-        {
+        
             <RadzenStack>
                 <MudText Typo="Typo.h6" Align="Align.Center">Rider/Driver Statistics</MudText>
             </RadzenStack>
@@ -101,13 +140,11 @@
                     <PropertyColumn Property="x => x.miles" Title="Miles" />
                 </Columns>
             </MudDataGrid>
-        }
+        
        
 
        
 
-    </RadzenCard>
-</RadzenStack>
 
 
 @code {
@@ -155,6 +192,11 @@
     UsersModel InputModel = new();
     private List<UsersModel> UserList = null;
     private string userName = "Not found";
+
+    private string userEmail => InputModel?.Email ?? "Email not avaliable";
+    private string userAddress => InputModel?.PickupLocation ?? "Address not available";
+    private string userPhone => InputModel?.Phone ?? "Phone Number not available";
+  
 
     private int noValue;
     public int ratingValue
