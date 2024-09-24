@@ -14,7 +14,6 @@ using Serilog;
 using DataAccessLibrary.Data.Database;
 
 
-
 var builder = WebApplication.CreateBuilder(args);
 // Configure Serilog
 builder.Host.UseSerilog((ctx, lc) => lc
@@ -36,6 +35,8 @@ builder.Services.AddScoped<Radzen.NotificationService>();
 builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
 
 // Database Connection services
+builder.Services.AddTransient<IGroupScheduleData, GroupScheduleData>();
+
 builder.Services.AddTransient<ICarpoolGroupsData, CarpoolGroupsData>();
 builder.Services.AddTransient<IFriendsData, FriendsData>();
 builder.Services.AddTransient<IGroupMemberLocationsData, GroupMemberLocationsData>();
@@ -46,12 +47,14 @@ builder.Services.AddTransient<ISchedulesData, SchedulesData>();
 builder.Services.AddTransient<IRolesData, RolesData>();
 builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
 builder.Services.AddTransient<IUsersData, UsersData>();
-
+builder.Services.AddTransient<ILocationData, LocationData>();
 // Geolocation Services
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<LocationService>();
 // services to allow database connection 
 builder.Services.AddTransient<ISQLDataAccess, SQLDataAccess>();
+// Services to allow groups to former 
+
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = IdentityConstants.ApplicationScheme;

@@ -2,6 +2,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
+@using DataAccessLibrary.Data.API
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using FITCarpoolWebApp.Components.Layout
@@ -16,7 +17,8 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject Radzen.DialogService DialogService
-
+@inject IGMapsAPI _googleAPI;
+@inject ILocationData _dbLocation;
 @inject IdentityRedirectManager RedirectManager
 @using MudBlazor
 @using Radzen.Blazor
@@ -66,17 +68,13 @@
         </div>
         <div class="form-floating mb-3">
             <InputText @bind-Value="Input.UserLocation" class="form-control" autocomplete="tel" aria-required="true" placeholder="User Location" />
-            <label for="Location">User Location</label>
+            <label for="Location">Home Address</label>
         </div>
-
         <div class="form-floating mb-3">
-            <InputText @bind-Value="Input.PickupLocation" class="form-control" autocomplete="tel" aria-required="true" placeholder="Pickup Location" />
+            <InputText @bind-Value="Input.PickupLocation" class="form-control" autocomplete="tel" aria-required="false" placeholder="Pickup Location" />
             <label for="PickupLocation">Pickup Location</label>
         </div>
-        <div class="form-floating mb-3">
-            <InputText @bind-Value="Input.DropLocation" class="form-control" autocomplete="tel" aria-required="true" placeholder="Drop Off Location" />
-            <label for="DropLocation">Dropoff Location</label>
-        </div>
+
         <div class="form-floating mb-3">
             <InputNumber @bind-Value="Input.DrivingDistance" class="form-control" placeholder="Driving Distance in miles" />
             <label for="DrivingDistance">Driving Distance (miles)</label>
@@ -93,10 +91,10 @@
     string UsersPhoneNumber = "";
     string UserLocation = "";
     string PickupLocation = "";
-    string DropLocation = "";
+    string DropLocation = "150 W University Blvd, Melbourne, FL 32901";
     int DrivingDistance = 30;
     int Rating;
-
+    bool isHomeDiffPick = false;
     private IEnumerable<IdentityError>? identityErrors;
 
     [SupplyParameterFromForm]
@@ -137,7 +135,17 @@
             Input.DropLocation,
             Input.DrivingDistance,
             Input.Rating);
+        if (String.IsNullOrWhiteSpace(Input.PickupLocation))
+        {
+            Input.PickupLocation = Input.UserLocation;
+        }
+        createdUser.DropoffLocation = DropLocation;
         await _dbUsers.AddUser(createdUser);
+        (double latitude, double longitude) = await _googleAPI.GetCoordinatesAsync(Input.PickupLocation);
+        double dropLat = 28.066750;
+        double dropLon = -80.623032;
+        UsersModel currUser = (await _dbUsers.GetUser(createdUser.Email)).FirstOrDefault();
+        await _dbLocation.AddPickupandDropOff(currUser.UserId, longitude, latitude, dropLon, dropLat);
         // Procceed with normal user creation using .net authentication 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);

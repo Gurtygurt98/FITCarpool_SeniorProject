@@ -17,7 +17,7 @@
 @inject IRolesData _dbRoles
 @inject IDialogService DialogService
 @inject IUsersData _dbUsers
-
+@inject IFriendsData _dbFriends
 
 @attribute [Authorize]
 
@@ -35,47 +35,26 @@
         </RadzenStack>
 
 
-        @foreach (var group in GroupRecommendations.Keys)
+        @foreach (var row in friends)
         {
-            if (GroupRecommendations[group])
-            {
-                <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
-                    <Columns>
-
-                        <RadzenDataGridColumn TItem="UsersModel" Width="80px">
-                            <Template Context="user">
-                                @if (user.ProfilePicture != null)
-                                {
-                                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="200px">
-                            <Template Context="user">
-                                @{
-                                    var fullName = $"{user.FirstName} {user.LastName}";
-                                }
-                                <text>@fullName</text>
-                            </Template>
-                        </RadzenDataGridColumn>
-                        
-                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
-                            <Template>
-                                <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
-            }
+            <RadzenRow>
+                <RadzenColumn>
+                    @row.Name
+                </RadzenColumn>
+                <RadzenColumn>
+                    @row.Status
+                </RadzenColumn>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => OnClick("Invite Sent")) Text="Invite to Group" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => RemoveFriend(row, "Friend Removed")) Text="Remove Friend" ButtonStyle="ButtonStyle.Danger" />
+                </RadzenColumn>
+            </RadzenRow>
         }
     </RadzenCard>
 </RadzenStack>
-@*<RadzenStack>
+<RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
             <MudText Typo="Typo.h2" Align="Align.Center">Incoming Friend Requests</MudText>
@@ -99,9 +78,8 @@
         }
     </RadzenCard>
 </RadzenStack>
-*@
-@code {
 
+@code {
     private void OnClick(string message)
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message});
@@ -110,53 +88,117 @@
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
-
-    /*private void RemoveFriend(Friend f, string message)
+    private void SendRequest(UsersModel u)
     {
+        //_dbFriends.AddFriend(new FriendsModel {FriendshipId = , UserId1 = ID, UserId2 = u.UserId, CreatedDate = DateTime.Now, Status = "pending" });
+    }
+    private void RemoveFriend(Friend f, string message)
+    {
+        _dbFriends.DeleteFriend(f.FriendId);
         friends.Remove(f);
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
     private void AcceptFriendRequest(Friend f)
     {
+        _dbFriends.UpdateFriend(new FriendsModel{FriendshipId = f.FriendId, UserId1 = f.ID1, UserId2 = f.ID2, CreatedDate = DateTime.Now, Status = "accepted"});
         friends.Add(f);
         requests.Remove(f);
     }
     private void DeclineFriendRequest(Friend f)
     {
+        _dbFriends.DeleteFriend(f.FriendId);
         requests.Remove(f);
-    }*/
-
-    private Dictionary<int, bool> GroupRecommendations = new();
-    private Dictionary<int, List<UsersModel>> RecommendationData = new();
-
-    public class Friend
-    {
-        public string? Name { get; set; }
-        public string? Status { get; set; }
     }
-
+    private int ID = 0;
+    private string userName = "Not Found";
+    List<UsersModel> UserList = null;
+    List<FriendsModel> FriendList = new();
+    private List<Friend> friends;
+    private List<Friend> requests;
+    UsersModel InputModel = null;
 
     // Code for searching other users
     private string _searchString = "";
-    private List<AccountModel> AccountList = new();
-
-    private void ViewUser(string userEmail)
-    {
-        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
-    }
+    private List<UsersModel> AccountList = new();
 
     protected override async Task OnInitializedAsync()
     {
-        AccountList = await _dbRoles.GetAccounts();
 
-        var allUsers = await _dbUsers.GetAllUser();
-        RecommendationData.Add(0, allUsers.Take(3).ToList());
-        RecommendationData.Add(1, allUsers.Skip(3).Take(3).ToList());
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
 
-        foreach (var key in RecommendationData.Keys)
+        if (user.Identity.IsAuthenticated)
         {
-            GroupRecommendations[key] = true;
+            userName = user.Identity.Name;
         }
+        else
+        {
+            userName = "Not found";
+        }
+        UserList = await _dbUsers.GetUser(userName);
+        if (UserList.Any())
+        {
+            InputModel = UserList.First();
+            ID = InputModel.UserId;
+        }
+
+        // TEST ADDING FRIEND
+        /*
+        int testUserID = 0;
+        List<UsersModel> testUser = await _dbUsers.GetUser("j@my.fit.edu");
+        if (testUser.Any())
+        {
+            testUserID = testUser.First().UserId;
+        }
+        FriendsModel friend = new FriendsModel { UserId1 = ID, UserId2 = testUserID, Status = "accepted", CreatedDate = DateTime.Now, FriendshipId = 10000 };
+        await _dbFriends.AddFriend(friend);
+        testUserID = 0;
+        testUser = await _dbUsers.GetUser("jdriver@my.fit.edu");
+        if (testUser.Any())
+        {
+            testUserID = testUser.First().UserId;
+        }
+        friend = new FriendsModel { UserId1 = testUserID, UserId2 = ID, Status = "pending", CreatedDate = DateTime.Now, FriendshipId = 10001 };
+        await _dbFriends.AddFriend(friend);
+        */
+        // TEST END
+
+        FriendList = await _dbFriends.GetFriends(ID);
+        friends = new List<Friend> {};
+        requests = new List<Friend> {};
+        foreach(FriendsModel dataFriend in FriendList)
+        {
+            List<UsersModel> temp = null;
+
+            if (dataFriend.UserId1 == ID)
+            {
+                temp = await _dbUsers.GetUser(dataFriend.UserId2);
+            }
+            else
+            {
+                temp = await _dbUsers.GetUser(dataFriend.UserId1);
+            }
+
+            if(dataFriend.Status.Equals("accepted"))
+            {
+                friends.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
+            }
+            else
+            {
+                requests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
+            }
+        }
+
+        AccountList = await _dbUsers.GetAllUser();
+    }
+
+    public class Friend
+    {
+        public int FriendId { get; set; }
+        public int ID1  { get; set; }
+        public int ID2 { get; set; }
+        public string? Name { get; set; }
+        public string? Status { get; set; }
     }
 
     private async Task<IEnumerable<string>> SearchUser(string value)
@@ -167,8 +209,8 @@
             return Enumerable.Empty<string>();
 
         return AccountList
-            .Where(a => a.UserName.Contains(value, StringComparison.InvariantCultureIgnoreCase))
-            .Select(a => a.UserName)
+            .Where(a => (a.FirstName + " " + a.LastName).Contains(value, StringComparison.InvariantCultureIgnoreCase))
+            .Select(a => (a.FirstName + " " + a.LastName))
             .ToList();
     }
 }

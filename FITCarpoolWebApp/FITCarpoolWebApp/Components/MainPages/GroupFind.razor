@@ -83,43 +83,98 @@
     protected override async Task OnInitializedAsync()
     {
         MapApi = _GmapKey.MapAPI;
+
+        // Gets test users
+        List<UsersModel> usersModels = getTestUsers();
+        List<SchedulesModel> schedulesModels = getTestSchedules();
+        List<Member> members = getTestMembers(usersModels, schedulesModels);
+        // Creates test groups, will use groups from database in final project
+        List<Group> output = Test4Groups(members);
+
+        output.Sort((x, y) => GroupScore(x).CompareTo(GroupScore(y)));
+
+        int count = 0;
+        foreach (Group g in output)
+        {
+            List<UsersModel> temp = new List<UsersModel>();
+            for (int i = 0; i < g.Members.Length; i++)
+            {
+                temp.Add(usersModels.First(u => u.UserId == g.Members[i].UserID));
+            }
+
+            RecommendationData.Add(count, temp);
+            count++;
+        }
+        foreach (var key in RecommendationData.Keys)
+        {
+            GroupRecommendations[key] = true;
+        }
+    }
+    private List<UsersModel> getTestUsers()
+    {
+        return new List<UsersModel>
+        {
+            new UsersModel {UserId = 0, UserType = "Driver", Email = "North1@my.fit.edu", FirstName = "North1", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "11 Rosevere Way, Melbourne, FL 32901" },
+            new UsersModel {UserId = 1, UserType = "Driver", Email = "North2@my.fit.edu", FirstName = "North2", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
+            PickupLocation = "11 Rosevere Way, Melbourne, FL 32901" },
+            new UsersModel {UserId = 2, UserType = "Driver", Email = "North3@my.fit.edu", FirstName = "North3", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "11 Rosevere Way, Melbourne, FL 32901" },
+            new UsersModel {UserId = 3, UserType = "Driver", Email = "North4@my.fit.edu", FirstName = "North4", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "11 Rosevere Way, Melbourne, FL 32901" },
+            new UsersModel {UserId = 4, UserType = "Driver", Email = "East1@my.fit.edu", FirstName = "East1", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "true",
+            PickupLocation = "606 Walls St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 5, UserType = "Driver", Email = "East2@my.fit.edu", FirstName = "East2", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "true",
+            PickupLocation = "606 Walls St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 6, UserType = "Driver", Email = "East3@my.fit.edu", FirstName = "East3", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
+            PickupLocation = "606 Walls St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 7, UserType = "Driver", Email = "East4@my.fit.edu", FirstName = "East4", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "606 Walls St, Melbourne, FL 32901" },
+            new UsersModel {UserId = 8, UserType = "Driver", Email = "South1@my.fit.edu", FirstName = "South1", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "339 Cinnamon Lake Cir, Melbourne, FL 32901" },
+            new UsersModel {UserId = 9, UserType = "Driver", Email = "South2@my.fit.edu", FirstName = "South2", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
+            PickupLocation = "339 Cinnamon Lake Cir, Melbourne, FL 32901" },
+            new UsersModel {UserId = 10, UserType = "Driver", Email = "South3@my.fit.edu", FirstName = "South3", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "339 Cinnamon Lake Cir, Melbourne, FL 32901" },
+            new UsersModel {UserId = 11, UserType = "Driver", Email = "South4@my.fit.edu", FirstName = "South4", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "339 Cinnamon Lake Cir, Melbourne, FL 32901" },
+            new UsersModel {UserId = 12, UserType = "Driver", Email = "West1@my.fit.edu", FirstName = "West1", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "true",
+            PickupLocation = "319 W University Blvd, Melbourne, FL 32901" },
+            new UsersModel {UserId = 13, UserType = "Driver", Email = "West2@my.fit.edu", FirstName = "West2", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "true",
+            PickupLocation = "319 W University Blvd, Melbourne, FL 32901" },
+            new UsersModel {UserId = 14, UserType = "Driver", Email = "West3@my.fit.edu", FirstName = "West3", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
+            PickupLocation = "319 W University Blvd, Melbourne, FL 32901" },
+            new UsersModel {UserId = 15, UserType = "Driver", Email = "West4@my.fit.edu", FirstName = "West4", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
+            PickupLocation = "319 W University Blvd, Melbourne, FL 32901" }
+        };
+    }
+    private List<SchedulesModel> getTestSchedules()
+    {
+        return new List<SchedulesModel>
+        {
+            new SchedulesModel {UserId = 0, Start = new DateTime(2024, 4, 12, 8, 30, 0), End = new DateTime(2024, 4, 12, 15, 0, 0) },
+            new SchedulesModel {UserId = 1, Start = new DateTime(2024, 4, 12, 7, 30, 0), End = new DateTime(2024, 4, 12, 16, 0, 0) },
+            new SchedulesModel {UserId = 2, Start = new DateTime(2024, 4, 12, 8, 45, 0), End = new DateTime(2024, 4, 12, 15, 30, 0) },
+            new SchedulesModel {UserId = 3, Start = new DateTime(2024, 4, 12, 8, 15, 0), End = new DateTime(2024, 4, 12, 15, 15, 0) },
+            new SchedulesModel {UserId = 4, Start = new DateTime(2024, 4, 12, 7, 45, 0), End = new DateTime(2024, 4, 12, 16, 15, 0) },
+            new SchedulesModel {UserId = 5, Start = new DateTime(2024, 4, 12, 8, 30, 0), End = new DateTime(2024, 4, 12, 16, 0, 0) },
+            new SchedulesModel {UserId = 6, Start = new DateTime(2024, 4, 12, 8, 0, 0), End = new DateTime(2024, 4, 12, 15, 45, 0) },
+            new SchedulesModel {UserId = 7, Start = new DateTime(2024, 4, 12, 9, 0, 0), End = new DateTime(2024, 4, 12, 15, 30, 0) },
+            new SchedulesModel {UserId = 8, Start = new DateTime(2024, 4, 12, 8, 30, 0), End = new DateTime(2024, 4, 12, 15, 0, 0) },
+            new SchedulesModel {UserId = 9, Start = new DateTime(2024, 4, 12, 7, 30, 0), End = new DateTime(2024, 4, 12, 16, 0, 0) },
+            new SchedulesModel {UserId = 10, Start = new DateTime(2024, 4, 12, 8, 45, 0), End = new DateTime(2024, 4, 12, 15, 30, 0) },
+            new SchedulesModel {UserId = 11, Start = new DateTime(2024, 4, 12, 8, 15, 0), End = new DateTime(2024, 4, 12, 15, 15, 0) },
+            new SchedulesModel {UserId = 12, Start = new DateTime(2024, 4, 12, 7, 45, 0), End = new DateTime(2024, 4, 12, 16, 15, 0) },
+            new SchedulesModel {UserId = 13, Start = new DateTime(2024, 4, 12, 8, 30, 0), End = new DateTime(2024, 4, 12, 16, 0, 0) },
+            new SchedulesModel {UserId = 14, Start = new DateTime(2024, 4, 12, 8, 0, 0), End = new DateTime(2024, 4, 12, 15, 45, 0) },
+            new SchedulesModel {UserId = 15, Start = new DateTime(2024, 4, 12, 9, 0, 0), End = new DateTime(2024, 4, 12, 15, 30, 0) }
+        };
+    }
+    private List<Member> getTestMembers(List<UsersModel> allUsers, List<SchedulesModel> s)
+    {
         List<Member> members = new List<Member>();
-
         // var allUsers = await _dbUsers.GetAllUser();
-
-        // Test Code with Fake Users
-        List<UsersModel> allUsers = new List<UsersModel>
-        {
-            new UsersModel {UserId = 0, UserType = "Driver", Email = "Ally@my.fit.edu", FirstName = "Ally", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
-            PickupLocation = "1810 Elizabeth St, Melbourne, FL 32901" },
-            new UsersModel {UserId = 1, UserType = "Driver", Email = "Bill@my.fit.edu", FirstName = "Bill", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
-            PickupLocation = "1511 Hedrick Dr, Melbourne, FL 32901" },
-            new UsersModel {UserId = 2, UserType = "Driver", Email = "Cass@my.fit.edu", FirstName = "Cass", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
-            PickupLocation = "507 Tucker St, Melbourne, FL 32901" },
-            new UsersModel {UserId = 3, UserType = "Driver", Email = "Dave@my.fit.edu", FirstName = "Dave", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
-            PickupLocation = "3464 Florida Palm Ave, Melbourne, FL 32901" },
-            new UsersModel {UserId = 4, UserType = "Driver", Email = "Ella@my.fit.edu", FirstName = "Ella", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "true",
-            PickupLocation = "1011 Brothers Ave, Melbourne, FL 32901" },
-            new UsersModel {UserId = 5, UserType = "Driver", Email = "Fred@my.fit.edu", FirstName = "Fred", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "true",
-            PickupLocation = "3006 Alice St, Melbourne, FL 32904" },
-            new UsersModel {UserId = 6, UserType = "Driver", Email = "Gail@my.fit.edu", FirstName = "Gail", LastName = "", AllowEatDrink = "true", AllowSmokeVape = "false",
-            PickupLocation = "173 Rachel St, Melbourne, FL 32901" },
-            new UsersModel {UserId = 7, UserType = "Driver", Email = "Hugh@my.fit.edu", FirstName = "Hugh", LastName = "", AllowEatDrink = "false", AllowSmokeVape = "false",
-            PickupLocation = "402 W Cornell Ave, Melbourne, FL 32901" }
-        };
-
-        List<SchedulesModel> s = new List<SchedulesModel>
-        {
-            new SchedulesModel {UserId = 0, Start = new DateTime(2024, 4, 12, 8, 30, 0) },
-            new SchedulesModel {UserId = 1, Start = new DateTime(2024, 4, 12, 7, 30, 0) },
-            new SchedulesModel {UserId = 2, Start = new DateTime(2024, 4, 12, 8, 45, 0) },
-            new SchedulesModel {UserId = 3, Start = new DateTime(2024, 4, 12, 8, 15, 0) },
-            new SchedulesModel {UserId = 4, Start = new DateTime(2024, 4, 12, 7, 45, 0) },
-            new SchedulesModel {UserId = 5, Start = new DateTime(2024, 4, 12, 8, 30, 0) },
-            new SchedulesModel {UserId = 6, Start = new DateTime(2024, 4, 12, 8, 0, 0) },
-            new SchedulesModel {UserId = 7, Start = new DateTime(2024, 4, 12, 9, 0, 0) }
-        };
-        foreach(UsersModel u in allUsers)
+        foreach (UsersModel u in allUsers)
         {
             //List<SchedulesModel> schedules = await _dbSchedules.GetSchedule(u.UserId);
             //SchedulesModel s = schedules.First();
@@ -131,12 +186,17 @@
                     Location = u.PickupLocation,
                     ArrivalH = s.First(sch => sch.UserId == u.UserId).Start.Hour,
                     ArrivalM = s.First(sch => sch.UserId == u.UserId).Start.Minute,
+                    DepartureH = s.First(sch => sch.UserId == u.UserId).End.Hour,
+                    DepartureM = s.First(sch => sch.UserId == u.UserId).End.Minute,
                     Early = 0,
                     Preferences = new int[] { prefParser(u.AllowEatDrink), prefParser(u.AllowSmokeVape) }
                 };
             members.Add(m);
         }
-
+        return members;
+    }
+    private List<Group> Test2Groups(List<Member> members)
+    {
         // CREATE PREDEFINED GROUPS FOR TESTING
         // Get latest and earliest times, make them group creators.
         Member earliest = members.First();
@@ -179,31 +239,61 @@
             TestAdd(a, members);
             TestAdd(b, members);
         }
-        List<Group> output = new List<Group> { a, b };
-        output.Sort((x, y) => GroupScore(x).CompareTo(GroupScore(y)));
-
-        int count = 0;
-        foreach (Group g in output)
-        {
-            List<UsersModel> temp = new List<UsersModel>();
-            for (int i = 0; i < g.Members.Length; i++)
-            {
-                temp.Add(allUsers.First(u => u.UserId == g.Members[i].UserID));
-            }
-
-            RecommendationData.Add(count, temp);
-            count++;
-        }
-
-
-
-        //RecommendationData.Add(0, allUsers.Take(3).ToList());
-        //RecommendationData.Add(1, allUsers.Skip(3).Take(3).ToList());
-        foreach (var key in RecommendationData.Keys)
-        {
-            GroupRecommendations[key] = true;
-        }
+        return new List<Group> { a, b };
     }
+    private List<Group> Test4Groups(List<Member> members)
+    {
+        // CREATE PREDEFINED GROUPS FOR TESTING
+
+        // Instantiate New Groups
+        Group a = new Group
+            {
+                Name = "Group 1",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 1",
+                Members = new Member[4] { members[0], null, null, null }
+            };
+        Group b = new Group
+            {
+                Name = "Group 2",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 2",
+                Members = new Member[4] { members[4], null, null, null }
+            };
+        Group c = new Group
+            {
+                Name = "Group 3",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 3",
+                Members = new Member[4] { members[8], null, null, null }
+            };
+        Group d = new Group
+            {
+                Name = "Group 4",
+                MaxSize = 4,
+                CurrentSize = 1,
+                Description = "Sample Group 4",
+                Members = new Member[4] { members[12], null, null, null }
+            };
+        members.Remove(members[12]);
+        members.Remove(members[8]);
+        members.Remove(members[4]);
+        members.Remove(members[0]);
+
+        // Greedily adds the least damaging group member
+        while (a.CurrentSize < a.MaxSize || b.CurrentSize < b.MaxSize || c.CurrentSize < c.MaxSize || d.CurrentSize < d.MaxSize)
+        {
+            TestAdd(a, members);
+            TestAdd(b, members);
+            TestAdd(c, members);
+            TestAdd(d, members);
+        }
+        return new List<Group> { a, b, c, d };
+    }
+
     private int prefParser(string input)
     {
         if (input.Equals("true")) {
@@ -260,8 +350,8 @@
 
     public double GroupScore(Group g)
     {
-        return LocationScore(g) + TimeScore(g) + 3 * PreferenceScore(g);
-        //return TimeScore(g) + 3 * PreferenceScore(g);
+        return LocationScore(g);
+        // return LocationScore(g) + 2 * TimeScore(g) + 10 * PreferenceScore(g);
     }
     // Calculates the difference between the earliest necessary arrival and the latest acceptable arrival
     private double TimeScore(Group g)
@@ -287,7 +377,29 @@
             }
             i++;
         }
-        return (latestH - earliestH) * 60 + latestM - earliestM;
+
+        int earliestH2 = g.Members[0].DepartureH;
+        int earliestM2 = g.Members[0].DepartureM;
+        int latestH2 = g.Members[0].DepartureH;
+        int latestM2 = g.Members[0].DepartureM;
+
+        i = 1;
+        while (i < g.Members.Length && g.Members[i] != null)
+        {
+            Member m = g.Members[i];
+            if (m.ArrivalH * 60 + m.DepartureM < earliestH2 * 60 + earliestM2)
+            {
+                earliestH2 = m.DepartureH;
+                earliestM2 = m.DepartureM;
+            }
+            if (m.ArrivalH * 60 + m.DepartureM - m.Early > latestH2 * 60 + latestM2)
+            {
+                latestH2 = (m.ArrivalH * 60 + m.DepartureM - m.Early) / 60;
+                latestM2 = (m.ArrivalH * 60 + m.DepartureM - m.Early) % 60;
+            }
+            i++;
+        }
+        return (latestH - earliestH) * 60 + latestM - earliestM + ((latestH2 - earliestH2) * 60 + latestM2 - earliestM2);
     }
     private double LocationScore(Group g)
     {
@@ -406,6 +518,8 @@
         public int[] Preferences { get; set; }
         public int ArrivalH { get; set; }
         public int ArrivalM { get; set; }
+        public int DepartureH { get; set; }
+        public int DepartureM { get; set; }
         public int Early { get; set; }
     }
 

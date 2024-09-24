@@ -6,7 +6,9 @@ namespace DataAccessLibrary.Data.Database
     {
         Task DeleteFriend(int friendshipId);
         Task<List<FriendsModel>> GetAllFriends();
+        Task<List<FriendsModel>> GetFriends(int userId);
         Task<FriendsModel> GetFriend(int friendshipId);
         Task UpdateFriend(FriendsModel friend);
+        Task AddFriend(FriendsModel friend);
     }
 }

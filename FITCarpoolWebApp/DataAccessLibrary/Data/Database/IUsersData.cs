@@ -14,5 +14,6 @@ namespace DataAccessLibrary.Data.Database
         Task UpdateUserProfilePicture(int userId, byte[] profilePicture);
         Task UpdateUserLicensePicture(int userId, byte[] licensePicture);
         Task UpdateUserCarPicture(int userId, byte[] carPicture);
+        Task UpdateRating(int userId, int rating);
     }
 }

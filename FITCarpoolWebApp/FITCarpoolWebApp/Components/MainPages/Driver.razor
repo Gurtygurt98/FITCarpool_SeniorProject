@@ -157,7 +157,7 @@
         {
             // Current driver location object, send this along with updated location to the database for riders to grab
             DriverLocation = DriverLocationList.First();
-            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
+            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
         }  
     }
     List<string> pickupAddresses = new List<string>
@@ -207,7 +207,7 @@
             DriverLocation.Latitude = latitude;
             DriverLocation.Longitude = longitude;
             DriverLocation.Timestamp = currentTime;
-            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupId));
+            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
             await _dbLocation.UpdateGroupMemberLocation(DriverLocation);
         }
         // Need to create call to either add or update user location in database 

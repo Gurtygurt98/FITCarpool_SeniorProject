@@ -1,0 +1,160 @@
+﻿@using DataAccessLibrary.Data.Database;
+@using DataAccessLibrary.Model;
+@using DataAccessLibrary.Model.Database_Models;
+@using DataAccessLibrary.Model.Logic_Models;
+@using FITCarpoolWebApp.Components.Group_Pages.CreateGroupComponents;
+@using Microsoft.AspNetCore.Authorization;
+@inject Radzen.DialogService DialogService;
+@inject HttpClient httpClient;
+@inject IUsersData _dbUsers;
+@inject ISchedulesData _dbSchedules;
+@inject AuthenticationStateProvider AuthenticationStateProvider;
+@inject NotificationService NotificationService;
+@inject NavigationManager NavigationManager;
+
+@attribute [Authorize]
+@page "/FindGroups";
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudGrid GutterSize="2">
+        <!-- Left Panel: My Groups -->
+        <MudItem xs="12" sm="4" md="3">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.h6">My Groups</MudText>
+                @if (CurrentUser != null && CurrentUser.UserType == "driver")
+                {
+                    <MudButton OnClick="OpenGroupDialog" Icon="@Icons.Material.Filled.Add" Color="Color.Primary" Class="mb-2">Create Group</MudButton>
+                }
+                @if (MyGroups != null && MyGroups.Any())
+                {
+                    <MudList>
+                        @foreach (var group in MyGroups)
+                        {
+                            <MudListItem>
+                                <MudListItemContent>
+                                    <MudText>@group.GroupName</MudText>
+                                </MudListItemContent>
+                                <MudListItemIcon>
+                                    <MudIconButton OnClick="@(async () => await LeaveGroup(group))" Color="Color.Error" Icon="@Icons.Material.Filled.ExitToApp" />
+                                </MudListItemIcon>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+                else
+                {
+                    <MudText>No groups found.</MudText>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- Right Panel: Group Recommendations -->
+        <MudItem xs="12" sm="8" md="9">
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.h5" Class="mb-2">Group Recommendations</MudText>
+                <MudGrid>
+                    <MudItem xs="12" class="mb-2">
+                        <MudSelect @bind-Value="SelectedSortOption" Label="Sort by" Dense="true" Margin="Margin.Dense" Variant="MudBlazor.Variant.Outlined" OnValueChanged="OnSortOptionChanged">
+                            <MudSelectItem Value="@("DistanceScore")">Distance Score</MudSelectItem>
+                            <MudSelectItem Value="@("PreferenceScore")">Preference Score</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+
+                    @if (RecommendedGroupsList != null && RecommendedGroupsList.Any())
+                    {
+                        @foreach (var group in RecommendedGroupsList)
+                        {
+                            <MudItem xs="12" sm="6" md="4">
+                                <MudCard Class="mb-4" Style="cursor:pointer;" @onclick="() => ShowGroupDetails(group)">
+                                    <MudCardHeader>
+                                        <MudText Typo="Typo.h6">@group.GroupName</MudText>
+                                    </MudCardHeader>
+                                    <MudCardContent>
+                                        <MudText>Distance Score: @group.DistanceScore:F2</MudText>
+                                        <MudText>Preference Score: @group.PreferenceScore:F2</MudText>
+                                    </MudCardContent>
+                                    <MudCardActions>
+                                        <MudButton Color="Color.Primary" OnClick="@(async () => await AddGroup(group))">Add Group</MudButton>
+                                    </MudCardActions>
+                                </MudCard>
+                            </MudItem>
+                        }
+                    }
+                    else
+                    {
+                        <MudItem xs="12">
+                            <MudText>No Groups Available to choose from.</MudText>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    UsersModel CurrentUser = null;
+    List<RecomendedGroup> RecommendedGroupsList = new();
+    List<RecomendedGroup> MyGroups = new();
+    string SelectedSortOption = "DistanceScore";
+    List<string> DaysOfTheWeek = new() { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        var userName = user.Identity.IsAuthenticated ? user.Identity.Name : "Not found";
+
+        var UserList = await _dbUsers.GetUser(userName);
+        if (UserList.Any())
+        {
+            CurrentUser = UserList.First();
+        }
+
+        // MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
+        RecommendedGroupsList = await _dbSchedules.GetMatchingSchedules(CurrentUser.UserId, DaysOfTheWeek);
+        SortRecommendedGroups();
+    }
+
+    private void SortRecommendedGroups()
+    {
+        if (SelectedSortOption == "DistanceScore")
+        {
+            RecommendedGroupsList = RecommendedGroupsList.OrderBy(g => g.DistanceScore).ToList();
+        }
+        else if (SelectedSortOption == "PreferenceScore")
+        {
+            RecommendedGroupsList = RecommendedGroupsList.OrderByDescending(g => g.PreferenceScore).ToList();
+        }
+    }
+
+    private void OnSortOptionChanged(string value)
+    {
+        SelectedSortOption = value;
+        SortRecommendedGroups();
+    }
+
+    private async Task AddGroup(RecomendedGroup group)
+    {
+        // TODO: Implement logic to add the user to the group in the database
+        NotificationService.Notify(NotificationSeverity.Success, "Group Added", $"You have been added to group {group.GroupName}");
+    }
+
+    private async Task LeaveGroup(RecomendedGroup group)
+    {
+        // TODO: Implement logic to remove the user from the group in the database
+        MyGroups.Remove(group);
+        NotificationService.Notify(NotificationSeverity.Success, "Group Left", $"You have left group {group.GroupName}");
+    }
+
+    private void ShowGroupDetails(RecomendedGroup group)
+    {
+        // TODO: Implement logic to show group details in a dialog or new page
+        // DialogService.Open<DialogComponent>("Group Details", new Dictionary<string, object> { { "Group", group } });
+    }
+
+    private async Task OpenGroupDialog()
+    {
+        await DialogService.OpenAsync<CreateGroupDialog>("Create Group", new Dictionary<string, object> { { "CurrentUser", CurrentUser } });
+    }
+}
