@@ -90,16 +90,11 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task UpdateUserProfilePicture(int userId, byte[] profilePicture)
         {
-            Console.WriteLine(userId + " " + profilePicture);
-
             string sql = "UPDATE Users SET ProfilePicture = @ProfilePicture WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, ProfilePicture = profilePicture });
         }
         public async Task UpdateUserLicensePicture(int userId, byte[] licensePicture)
         {
-            Console.WriteLine("hELP?");
-
-            Console.WriteLine($"{userId} {licensePicture}");
             string sql = "UPDATE Users SET LicensePicture = @LicensePic WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, LicensePic = licensePicture });
         }

@@ -12,8 +12,6 @@ using AspNetMonsters.Blazor.Geolocation;
 using DataAccessLibrary;
 using Serilog;
 using DataAccessLibrary.Data.Database;
-using DataAccessLibrary.Data.Logic;
-
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +35,8 @@ builder.Services.AddScoped<Radzen.NotificationService>();
 builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
 
 // Database Connection services
+builder.Services.AddTransient<IGroupScheduleData, GroupScheduleData>();
+
 builder.Services.AddTransient<ICarpoolGroupsData, CarpoolGroupsData>();
 builder.Services.AddTransient<IFriendsData, FriendsData>();
 builder.Services.AddTransient<IGroupMemberLocationsData, GroupMemberLocationsData>();
