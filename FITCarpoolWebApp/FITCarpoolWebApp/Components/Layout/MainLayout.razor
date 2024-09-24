@@ -39,7 +39,6 @@
                     <MudNavLink Href="Directions" Icon="@Icons.Material.Filled.Directions">Directions</MudNavLink>
                     <MudNavLink Href="User-Details" Icon="@Icons.Material.Filled.AccountBox">User Details</MudNavLink>
                     <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.ManageAccounts">@context.User.Identity?.Name</MudNavLink>
-                    <MudNavLink Href="#" Icon="@Icons.Material.Filled.Logout" OnClick="InvokeLogout">Logout</MudNavLink>
                     <RadzenPanelMenuItem Text="Profile" Path="Profile" Icon="account_circle" />
                     <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
                     <RadzenPanelMenuItem Text="Rider View" Path="Rider" Icon="local_taxi" />
@@ -51,7 +50,7 @@
                     <RadzenPanelMenuItem Text="Directions" Path="Directions" Icon="directions" />
                     <RadzenPanelMenuItem Text="User Details" Path="User-Details" Icon="account_box" />
                     <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="manage_accounts" />
-                    <RadzenPanelMenuItem Text="Logout" Icon="logout" Click="@InvokeLogout" />
+                    <MudButton Icon="@Icons.Material.Filled.Logout" OnClick="InvokeLogout">Logout</MudButton>
                 </Authorized>
                 <NotAuthorized>
                     <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.Edit">Register</MudNavLink>
@@ -102,11 +101,16 @@
 
     private async Task InvokeLogout()
     {
+        Console.WriteLine("Logout button clicked"); // Debugging log
+
         await JSRuntime.InvokeVoidAsync("eval", "document.getElementById('logoutForm').submit();");
     }
 
+
     private void ToggleDrawer()
     {
+        Console.WriteLine("dAW"); // Debugging log
+
         _drawerOpen = !_drawerOpen;
     }
 }

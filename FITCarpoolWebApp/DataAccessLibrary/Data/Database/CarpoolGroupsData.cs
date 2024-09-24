@@ -103,6 +103,14 @@ namespace DataAccessLibrary.Data.Database
             string sql = @"INSERT INTO CarpoolGroups (GroupName, DriverID, Destination, CreatorID) 
                    VALUES (@GroupName, @DriverId, @Destination, @CreatorID)";
             await _db.SaveData(sql, carpoolGroup);
+            sql = @"select GroupID from CarpoolGroups where GroupName = @groupName";
+            var result = await _db.LoadData<string, dynamic>(sql, new { groupName = carpoolGroup.GroupName });
+            string GoalGroupID = result.First();
+            sql = $@"
+                INSERT INTO GroupMembers (GroupID, UserID, JoinDate)
+                VALUES (@GroupId, @UserId, CURRENT_TIMESTAMP);";
+
+            await _db.SaveData(sql, new { UserId = carpoolGroup.DriverId, GroupId = GoalGroupID });
         }
         public async Task<int> GetGroupNumber(string GroupName, int CreatorID)
         {
