@@ -111,7 +111,7 @@
             CurrentUser = UserList.First();
         }
 
-        // MyGroups = await _dbSchedules.Get(CurrentUser.UserId);
+        // MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
         RecommendedGroupsList = await _dbSchedules.GetMatchingSchedules(CurrentUser.UserId, DaysOfTheWeek);
         SortRecommendedGroups();
     }

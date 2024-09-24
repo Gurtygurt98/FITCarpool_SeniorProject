@@ -78,7 +78,6 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task<UserInfoModel> GetUserInfoModel(int GoalUserID)
         {
-            Console.WriteLine(GoalUserID + " Searching>???");
             string sql = $@"SELECT 
                 u.UserID, 
                            u.FirstName, 
@@ -128,6 +127,27 @@ namespace DataAccessLibrary.Data.Database
             string sql = @"select UserID from GroupMembers where GroupID = @groupID";
             return await _db.LoadData<int, dynamic>(sql, new { groupID = GroupID });
 
+        }
+        // Get the current groups a user is apart of 
+        public async Task<List<(int,string)>> GetCurrentGroups(int GoalUserID)
+        {
+            // Query to get all the matching groups 
+            string sql = $@"
+                    SELECT GM.GroupID, CG.GroupName
+                    FROM GroupMembers GM
+                    JOIN CarpoolGroups CG on GM.GroupID = CG.GroupID
+                    WHERE GM.UserID = @UserId;";
+
+            return await _db.LoadData<(int, string), dynamic>(sql, new { UserId = GoalUserID });
+            
+        }
+        public async Task JoinGroup(int GoalUserID, int GoalGroupID)
+        {
+            string sql = $@"
+                INSERT INTO GroupMembers (GroupID, UserID, JoinDate)
+                VALUES (@GroupId, @UserId, CURRENT_TIMESTAMP);";
+
+            await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
 
     }
