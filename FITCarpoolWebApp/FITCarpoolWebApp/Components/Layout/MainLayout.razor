@@ -29,6 +29,7 @@
             <MudNavLink Href="/" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
             <AuthorizeView>
                 <Authorized>
+<<<<<<< HEAD
                     <MudNavLink Href="Profile" Icon="@Icons.Material.Filled.AccountCircle">Profile</MudNavLink>
                     <MudNavLink Href="Preferences" Icon="@Icons.Material.Filled.PsychologyAlt">Preferences</MudNavLink>
                     <MudNavLink Href="Rider" Icon="@Icons.Material.Filled.LocalTaxi">Rider View</MudNavLink>
@@ -40,6 +41,20 @@
                     <MudNavLink Href="User-Details" Icon="@Icons.Material.Filled.AccountBox">User Details</MudNavLink>
                     <MudNavLink Href="Account/Manage" Icon="@Icons.Material.Filled.ManageAccounts">@context.User.Identity?.Name</MudNavLink>
                     <MudNavLink Href="#" Icon="@Icons.Material.Filled.Logout" OnClick="InvokeLogout">Logout</MudNavLink>
+=======
+                    <RadzenPanelMenuItem Text="Profile" Path="Profile" Icon="account_circle" />
+                    <RadzenPanelMenuItem Text="Preferences" Path="Preferences" Icon="psychology_alt" />
+                    <RadzenPanelMenuItem Text="Rider View" Path="Rider" Icon="local_taxi" />
+                    <RadzenPanelMenuItem Text="Driver View" Path="Driver" Icon="directions_car_filled" />
+                    <RadzenPanelMenuItem Text="Find Groups" Path="Group-Find" Icon="group_work" />
+                    <RadzenPanelMenuItem Text="Group Interface" Path="Group-Interface" Icon="workspaces" />
+                    <RadzenPanelMenuItem Text="After Trip" Path="After-Trip" Icon="no_crash" />
+                    <RadzenPanelMenuItem Text="Friends List" Path="Friends" Icon="supervised_user_circle" />
+                    <RadzenPanelMenuItem Text="Directions" Path="Directions" Icon="directions" />
+                    <RadzenPanelMenuItem Text="User Details" Path="User-Details" Icon="account_box" />
+                    <RadzenPanelMenuItem Text="@context.User.Identity?.Name" Path="Account/Manage" Icon="manage_accounts" />
+                    <RadzenPanelMenuItem Text="Logout" Icon="logout" Click="@InvokeLogout" />
+>>>>>>> 9ad0c06aab9e0ee827ae6509887d3674aeb3f64d
                 </Authorized>
                 <NotAuthorized>
                     <MudNavLink Href="Account/Register" Icon="@Icons.Material.Filled.Edit">Register</MudNavLink>
