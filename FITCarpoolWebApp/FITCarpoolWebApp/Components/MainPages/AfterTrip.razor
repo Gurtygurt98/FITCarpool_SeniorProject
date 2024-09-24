@@ -1,0 +1,117 @@
+﻿@page "/After-Trip"
+@using Radzen.Blazor
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@using Microsoft.AspNetCore.Authorization
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Database_Models
+@inject NotificationService NotificationService
+@inject IUsersData _dbUsers
+@attribute [Authorize]
+
+<RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
+        <RadzenHeading Size="H2" Text="Review Your Trip" Style="text-align: center; margin-bottom: 20px;" />
+
+        @foreach (var group in GroupRecommendations.Keys)
+        {
+            if (GroupRecommendations[group])
+            {
+                
+                <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
+                    <Columns>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Width="80px">
+                            <Template Context="user">
+                                @if (user.ProfilePicture != null)
+                                {
+                                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                                }
+                                else
+                                {
+                                    <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Property="Email" Title="Email" Width="200px" />
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="200px">
+                            <Template Context="user">
+                                @{
+                                    var fullName = $"{user.FirstName} {user.LastName}";
+                                }
+                                <text>@fullName</text>
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Rating" Width="200px">
+                            <Template Context="user">
+
+                                <RadzenRating @bind-Value="@user.Rating" Max="5" Change="@(args => UpdateRatings(args, user))" />
+                            </Template>
+                        </RadzenDataGridColumn>
+                
+                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="140px">
+                            <Template>
+                                <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
+                            <Template>
+                                <RadzenButton Text="Report" Click="@(() => ReportUser(user.Email))" Style="width: 100%; background-color: tomato; color: white;" />
+                            </Template>
+                        </RadzenDataGridColumn>
+
+                    </Columns>
+                </RadzenDataGrid>
+            }
+        }
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    private Dictionary<int, bool> GroupRecommendations = new();
+    private Dictionary<int, List<UsersModel>> RecommendationData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var allUsers = await _dbUsers.GetAllUser();
+        RecommendationData.Add(0, allUsers.Skip(3).Take(3).ToList());
+
+        foreach (var key in RecommendationData.Keys)
+        {
+            GroupRecommendations[key] = true;
+        }
+    }
+
+
+    bool _busyUpdate = false;
+    UsersModel InputModel = new();
+    async Task UpdateRatings(int rating, UsersModel user)
+    {       
+        _busyUpdate = true;
+        
+        try
+        {
+            await _dbUsers.UpdateUser(user);
+        }
+
+        finally
+        {
+            NavigationManager.NavigateTo("/After-Trip", forceLoad: true);
+        }
+
+    }
+
+    private void ReportUser(string userEmail)
+    {
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "User Reported" });
+    }
+
+    private void ViewUser(string userEmail)
+    {
+        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
+    }
+}
