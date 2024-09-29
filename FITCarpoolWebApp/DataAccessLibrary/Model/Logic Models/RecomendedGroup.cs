@@ -11,7 +11,6 @@ namespace DataAccessLibrary.Model.Logic_Models
         public List<UserInfoModel> GroupMembers { get; set; }
         public UserInfoModel RequestingUser { get; set; }
         public string Direction { get; set; } = "";
-        // Either Arriving or Departing 
         public double DistanceScore { get; private set; }
         public double PreferenceScore { get; private set; }
 
@@ -99,7 +98,7 @@ namespace DataAccessLibrary.Model.Logic_Models
             if (user1.MusicPreference == user2.MusicPreference || user1.MusicPreference == "No Preference")
                 matchScore++;
 
-            return (double)matchScore / totalPreferences * 100; // Return percentage
+            return (double)matchScore / totalPreferences * 100; 
         }
 
         public double CalculateTotalMatchScore()
@@ -119,7 +118,7 @@ namespace DataAccessLibrary.Model.Logic_Models
             if (memberCount == 0)
                 return 0;
 
-            return totalScore / memberCount; // Average preference match percentage
+            return totalScore / memberCount; 
         }
 
         public override string ToString()
