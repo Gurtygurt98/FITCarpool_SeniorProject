@@ -26,12 +26,18 @@
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack style="margin-bottom: 50px;">
             <MudText Typo="Typo.h2" Align="Align.Center">Friends List</MudText>
-            <MudAutocomplete T="string" @bind-Value="_searchString"
+            <MudAutocomplete 
                              SearchFunc="@SearchUser"
+                             T="UsersModel" @bind-Value="selectedUser"
                              Placeholder="Search for other users..."
                              Dense="true"
                              ResetValueOnEmptyText="true"
-                             ToStringFunc="@((string s) => s)" />
+                             ToStringFunc="@(i => ItemDisplay(i))" />
+            <RadzenRow>
+                <RadzenColumn>
+                    <RadzenButton Click=@(args => SendRequest(@selectedUser)) Text="Send Friend Request" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+            </RadzenRow>
         </RadzenStack>
 
 
@@ -88,9 +94,39 @@
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
+    private bool ListContains(List<Friend> flist, int u2)
+    {
+        foreach(Friend f in flist)
+        {
+            if (f.ID1 == u2 || f.ID2 == u2)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
     private void SendRequest(UsersModel u)
     {
-        //_dbFriends.AddFriend(new FriendsModel {FriendshipId = , UserId1 = ID, UserId2 = u.UserId, CreatedDate = DateTime.Now, Status = "pending" });
+        if(u!=null)
+        {
+            if (ListContains(outgoingRequests, u.UserId))
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Friend Request Already Sent" });
+            }
+            else if (ListContains(friends, u.UserId))
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "User Already Friended" });
+            }
+            else
+            {
+                _dbFriends.AddFriend(new FriendsModel { UserId1 = ID, UserId2 = u.UserId, CreatedDate = DateTime.Now, Status = "pending" });
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Friend Request Sent" });
+            }
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "No User Selected" });
+        }
     }
     private void RemoveFriend(Friend f, string message)
     {
@@ -115,9 +151,11 @@
     List<FriendsModel> FriendList = new();
     private List<Friend> friends;
     private List<Friend> requests;
+    private List<Friend> outgoingRequests;
     UsersModel InputModel = null;
 
     // Code for searching other users
+    private UsersModel selectedUser = null;
     private string _searchString = "";
     private List<UsersModel> AccountList = new();
 
@@ -148,17 +186,17 @@
         List<UsersModel> testUser = await _dbUsers.GetUser("j@my.fit.edu");
         if (testUser.Any())
         {
-            testUserID = testUser.First().UserId;
+        testUserID = testUser.First().UserId;
         }
-        FriendsModel friend = new FriendsModel { UserId1 = ID, UserId2 = testUserID, Status = "accepted", CreatedDate = DateTime.Now, FriendshipId = 10000 };
+        FriendsModel friend = new FriendsModel { UserId1 = ID, UserId2 = testUserID, Status = "accepted", CreatedDate = DateTime.Now };
         await _dbFriends.AddFriend(friend);
         testUserID = 0;
         testUser = await _dbUsers.GetUser("jdriver@my.fit.edu");
-        if (testUser.Any())
-        {
+            if (testUser.Any())
+            {
             testUserID = testUser.First().UserId;
         }
-        friend = new FriendsModel { UserId1 = testUserID, UserId2 = ID, Status = "pending", CreatedDate = DateTime.Now, FriendshipId = 10001 };
+        friend = new FriendsModel { UserId1 = testUserID, UserId2 = ID, Status = "pending", CreatedDate = DateTime.Now };
         await _dbFriends.AddFriend(friend);
         */
         // TEST END
@@ -166,6 +204,7 @@
         FriendList = await _dbFriends.GetFriends(ID);
         friends = new List<Friend> {};
         requests = new List<Friend> {};
+        outgoingRequests = new List<Friend> { };
         foreach(FriendsModel dataFriend in FriendList)
         {
             List<UsersModel> temp = null;
@@ -183,9 +222,13 @@
             {
                 friends.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
-            else
+            else if(dataFriend.UserId1 != ID)
             {
                 requests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
+            }
+            else
+            {
+                outgoingRequests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
         }
 
@@ -201,16 +244,19 @@
         public string? Status { get; set; }
     }
 
-    private async Task<IEnumerable<string>> SearchUser(string value)
+    private async Task<IEnumerable<UsersModel>> SearchUser(string value)
     {
         await Task.Delay(5);
 
         if (string.IsNullOrEmpty(value))
-            return Enumerable.Empty<string>();
+            return Enumerable.Empty<UsersModel>();
 
         return AccountList
-            .Where(a => (a.FirstName + " " + a.LastName).Contains(value, StringComparison.InvariantCultureIgnoreCase))
-            .Select(a => (a.FirstName + " " + a.LastName))
-            .ToList();
+            .Where(a => (a.FirstName + " " + a.LastName).Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private string ItemDisplay(UsersModel m)
+    {
+        return m.FirstName + " " + m.LastName;
     }
 }
