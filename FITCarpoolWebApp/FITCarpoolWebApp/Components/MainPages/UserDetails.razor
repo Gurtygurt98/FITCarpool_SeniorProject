@@ -1,5 +1,6 @@
 ﻿@inject NavigationManager NavigationManager
 @inject IUsersData _dbUsers
+@inject IReviewsData _dbReviews
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model
 @using DataAccessLibrary.Model.Database_Models
@@ -92,17 +93,22 @@
     <RadzenTextArea class="w-60" aria-label="TextArea" />
 
 
-
-
-    <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews </RadzenText>
-
-    <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
-    <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
-    <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
-
-
     <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
     <RadzenRating @bind-Value=@ratingValue ReadOnly=true />
+
+    <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
+
+    @if (userReviews != null && userReviews.Any())
+    {
+        @foreach (var reviewText in userReviews)
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">@reviewText</RadzenText>
+        }
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">No reviews yet.</RadzenText>
+    }
 
 
     <RadzenStack>
@@ -167,6 +173,7 @@
     UsersModel InputModel = new();
     private List<UsersModel> UserList = null;
     private string userName = "Not found";
+    private List<string> userReviews;
 
     private string userEmail => InputModel?.Email ?? "Email not avaliable";
     private string userAddress => InputModel?.PickupLocation ?? "Address not available";
@@ -186,7 +193,7 @@
             noValue = ratingValue;
         }
     }
-
+    
     protected override async Task OnInitializedAsync()
     {
         //UserList = await _dbUsers.GetAllUser();
@@ -207,6 +214,11 @@
         {
             InputModel = UserList.First();
         }
+
+        if (InputModel != null)
+        {
+            userReviews = await _dbReviews.GetReviewsText(InputModel.UserId);
+        }
     }
 
     private async Task<IEnumerable<UsersModel>> SearchUser(string value)
@@ -221,4 +233,5 @@
             .ToList();
     }
 
+    
 }
