@@ -10,6 +10,7 @@
 @inject Radzen.DialogService DialogService
 @inject IUsersData _dbUsers
 @inject IReportsData _dbReports
+@inject IReviewsData _dbReviews
 
 @attribute [Authorize]
 
@@ -214,14 +215,15 @@
         DialogService.Close(true);
     }
 
-    private string reviewContent; 
-    private string reviewedUserEmail; 
+    
+    private string reviewContent;
+    private string reviewedUserEmail;
     private string reviewedUserName;
     private string reviewedUserNameLast;
 
     private async Task LeaveReview(UsersModel user)
     {
-        reviewedUserEmail = user.Email; 
+        reviewedUserEmail = user.Email;
         reviewedUserName = user.FirstName;
         reviewedUserNameLast = user.LastName;
 
@@ -235,12 +237,39 @@
 
     private async Task SubmitReview()
     {
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Review Submitted", Detail = "Your review has been submitted successfully." });
+        if (string.IsNullOrEmpty(reviewContent))
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "Submission Failed", Detail = "Please provide a review." });
+            return;
+        }
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authState.User;
+        var currentUserEmail = currentUser.Identity.Name;
+
+        var reviewedUser = (await _dbUsers.GetAllUser()).FirstOrDefault(u => u.Email == reviewedUserEmail);
+        var reviewerUser = (await _dbUsers.GetAllUser()).FirstOrDefault(u => u.Email == currentUserEmail);
+
+        if (reviewedUser != null && reviewerUser != null)
+        {
+            var newReview = new ReviewsModel
+                {
+                    ReviewedUserID = reviewedUser.UserId,
+                    ReviewerUserID = reviewerUser.UserId,
+                    ReviewText = reviewContent
+                };
+
+            await _dbReviews.CreateNewReview(newReview);
+
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Review Submitted", Detail = "Your review has been submitted successfully." });
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "Could not find the reviewed or submitting user." });
+        }
 
         reviewContent = string.Empty;
         DialogService.Close(true);
     }
-
-    
 }
 }
