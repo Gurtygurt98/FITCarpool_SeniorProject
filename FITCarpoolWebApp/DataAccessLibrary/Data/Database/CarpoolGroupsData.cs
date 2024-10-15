@@ -12,13 +12,26 @@ namespace DataAccessLibrary.Data.Database
     {
         private readonly ISQLDataAccess _db;
         private readonly IUsersData _dbUsers;
+        private readonly ISchedulesData _dbSchedule;
 
-        public CarpoolGroupsData(ISQLDataAccess db, IUsersData usersData)
+
+        public CarpoolGroupsData(ISQLDataAccess db, IUsersData usersData, ISchedulesData schedules)
         {
             _db = db;
             _dbUsers = usersData;
+            _dbSchedule = schedules;   
         }
+        // build a groups from groups that dont exist 
+        public async Task<List<RecomendedGroup>> GetRecomendedGroups(int GoalUserID, string Direction)
+        {
+            List<RecomendedGroup> RecomendedGroups = new();
+            // Get all the users 
+            List<UserInfoModel> MatchingUsers = new();
 
+
+            return RecomendedGroups;
+
+        }
         public async Task<List<CarpoolGroupsModel>> GetAllCarpoolGroups()
         {
             string sql = "SELECT * FROM CarpoolGroups";
@@ -29,7 +42,6 @@ namespace DataAccessLibrary.Data.Database
             }
             return result;
         }
-
         public async Task<List<CarpoolGroupsModel>> GetCarpoolGroup(int groupId)
         {
             string sql = @"SELECT 
@@ -45,7 +57,6 @@ namespace DataAccessLibrary.Data.Database
             }
             return result;
         }
-
         public async Task UpdateCarpoolGroup(CarpoolGroupsModel group)
         {
             string sql = @"UPDATE CarpoolGroups 
@@ -53,7 +64,6 @@ namespace DataAccessLibrary.Data.Database
                            WHERE GroupID = @GroupId";
             await _db.SaveData(sql, group);
         }
-
         public async Task DeleteCarpoolGroup(CarpoolGroupsModel group)
         {
             string sql = @"DELETE FROM CarpoolGroups WHERE GroupID = @GroupId";
@@ -189,7 +199,6 @@ namespace DataAccessLibrary.Data.Database
 
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
-        // Build Recommended Groups 
 
     }
 }
