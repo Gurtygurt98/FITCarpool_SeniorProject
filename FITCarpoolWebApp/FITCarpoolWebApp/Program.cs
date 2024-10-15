@@ -48,6 +48,8 @@ builder.Services.AddTransient<IRolesData, RolesData>();
 builder.Services.AddTransient<ITripStatisticsData, TripStatisticsData>();
 builder.Services.AddTransient<IUsersData, UsersData>();
 builder.Services.AddTransient<ILocationData, LocationData>();
+builder.Services.AddTransient<IReportsData, ReportsData>();
+builder.Services.AddTransient<IReviewsData, ReviewsData>();
 // Geolocation Services
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<LocationService>();
