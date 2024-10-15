@@ -88,10 +88,17 @@
         List<UsersModel> usersModels = getTestUsers();
         List<SchedulesModel> schedulesModels = getTestSchedules();
         List<Member> members = getTestMembers(usersModels, schedulesModels);
-        // Creates test groups, will use groups from database in final project
-        List<Group> output = Test4Groups(members);
 
-        output.Sort((x, y) => GroupScore(x).CompareTo(GroupScore(y)));
+        // Creates test groups, will use groups from database in final project
+        List<Group> output = await Test4Groups(members);
+        Console.WriteLine(output.Count);
+        Dictionary<Group, double> g_scores = new Dictionary<Group, double>();
+        // create a dictionary for groups to resolve awaits
+        foreach (Group g in output)
+        {
+            g_scores.Add(g, await GroupScore(g));
+        }
+        output.Sort((x, y) => (g_scores[x]).CompareTo(g_scores[y]));
 
         int count = 0;
         foreach (Group g in output)
@@ -195,7 +202,7 @@
         }
         return members;
     }
-    private List<Group> Test2Groups(List<Member> members)
+    private async Task<List<Group>> Test2Groups(List<Member> members)
     {
         // CREATE PREDEFINED GROUPS FOR TESTING
         // Get latest and earliest times, make them group creators.
@@ -236,12 +243,12 @@
         // Greedily adds the least damaging group member
         while (a.CurrentSize < a.MaxSize || b.CurrentSize < b.MaxSize)
         {
-            TestAdd(a, members);
-            TestAdd(b, members);
+            await TestAdd(a, members);
+            await TestAdd(b, members);
         }
         return new List<Group> { a, b };
     }
-    private List<Group> Test4Groups(List<Member> members)
+    private async Task<List<Group>> Test4Groups(List<Member> members)
     {
         // CREATE PREDEFINED GROUPS FOR TESTING
 
@@ -286,10 +293,10 @@
         // Greedily adds the least damaging group member
         while (a.CurrentSize < a.MaxSize || b.CurrentSize < b.MaxSize || c.CurrentSize < c.MaxSize || d.CurrentSize < d.MaxSize)
         {
-            TestAdd(a, members);
-            TestAdd(b, members);
-            TestAdd(c, members);
-            TestAdd(d, members);
+            await TestAdd(a, members);
+            await TestAdd(b, members);
+            await TestAdd(c, members);
+            await TestAdd(d, members);
         }
         return new List<Group> { a, b, c, d };
     }
@@ -320,7 +327,7 @@
         NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
     }
 
-    public Group TestAdd(Group a, List<Member> members)
+    public async Task<Group> TestAdd(Group a, List<Member> members)
     {
         if (a.CurrentSize == a.MaxSize)
         {
@@ -333,7 +340,7 @@
         {
             a.Members[a.CurrentSize] = m;
             a.CurrentSize++;
-            double currScore = GroupScore(a);
+            double currScore = await GroupScore(a);
             if (currScore < bestScore)
             {
                 bestA = m;
@@ -348,10 +355,10 @@
         return a;
     }
 
-    public double GroupScore(Group g)
+    public async Task<double> GroupScore(Group g)
     {
-        return LocationScore(g);
-        // return LocationScore(g) + 2 * TimeScore(g) + 10 * PreferenceScore(g);
+        return await DistanceScore(g);
+        //return 2 * TimeScore(g) + 10 * PreferenceScore(g);
     }
     // Calculates the difference between the earliest necessary arrival and the latest acceptable arrival
     private double TimeScore(Group g)
@@ -401,6 +408,73 @@
         }
         return (latestH - earliestH) * 60 + latestM - earliestM + ((latestH2 - earliestH2) * 60 + latestM2 - earliestM2);
     }
+
+    private async Task<double> CartDist((double lat, double lon) u1, (double lat, double lon) u2)
+    {
+        return Math.Sqrt((u1.lat - u2.lat) * (u1.lat - u2.lat) + (u1.lon - u2.lon) * (u1.lon - u2.lon));
+    }
+    private async Task<double> DistanceScore(Group g)
+    {
+        (double lat, double lon) campus = await _GmapKey.GetCoordinatesAsync("150 W University Blvd, Melbourne, FL 32901");
+        (double lat, double lon)[] spots = new (double lat, double lon)[g.CurrentSize];
+        int count = 0;
+        while (count < g.Members.Length && g.Members[count] != null)
+        {
+            spots[count] = await _GmapKey.GetCoordinatesAsync(g.Members[count].Location);
+            count++;
+        }
+
+        double[,] distances = new double[spots.Length, spots.Length];
+        double[] final_stop = new double[spots.Length];
+        bool[] visited = new bool[spots.Length];
+        for (int i = 0; i < visited.Length; i++)
+        {
+            visited[i] = false;
+            final_stop[i] = await CartDist(spots[i], campus);
+            distances[i, i] = 0;
+            for (int j = i + 1; j < visited.Length; j++)
+            {
+                double dist = await CartDist(spots[i], spots[j]);
+                distances[i, j] = dist;
+                distances[j, i] = dist;
+            }
+        }
+
+        double total = 0;
+        for (int i = 0; i < visited.Length; i++)
+        {
+            visited[i] = true;
+            total += TreeSpan(distances, visited, final_stop, i, 0, visited.Length-1);
+            visited[i] = false;
+        }
+        total /= visited.Length;
+        return total;
+
+    }
+    private double TreeSpan(double[,] distances, bool[] visited, double[] final_stop, int curr, double dist, int no_left)
+    {
+        if (no_left == 0)
+        {
+            return dist + final_stop[curr];
+        }
+        double min = Double.MaxValue;
+        for (int i = 0; i < visited.Length; i++)
+        {
+            if (visited[i] != true)
+            {
+                visited[i] = true;
+                double next = TreeSpan(distances, visited, final_stop, i, dist + distances[curr, i], no_left - 1);
+                visited[i] = false;
+                if (next < min)
+                {
+                    min = next;
+                }
+            }
+        }
+        return min;
+    }
+
+
     private double LocationScore(Group g)
     {
         // List of Addresses
