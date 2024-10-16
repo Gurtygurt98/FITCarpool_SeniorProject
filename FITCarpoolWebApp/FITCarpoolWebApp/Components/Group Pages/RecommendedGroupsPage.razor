@@ -7,7 +7,7 @@
 @inject Radzen.DialogService DialogService;
 @inject HttpClient httpClient;
 @inject IUsersData _dbUsers;
-@inject ISchedulesData _dbSchedules;
+@inject ICarpoolGroupsData _dbGroups;
 @inject AuthenticationStateProvider AuthenticationStateProvider;
 @inject NotificationService NotificationService;
 @inject NavigationManager NavigationManager;
@@ -111,8 +111,8 @@
             CurrentUser = UserList.First();
         }
 
-        MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
-        RecommendedGroupsList = await _dbSchedules.GetMatchingSchedules(CurrentUser.UserId, DaysOfTheWeek);
+        MyGroups = await _dbGroups.GetCurrentGroups(CurrentUser.UserId);
+        RecommendedGroupsList = await _dbGroups.GetAvailableGroups(CurrentUser.UserId, DaysOfTheWeek);
         SortRecommendedGroups();
     }
 
@@ -136,9 +136,9 @@
 
     private async Task AddGroup(RecomendedGroup group)
     {
-        await _dbSchedules.JoinGroup(CurrentUser.UserId, group.GroupID);
+        await _dbGroups.JoinGroup(CurrentUser.UserId, group.GroupID);
         NotificationService.Notify(NotificationSeverity.Success, "Group Added", $"You have been added to group {group.GroupName}");
-        MyGroups = await _dbSchedules.GetCurrentGroups(CurrentUser.UserId);
+        MyGroups = await _dbGroups.GetCurrentGroups(CurrentUser.UserId);
     }
 
     private async Task LeaveGroup((int, string, int,int) group)
@@ -149,7 +149,7 @@
             return;
         }
         MyGroups.Remove(group);
-        await _dbSchedules.RemoveGroupMember(CurrentUser.UserId, group.Item1);
+        await _dbGroups.RemoveGroupMember(CurrentUser.UserId, group.Item1);
         NotificationService.Notify(NotificationSeverity.Success, "Group Left", $"You have left group {group.Item2}");
     }
 

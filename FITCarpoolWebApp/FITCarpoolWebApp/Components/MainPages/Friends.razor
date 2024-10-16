@@ -94,32 +94,41 @@
     {
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = message });
     }
-    private bool ListContains(List<Friend> flist, int u2)
+    private Friend Find(List<Friend> flist, int u2)
     {
-        foreach(Friend f in flist)
+        foreach (Friend f in flist)
         {
             if (f.ID1 == u2 || f.ID2 == u2)
             {
-                return true;
+                return f;
             }
         }
-        return false;
+        return null;
     }
     private void SendRequest(UsersModel u)
     {
         if(u!=null)
         {
-            if (ListContains(outgoingRequests, u.UserId))
+            if (Find(outgoingRequests, u.UserId) != null)
             {
                 NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Friend Request Already Sent" });
             }
-            else if (ListContains(friends, u.UserId))
+            else if (Find(friends, u.UserId) != null)
             {
                 NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "User Already Friended" });
+            }
+            else if (u.UserId == ID)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Can Not Friend Yourself" });
+            }
+            else if (Find(requests, u.UserId) != null)
+            {
+                AcceptFriendRequest(Find(requests, u.UserId));
             }
             else
             {
                 _dbFriends.AddFriend(new FriendsModel { UserId1 = ID, UserId2 = u.UserId, CreatedDate = DateTime.Now, Status = "pending" });
+                outgoingRequests.Add(new Friend{FriendId = -1, ID1 = ID, ID2 = u.UserId, Name = u.FirstName + " " + u.LastName, Status = "Recently Online"});
                 NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Friend Request Sent" });
             }
         }
@@ -161,7 +170,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -179,27 +187,6 @@
             InputModel = UserList.First();
             ID = InputModel.UserId;
         }
-
-        // TEST ADDING FRIEND
-        /*
-        int testUserID = 0;
-        List<UsersModel> testUser = await _dbUsers.GetUser("j@my.fit.edu");
-        if (testUser.Any())
-        {
-        testUserID = testUser.First().UserId;
-        }
-        FriendsModel friend = new FriendsModel { UserId1 = ID, UserId2 = testUserID, Status = "accepted", CreatedDate = DateTime.Now };
-        await _dbFriends.AddFriend(friend);
-        testUserID = 0;
-        testUser = await _dbUsers.GetUser("jdriver@my.fit.edu");
-            if (testUser.Any())
-            {
-            testUserID = testUser.First().UserId;
-        }
-        friend = new FriendsModel { UserId1 = testUserID, UserId2 = ID, Status = "pending", CreatedDate = DateTime.Now };
-        await _dbFriends.AddFriend(friend);
-        */
-        // TEST END
 
         FriendList = await _dbFriends.GetFriends(ID);
         friends = new List<Friend> {};
@@ -257,6 +244,10 @@
 
     private string ItemDisplay(UsersModel m)
     {
+        if(m==null)
+        {
+            return "";
+        }
         return m.FirstName + " " + m.LastName;
     }
 }

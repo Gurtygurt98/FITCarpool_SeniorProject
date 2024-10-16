@@ -98,8 +98,9 @@ namespace DataAccessLibrary.Model.Logic_Models
             if (user1.MusicPreference == user2.MusicPreference || user1.MusicPreference == "No Preference")
                 matchScore++;
 
-            return (double)matchScore / totalPreferences * 100; 
+            return (double)matchScore / totalPreferences * 100;
         }
+
 
         public double CalculateTotalMatchScore()
         {

@@ -1,4 +1,6 @@
 ﻿@page "/"
+
+@using FITCarpoolWebApp.Components.Account.Shared
 @using MudBlazor
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
@@ -9,32 +11,45 @@
     <Authorized>
         <RadzenStack>
             <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-                        <RadzenStack>
-                            <MudText Typo="Typo.h2" Align="Align.Center">Welcome, @userName!</MudText>
-                            <RadzenButton Text="Update Profile" Click="@(() => NavigateTo("Profile"))" />
-                            <RadzenButton Text="Update Preferences" Click="@(() => NavigateTo("Preferences"))" />
-                            <RadzenButton Text="Rider" Click="@(() => NavigateTo("Rider"))" />
-                            <RadzenButton Text="Driver" Click="@(() => NavigateTo("Driver"))" />
-                            <RadzenButton Text="Group Find" Click="@(() => NavigateTo("Group-Find"))" />
-                            <RadzenButton Text="Group Interface" Click="@(() => NavigateTo("Group-Interface"))" />
-                            <RadzenButton Text="Friends List" Click="@(() => NavigateTo("Friends"))" />
-                            <RadzenButton Text="Directions Display" Click="@(() => NavigateTo("Directions"))" />
-                            <RadzenButton Text="User Details" Click="@(() => NavigateTo("User-Details"))" />
-                        </RadzenStack>
+                <RadzenStack>
+                    <MudText Typo="Typo.h2" Align="Align.Center">Welcome, @userName!</MudText>
+                    <RadzenButton Text="Update Profile" Click="@(() => NavigateTo("Profile"))" />
+                    <RadzenButton Text="Update Preferences" Click="@(() => NavigateTo("Preferences"))" />
+                    <RadzenButton Text="Rider" Click="@(() => NavigateTo("Rider"))" />
+                    <RadzenButton Text="Driver" Click="@(() => NavigateTo("Driver"))" />
+                    <RadzenButton Text="Group Find" Click="@(() => NavigateTo("Group-Find"))" />
+                    <RadzenButton Text="Group Interface" Click="@(() => NavigateTo("Group-Interface"))" />
+                    <RadzenButton Text="Friends List" Click="@(() => NavigateTo("Friends"))" />
+                    <RadzenButton Text="Directions Display" Click="@(() => NavigateTo("Directions"))" />
+                    <RadzenButton Text="User Details" Click="@(() => NavigateTo("User-Details"))" />
+                </RadzenStack>
             </RadzenCard>
         </RadzenStack>
     </Authorized>
+
     @*User is not logged in *@
     <NotAuthorized>
-        <RadzenStack>
-            <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-                    <RadzenStack>
-                        <MudText Typo="Typo.h2" Align="Align.Center">Welcome to Florida Tech Carpool</MudText>
-                        <RadzenButton Text="Login" Click="@(() => NavigationManager.NavigateTo("/Account/Login"))" />
-                        <RadzenButton Text="Register" Click="@(() => NavigationManager.NavigateTo("/Account/Register"))" />
-                    </RadzenStack>
-            </RadzenCard>
-        </RadzenStack>
+
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="6" lg="6">
+                <RadzenStack Style="display: flex; align-items: center; justify-content: center; margin: 0 10px;">
+                    <MudImage Src="https://scontent-mia3-1.xx.fbcdn.net/v/t39.30808-6/337879099_1147060015965896_3147312146304339976_n.jpg?stp=dst-jpg_tt6&_nc_cat=100&cb=99be929b-6bbdfb60&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=hQzfuzI0_j8Q7kNvgGO-P4D&_nc_ht=scontent-mia3-1.xx&_nc_gid=AS7qWpThdZHOwZYAbs2FwSW&oh=00_AYDyTW7_8P3P5lMY4yvGez0Ah83Y4xjEjjANsTmFruUo8w&oe=670F557C"
+                              Style="max-width: 100%; height: auto;"
+                              Alt="Florida Tech"
+                              Elevation="25"
+                              Class="rounded-lg" />
+                </RadzenStack>
+            </MudItem>
+
+            <MudItem xs="12" sm="6" md="6" lg="6">
+                <RadzenCard Class="rz-my-12" Style="flex: 1; margin: 0 10px;">
+                    <LoginForm />
+                </RadzenCard>
+            </MudItem>
+
+
+        </MudGrid>
+
     </NotAuthorized>
 </AuthorizeView>
 

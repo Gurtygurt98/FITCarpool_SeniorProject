@@ -18,6 +18,12 @@
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
         <RadzenHeading Size="H2" Text="Group Recommendation (Test Users)" Style="text-align: center; margin-bottom: 20px;" />
+        @if (GroupRecommendations.Keys.Count == 0)
+        {
+            <div>
+                Loading...
+            </div>
+        }
         @foreach (var group in GroupRecommendations.Keys)
         {
             if (GroupRecommendations[group])
@@ -79,19 +85,29 @@
     private string MapApi = "";
     private Dictionary<int, bool> GroupRecommendations = new();
     private Dictionary<int, List<UsersModel>> RecommendationData = new();
+    (double lat, double lon) campus;
 
     protected override async Task OnInitializedAsync()
     {
         MapApi = _GmapKey.MapAPI;
 
+        campus = await _GmapKey.GetCoordinatesAsync("150 W University Blvd, Melbourne, FL 32901");
+
         // Gets test users
         List<UsersModel> usersModels = getTestUsers();
         List<SchedulesModel> schedulesModels = getTestSchedules();
-        List<Member> members = getTestMembers(usersModels, schedulesModels);
+        List<Member> members = await getTestMembers(usersModels, schedulesModels);
+
         // Creates test groups, will use groups from database in final project
         List<Group> output = Test4Groups(members);
-
-        output.Sort((x, y) => GroupScore(x).CompareTo(GroupScore(y)));
+        Console.WriteLine(output.Count);
+        Dictionary<Group, double> g_scores = new Dictionary<Group, double>();
+        // create a dictionary for groups to resolve awaits
+        foreach (Group g in output)
+        {
+            g_scores.Add(g, GroupScore(g));
+        }
+        output.Sort((x, y) => (g_scores[x]).CompareTo(g_scores[y]));
 
         int count = 0;
         foreach (Group g in output)
@@ -170,7 +186,7 @@
             new SchedulesModel {UserId = 15, Start = new DateTime(2024, 4, 12, 9, 0, 0), End = new DateTime(2024, 4, 12, 15, 30, 0) }
         };
     }
-    private List<Member> getTestMembers(List<UsersModel> allUsers, List<SchedulesModel> s)
+    private async Task<List<Member>> getTestMembers(List<UsersModel> allUsers, List<SchedulesModel> s)
     {
         List<Member> members = new List<Member>();
         // var allUsers = await _dbUsers.GetAllUser();
@@ -183,7 +199,7 @@
                 {
                     UserID = u.UserId,
                     Name = u.FirstName + u.LastName,
-                    Location = u.PickupLocation,
+                    Location = await _GmapKey.GetCoordinatesAsync(u.PickupLocation),
                     ArrivalH = s.First(sch => sch.UserId == u.UserId).Start.Hour,
                     ArrivalM = s.First(sch => sch.UserId == u.UserId).Start.Minute,
                     DepartureH = s.First(sch => sch.UserId == u.UserId).End.Hour,
@@ -350,8 +366,8 @@
 
     public double GroupScore(Group g)
     {
-        return LocationScore(g);
-        // return LocationScore(g) + 2 * TimeScore(g) + 10 * PreferenceScore(g);
+        return DistanceScore(g);
+        //return 2 * TimeScore(g) + 10 * PreferenceScore(g);
     }
     // Calculates the difference between the earliest necessary arrival and the latest acceptable arrival
     private double TimeScore(Group g)
@@ -401,6 +417,72 @@
         }
         return (latestH - earliestH) * 60 + latestM - earliestM + ((latestH2 - earliestH2) * 60 + latestM2 - earliestM2);
     }
+
+    private double CartDist((double lat, double lon) u1, (double lat, double lon) u2)
+    {
+        return Math.Sqrt((u1.lat - u2.lat) * (u1.lat - u2.lat) + (u1.lon - u2.lon) * (u1.lon - u2.lon));
+    }
+    private double DistanceScore(Group g)
+    {
+        (double lat, double lon)[] spots = new (double lat, double lon)[g.CurrentSize];
+        int count = 0;
+        while (count < g.Members.Length && g.Members[count] != null)
+        {
+            spots[count] = g.Members[count].Location;
+            count++;
+        }
+
+        double[,] distances = new double[spots.Length, spots.Length];
+        double[] final_stop = new double[spots.Length];
+        bool[] visited = new bool[spots.Length];
+        for (int i = 0; i < visited.Length; i++)
+        {
+            visited[i] = false;
+            final_stop[i] = CartDist(spots[i], campus);
+            distances[i, i] = 0;
+            for (int j = i + 1; j < visited.Length; j++)
+            {
+                double dist = CartDist(spots[i], spots[j]);
+                distances[i, j] = dist;
+                distances[j, i] = dist;
+            }
+        }
+
+        double total = 0;
+        for (int i = 0; i < visited.Length; i++)
+        {
+            visited[i] = true;
+            total += TreeSpan(distances, visited, final_stop, i, 0, visited.Length-1);
+            visited[i] = false;
+        }
+        total /= visited.Length;
+        return total;
+
+    }
+    private double TreeSpan(double[,] distances, bool[] visited, double[] final_stop, int curr, double dist, int no_left)
+    {
+        if (no_left == 0)
+        {
+            return dist + final_stop[curr];
+        }
+        double min = Double.MaxValue;
+        for (int i = 0; i < visited.Length; i++)
+        {
+            if (visited[i] != true)
+            {
+                visited[i] = true;
+                double next = TreeSpan(distances, visited, final_stop, i, dist + distances[curr, i], no_left - 1);
+                visited[i] = false;
+                if (next < min)
+                {
+                    min = next;
+                }
+            }
+        }
+        return min;
+    }
+
+    /*
     private double LocationScore(Group g)
     {
         // List of Addresses
@@ -456,6 +538,7 @@
         }
         return answer;
     }
+    */
     // Counts every preference disagreemetn between members
     private double PreferenceScore(Group g)
     {
@@ -514,7 +597,7 @@
     {
         public int UserID { get; set; }
         public string? Name { get; set; }
-        public string? Location { get; set; }
+        public (double lat, double lon) Location { get; set; }
         public int[] Preferences { get; set; }
         public int ArrivalH { get; set; }
         public int ArrivalM { get; set; }
