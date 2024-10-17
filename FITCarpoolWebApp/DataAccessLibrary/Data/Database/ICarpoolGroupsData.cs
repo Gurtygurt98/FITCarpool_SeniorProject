@@ -19,5 +19,6 @@ namespace DataAccessLibrary.Data.Database
         Task JoinGroup(int GoalUserID, int GoalGroupID);
         Task RemoveGroupMember(int GoalUserID, int GoalGroupID);
         Task UpdateCarpoolGroup(CarpoolGroupsModel group);
+        Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection);
     }
 }
