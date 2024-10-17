@@ -200,17 +200,7 @@ namespace DataAccessLibrary.Data.Database
 
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
-        /// <summary>
-        /// This function uses k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
-        /// </summary>
-        /// <param name="GoalUserID"></param>
-        /// This is the user who is looking for groups to join
-        /// <param name="Days"></param>
-        /// days of the week Monday, Tuesday, Wednesday ETC 
-        /// <param name="direction"></param>
-        /// Value is either arrival or departure 
-        /// <returns></returns>
-        /// A List of generated groups that best match the user 
+        // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
         public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection)
         {
             if(!TravelDirection.Equals("arrival") && !TravelDirection.Equals("departure"))
@@ -222,13 +212,15 @@ namespace DataAccessLibrary.Data.Database
             UserInfoModel GoalUserModel = await _dbUsers.GetUserInfoModel(GoalUserID);
             // Get a list of User Info Model, this repersents all the user that the Goal User can be in a group with 
             List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
-            // Cluster these users by their longitude and latitude using K clustering 
-            List<List<UserInfoModel>> ClusterUserList = ClusterUsersbyLocation(MatchingUserList, GoalUserModel, TravelDirection);
+            // Cluster these users by their longitude and latitude using grid quadrants 
+            List<List<UserInfoModel>> ClusterUserList = ClusterUsersbyLocation(MatchingUserList, GoalUserModel);
             List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
             foreach(List < UserInfoModel > UserCluster in ClusterUserList)
             {
+                Console.WriteLine("Processing Cluster of size " + UserCluster.Count);
                 // Build groups from the cluster using HAC
                 List<RecomendedGroup> GroupsFromCluster = HACGroupBuilder(UserCluster, GoalUserModel, TravelDirection, 4);
+                Console.WriteLine(GroupsFromCluster.Count + " groups created from HAC");
                 GroupList.AddRange(GroupsFromCluster);
             }
 
@@ -236,131 +228,51 @@ namespace DataAccessLibrary.Data.Database
             return GroupList;
         }
 
-        /// <summary>
-        /// Clusters users by their location using K-means clustering algorithm.
-        /// </summary>
-        /// <param name="UserList">List of users to cluster.</param>
-        /// <param name="GoalUserModel">The user requesting recommendations.</param>
-        /// <param name="Direction">Travel direction ("arrival" or "departure").</param>
-        /// <returns>List of clusters, each cluster is a list of UserInfoModel.</returns>
-        public List<List<UserInfoModel>> ClusterUsersbyLocation(List<UserInfoModel> UserList, UserInfoModel GoalUserModel, string Direction)
+        // Clusters users by their location using a grid, need 
+        public List<List<UserInfoModel>> ClusterUsersbyLocation(List<UserInfoModel> UserList, UserInfoModel GoalUserModel)
         {
-            // Number of clusters
-            int K = 4; // You can adjust K or make it a parameter
+            // Initialize the clusters (one for each quadrant)
+            List<List<UserInfoModel>> clusters = new List<List<UserInfoModel>>()
+            {
+                new List<UserInfoModel>(),
+                new List<UserInfoModel>(), 
+                new List<UserInfoModel>(),
+                new List<UserInfoModel>()  
+            };
 
-            // Maximum number of iterations for K-means algorithm
-            int maxIterations = 100;
+            // Center of the grid 
+            double centerLat = GoalUserModel.PickupLatitude;
+            double centerLon = GoalUserModel.PickupLongitude;
 
-            // List to hold the clusters
-            List<List<UserInfoModel>> clusters = new List<List<UserInfoModel>>();
-
-            // List to hold centroids (latitude, longitude)
-            List<(double lat, double lon)> centroids = new List<(double lat, double lon)>();
-
-            // Extract locations of users based on the travel direction
-            // For arrival, use Dropoff location; for departure, use Pickup location
-            List<(UserInfoModel user, double lat, double lon)> userLocations = new List<(UserInfoModel user, double lat, double lon)>();
+            // Iterate over all users and place them into quadrants
             foreach (var user in UserList)
             {
-                double lat, lon;
-                if (Direction.Equals("arrival", StringComparison.OrdinalIgnoreCase))
+                double userLat = user.PickupLatitude;
+                double userLon = user.PickupLongitude;
+
+                // Determine the quadrant based on the relative position to the center
+                if (userLat >= centerLat && userLon >= centerLon)
                 {
-                    lat = user.DropoffLatitude;
-                    lon = user.DropoffLongitude;
+                    clusters[0].Add(user);
                 }
-                else // departure
+                else if (userLat >= centerLat && userLon < centerLon)
                 {
-                    lat = user.PickupLatitude;
-                    lon = user.PickupLongitude;
+                    clusters[1].Add(user);
                 }
-                userLocations.Add((user, lat, lon));
-            }
-
-            // Initialize centroids randomly from the users' locations
-            Random rand = new Random();
-            HashSet<int> chosenIndices = new HashSet<int>();
-            for (int i = 0; i < K; i++)
-            {
-                int index;
-                do
+                else if (userLat < centerLat && userLon < centerLon)
                 {
-                    index = rand.Next(userLocations.Count);
-                } while (chosenIndices.Contains(index));
-                chosenIndices.Add(index);
-                centroids.Add((userLocations[index].lat, userLocations[index].lon));
-            }
-
-            // Initialize cluster assignments for each user
-            // assignments[i] = cluster index assigned to user i
-            List<int> assignments = new List<int>(new int[userLocations.Count]);
-
-            // K-means algorithm main loop
-            for (int iter = 0; iter < maxIterations; iter++)
-            {
-                bool changed = false;
-
-                // Assignment step: Assign each user to the nearest centroid
-                for (int i = 0; i < userLocations.Count; i++)
-                {
-                    double minDistance = double.MaxValue;
-                    int minIndex = -1;
-
-                    for (int c = 0; c < K; c++)
-                    {
-                        // Calculate distance between user and centroid
-                        double distance = CalculateDistance(userLocations[i].lat, userLocations[i].lon, centroids[c].lat, centroids[c].lon);
-                        if (distance < minDistance)
-                        {
-                            minDistance = distance;
-                            minIndex = c;
-                        }
-                    }
-
-                    // Check if assignment has changed
-                    if (assignments[i] != minIndex)
-                    {
-                        changed = true;
-                        assignments[i] = minIndex;
-                    }
+                    clusters[2].Add(user);
                 }
-
-                // If no assignments have changed, convergence reached
-                if (!changed)
-                    break;
-
-                // Update step: Recalculate centroids as the mean of assigned users
-                for (int c = 0; c < K; c++)
+                else if (userLat < centerLat && userLon >= centerLon)
                 {
-                    var assignedUsers = userLocations.Where((ul, idx) => assignments[idx] == c).ToList();
-                    if (assignedUsers.Count > 0)
-                    {
-                        // Calculate mean latitude and longitude
-                        double meanLat = assignedUsers.Average(ul => ul.lat);
-                        double meanLon = assignedUsers.Average(ul => ul.lon);
-                        centroids[c] = (meanLat, meanLon);
-                    }
-                    else
-                    {
-                        // If no users assigned to centroid, reinitialize centroid randomly
-                        int index = rand.Next(userLocations.Count);
-                        centroids[c] = (userLocations[index].lat, userLocations[index].lon);
-                    }
+                    clusters[3].Add(user);
                 }
-            }
-
-            // Build the clusters based on final assignments
-            for (int c = 0; c < K; c++)
-            {
-                var clusterUsers = userLocations.Where((ul, idx) => assignments[idx] == c).Select(ul => ul.user).ToList();
-                clusters.Add(clusterUsers);
             }
 
             return clusters;
         }
 
-        /// <summary>
-        /// Haversine formula to calculate the distance between two lat/lon points in meters.
-        /// </summary>
+        // Haversine formula to calculate the distance between two lat/lon points in meters.
         private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
             // Earth's radius in meters
@@ -380,14 +292,7 @@ namespace DataAccessLibrary.Data.Database
             return distance;
         }
 
-        /// <summary>
-        /// Builds groups from a cluster of users using Hierarchical Agglomerative Clustering (HAC).
-        /// </summary>
-        /// <param name="UserCluster">List of users in the cluster.</param>
-        /// <param name="GoalUserModel">The user requesting recommendations.</param>
-        /// <param name="direction">Travel direction ("arrival" or "departure").</param>
-        /// <param name="n">Maximum group size.</param>
-        /// <returns>List of recommended groups.</returns>
+        // Builds groups from a cluster of users using Hierarchical Agglomerative Clustering (HAC).
         public List<RecomendedGroup> HACGroupBuilder(List<UserInfoModel> UserCluster, UserInfoModel GoalUserModel, string direction, int n)
         {
             // Initialize clusters: Each user is its own cluster
@@ -441,7 +346,6 @@ namespace DataAccessLibrary.Data.Database
 
             // Create RecomendedGroup instances for each cluster
             List<RecomendedGroup> recommendedGroups = new List<RecomendedGroup>();
-            int groupId = 1; // Group ID can be assigned sequentially or fetched from database
 
             foreach (var cluster in clusters)
             {
@@ -453,23 +357,17 @@ namespace DataAccessLibrary.Data.Database
                     continue;
                 }
 
-                // Include the GoalUserModel in the group if not already present
-                if (!cluster.Any(u => u.UserID == GoalUserModel.UserID))
-                {
-                    cluster.Add(GoalUserModel);
-                }
 
                 // Create a RecomendedGroup instance
                 RecomendedGroup group = new RecomendedGroup(
-                    groupName: $"Group {groupId}",
-                    groupID: groupId,
+                    groupName: string.Join(" ", cluster.Select(user => user.FirstName)),
+                    groupID: -1,
                     groupMembers: cluster,
                     requestUser: GoalUserModel,
                     direction: direction
                 );
 
                 recommendedGroups.Add(group);
-                groupId++;
             }
 
             return recommendedGroups;

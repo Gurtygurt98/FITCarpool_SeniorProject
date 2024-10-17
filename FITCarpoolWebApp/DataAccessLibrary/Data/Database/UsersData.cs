@@ -142,7 +142,7 @@ namespace DataAccessLibrary.Data.Database
                            u.LicensePlate, 
                            u.LicensePicture, 
                            u.CarPicture,
-                           u.ProfilePicture,
+                           u.ProfilePicture, 
                            u.Rating
                         FROM Users u
                         JOIN Locations l ON u.UserID = l.UserID
@@ -152,7 +152,10 @@ namespace DataAccessLibrary.Data.Database
             if (!FoundUsers.Any())
             {
                 Console.WriteLine("Goal user not found " + GoalUserID);
-                return new UserInfoModel();
+                var defaultPreference = new PreferencesModel(GoalUserID);
+                string sql2 = @"INSERT INTO Preferences (UserID, GenderPreference, EatingPreference, SmokingPreference, TemperaturePreference, MusicPreference) VALUES (@UserId, @GenderPreference, @EatingPreference, @SmokingPreference, @TemperaturePreference, @MusicPreference)";
+                await _db.SaveData(sql2, defaultPreference);
+                return await GetUserInfoModel(GoalUserID);
 
             }
             return FoundUsers.FirstOrDefault();
