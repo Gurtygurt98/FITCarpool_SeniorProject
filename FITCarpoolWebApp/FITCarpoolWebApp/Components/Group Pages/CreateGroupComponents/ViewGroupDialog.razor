@@ -1,60 +1,59 @@
 ﻿@using DataAccessLibrary.Model.Logic_Models
-@inject MudBlazor.DialogService DialogService
+@inject Radzen.DialogService DialogService
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Database_Models
+@using FITCarpoolWebApp.Components.MainPages
+@using Radzen
+<MudGrid GutterSize="2">
+    <MudItem xs="12" sm="6">
+        <MudText Typo="Typo.h6">Group Information</MudText>
+        <MudText><b>Group Name:</b> @CurrentGroup.GroupName</MudText>
+        <MudText><b>Group ID:</b> @CurrentGroup.GroupID</MudText>
+        <MudText><b>Direction:</b> @CurrentGroup.Direction</MudText>
+        <MudText><b>Distance Score:</b> @CurrentGroup.DistanceScore:F2</MudText>
+        <MudText><b>Preference Score:</b> @CurrentGroup.PreferenceScore:F2</MudText>
+    </MudItem>
 
-<RadzenDialog Width="MaxWidth.Large">
-    <MudGrid GutterSize="2">
-        <MudItem xs="12" sm="6">
-            <MudText Typo="Typo.h6">Group Information</MudText>
-            <MudText><b>Group Name:</b> @Group.GroupName</MudText>
-            <MudText><b>Group ID:</b> @Group.GroupID</MudText>
-            <MudText><b>Direction:</b> @Group.Direction</MudText>
-            <MudText><b>Distance Score:</b> @Group.DistanceScore:F2</MudText>
-            <MudText><b>Preference Score:</b> @Group.PreferenceScore:F2</MudText>
-        </MudItem>
+    <MudItem xs="12" sm="6">
+        <MudText Typo="Typo.h6">Group Members</MudText>
+        <MudTable Items="@CurrentGroup.GroupMembers" Hover="true">
+            <HeaderContent>
+                <MudTh>User Name</MudTh>
+                <MudTh>Gender</MudTh>
+                <MudTh>Allow Smoke/Vape</MudTh>
+                <MudTh>Allow Eat/Drink</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.FirstName @context.LastName</MudTd>
+                <MudTd>@context.Gender</MudTd>
+                <MudTd>@context.AllowSmokeVape</MudTd>
+                <MudTd>@context.AllowEatDrink</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
 
-        <MudItem xs="12" sm="6">
-            <MudText Typo="Typo.h6">Group Members</MudText>
-            <MudTable Items="@Group.GroupMembers" Hover="true">
-                <HeaderContent>
-                    <MudTh>User Name</MudTh>
-                    <MudTh>Gender</MudTh>
-                    <MudTh>Allow Smoke/Vape</MudTh>
-                    <MudTh>Allow Eat/Drink</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.FirstName @context.LastName</MudTd>
-                    <MudTd>@context.Gender</MudTd>
-                    <MudTd>@context.AllowSmokeVape</MudTd>
-                    <MudTd>@context.AllowEatDrink</MudTd>
-                </RowTemplate>
-            </MudTable>
-        </MudItem>
-    </MudGrid>
+<MudDivider Class="mt-4 mb-2" />
 
-    <MudDivider Class="mt-4 mb-2" />
-
-    <MudGrid GutterSize="2">
-        <MudItem xs="12">
-            <MudText Typo="Typo.h6">Preference Match Scores</MudText>
-            <MudTable Items="@Group.GroupMembers" Hover="true">
-                <HeaderContent>
-                    <MudTh>User Name</MudTh>
-                    <MudTh>Match Score</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>@context.FirstName @context.LastName</MudTd>
-                    <MudTd>@Group.CalculatePreferenceMatch(Group.RequestingUser, context):F2 %</MudTd>
-                </RowTemplate>
-            </MudTable>
-        </MudItem>
-    </MudGrid>
-    <MudButton Color="Color.Secondary" OnClick="Cancel">Close</MudButton>
-</RadzenDialog>
+<MudGrid GutterSize="2">
+    <MudItem xs="12">
+        <MudText Typo="Typo.h6">Preference Match Scores</MudText>
+        <MudTable Items="@CurrentGroup.GroupMembers" Hover="true">
+            <HeaderContent>
+                <MudTh>User Name</MudTh>
+                <MudTh>Match Score</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>@context.FirstName @context.LastName</MudTd>
+                <MudTd>@CurrentGroup.CalculatePreferenceMatch(CurrentGroup.RequestingUser, context):F2 %</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+</MudGrid>
 
 @code {
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
-    [Parameter] public RecomendedGroup Group { get; set; }
+    [Parameter] public RecomendedGroup CurrentGroup { get; set; }
 
-    private void Cancel() => MudDialog.Cancel();
 }

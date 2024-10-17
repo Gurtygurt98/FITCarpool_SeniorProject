@@ -82,5 +82,18 @@ namespace DataAccessLibrary.Model.Logic_Models
         {
             return $"UserID: {UserID}, Name: {FirstName} {LastName}, UserType: {UserType}, Pickup: {PickupLocation} (Lat: {PickupLatitude}, Lon: {PickupLongitude}), Dropoff: {DropoffLocation} (Lat: {DropoffLatitude}, Lon: {DropoffLongitude}), DrivingDistance: {DrivingDistance}, Gender: {Gender}, BeltCount: {BeltCount}, AllowEatDrink: {AllowEatDrink}, AllowSmokeVape: {AllowSmokeVape}, Preferences: [Gender: {GenderPreference}, Eating: {EatingPreference}, Smoking: {SmokingPreference}, Temperature: {TemperaturePreference}, Music: {MusicPreference}]";
         }
+        public override bool Equals(object obj)
+        {
+            if (obj == null || GetType() != obj.GetType())
+                return false;
+
+            UserInfoModel other = (UserInfoModel)obj;
+            return UserID == other.UserID;
+        }
+
+        public override int GetHashCode()
+        {
+            return UserID.GetHashCode();
+        }
     }
 }

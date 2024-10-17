@@ -210,9 +210,11 @@
         NotificationService.Notify(NotificationSeverity.Success, "Group Left", $"You have left group {group.Item2}");
     }
 
-    private void ShowGroupDetails(RecomendedGroup group)
+    private async Task ShowGroupDetails(RecomendedGroup group)
     {
-        // TODO: Implement logic to show group details in a dialog or new page
+        Console.WriteLine(group.GroupName);
+        await DialogService.OpenAsync<ViewGroupDialog>("View Group", new Dictionary<string, object> { { "CurrentGroup", group } });
+
     }
 
     private async Task OpenGroupDialog()

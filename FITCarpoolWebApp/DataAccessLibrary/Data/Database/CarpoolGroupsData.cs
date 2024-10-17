@@ -292,77 +292,29 @@ namespace DataAccessLibrary.Data.Database
             return distance;
         }
 
-        // Builds groups from a cluster of users using Hierarchical Agglomerative Clustering (HAC).
         public List<RecomendedGroup> HACGroupBuilder(List<UserInfoModel> UserCluster, UserInfoModel GoalUserModel, string direction, int n)
         {
-            // Initialize clusters: Each user is its own cluster
-            List<List<UserInfoModel>> clusters = new List<List<UserInfoModel>>();
-            foreach (var user in UserCluster)
-            {
-                clusters.Add(new List<UserInfoModel> { user });
-            }
+            // Step 1: Remove duplicate users based on UserId
+            List<UserInfoModel> distinctUsers = UserCluster.Distinct().ToList();
 
-            // Flag to check if clusters can be merged
-            bool clustersCanMerge = true;
+            // Step 2: Shuffle the users to ensure random distribution into groups
+            Random rand = new Random();
+            distinctUsers = distinctUsers.OrderBy(user => rand.Next()).ToList();
 
-            // Continue merging clusters until no more merges can be done
-            while (clustersCanMerge)
-            {
-                clustersCanMerge = false;
-                double minDistance = double.MaxValue;
-                int mergeIndexA = -1;
-                int mergeIndexB = -1;
-
-                // Find the pair of clusters with the minimum distance
-                for (int i = 0; i < clusters.Count; i++)
-                {
-                    for (int j = i + 1; j < clusters.Count; j++)
-                    {
-                        // Check if merging these clusters would exceed the maximum group size
-                        if (clusters[i].Count + clusters[j].Count > n)
-                            continue;
-
-                        // Compute the distance between clusters[i] and clusters[j]
-                        double distance = ComputeClusterDistance(clusters[i], clusters[j]);
-
-                        if (distance < minDistance)
-                        {
-                            minDistance = distance;
-                            mergeIndexA = i;
-                            mergeIndexB = j;
-                            clustersCanMerge = true;
-                        }
-                    }
-                }
-
-                // If a mergeable pair was found, merge them
-                if (clustersCanMerge && mergeIndexA != -1 && mergeIndexB != -1)
-                {
-                    // Merge clusters[mergeIndexB] into clusters[mergeIndexA] and remove clusters[mergeIndexB]
-                    clusters[mergeIndexA].AddRange(clusters[mergeIndexB]);
-                    clusters.RemoveAt(mergeIndexB);
-                }
-            }
-
-            // Create RecomendedGroup instances for each cluster
+            // Step 3: Initialize the list to hold the recommended groups
             List<RecomendedGroup> recommendedGroups = new List<RecomendedGroup>();
 
-            foreach (var cluster in clusters)
+            // Step 4: Assign users to groups of size 'n'
+            for (int i = 0; i < distinctUsers.Count; i += n)
             {
-                // Ensure the cluster size does not exceed N
-                if (cluster.Count > n)
-                {
-                    // Handle splitting the cluster if necessary
-                    // For simplicity, skip clusters that exceed size N
-                    continue;
-                }
+                // Get the next 'n' users to form a group
+                List<UserInfoModel> currentGroup = distinctUsers.Skip(i).Take(n).ToList();
 
-
-                // Create a RecomendedGroup instance
+                // Create a RecomendedGroup instance for the current group
                 RecomendedGroup group = new RecomendedGroup(
-                    groupName: string.Join(" ", cluster.Select(user => user.FirstName)),
+                    groupName: string.Join(" ", currentGroup.Select(user => user.FirstName)),
                     groupID: -1,
-                    groupMembers: cluster,
+                    groupMembers: currentGroup,
                     requestUser: GoalUserModel,
                     direction: direction
                 );
@@ -373,9 +325,9 @@ namespace DataAccessLibrary.Data.Database
             return recommendedGroups;
         }
 
-        /// <summary>
-        /// Computes the distance between two clusters using average linkage.
-        /// </summary>
+
+
+        // Computes the distance between two clusters using average linkage.
         private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB)
         {
             // Use average linkage: average distance between all pairs of users in the two clusters
@@ -398,9 +350,7 @@ namespace DataAccessLibrary.Data.Database
             return totalDistance / count;
         }
 
-        /// <summary>
-        /// Computes the distance between two users based on their preference match.
-        /// </summary>
+        //Computes the distance between two users based on their preference match.
         private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB)
         {
             // Calculate preference match score
@@ -410,9 +360,7 @@ namespace DataAccessLibrary.Data.Database
             return distance;
         }
 
-        /// <summary>
-        /// Calculates the preference match score between two users.
-        /// </summary>
+        //Calculates the preference match score between two users.
         private double CalculatePreferenceMatch(UserInfoModel user1, UserInfoModel user2)
         {
             int matchScore = 0;
