@@ -1,6 +1,7 @@
 ﻿using DataAccessLibrary.Data.API;
 using DataAccessLibrary.Model;
 using DataAccessLibrary.Model.Database_Models;
+using DataAccessLibrary.Model.Logic_Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -108,6 +109,54 @@ namespace DataAccessLibrary.Data.Database
         {
             string sql = "UPDATE Users SET Rating = @Rating WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, Rating = rating });
+        }
+        public async Task<UserInfoModel> GetUserInfoModel(int GoalUserID)
+        {
+            Console.WriteLine("Checking for " + GoalUserID);
+
+            string sql = $@"SELECT 
+                u.UserID, 
+                           u.FirstName, 
+                           u.LastName, 
+                           u.UserType, 
+                           u.PickupLocation, 
+                           u.DropoffLocation, 
+                           u.DrivingDistance, 
+                           u.Gender, 
+                           u.BeltCount, 
+                           u.AllowEatDrink, 
+                           u.AllowSmokeVape, 
+                           p.GenderPreference, 
+                           p.EatingPreference, 
+                           p.SmokingPreference, 
+                           p.TemperaturePreference, 
+                           p.MusicPreference,
+                           l.PickupLatitude,
+                           l.PickupLongitude, 
+                           l.DropoffLongitude, 
+                           l.DropoffLatitude, 
+                           u.PhonePrivacy, 
+                           u.AddressPrivacy, 
+                           u.MakeModel, 
+                           u.VehicleColor, 
+                           u.LicensePlate, 
+                           u.LicensePicture, 
+                           u.CarPicture,
+                           u.ProfilePicture,
+                           u.Rating
+                        FROM Users u
+                        JOIN Locations l ON u.UserID = l.UserID
+                        JOIN Preferences p ON u.UserID = p.UserID
+                        WHERE u.UserID = @UserId;";
+            List<UserInfoModel> FoundUsers = await _db.LoadData<UserInfoModel, dynamic>(sql, new { UserId = GoalUserID });
+            if (!FoundUsers.Any())
+            {
+                Console.WriteLine("Goal user not found " + GoalUserID);
+                return new UserInfoModel();
+
+            }
+            return FoundUsers.FirstOrDefault();
+
         }
     }
 }

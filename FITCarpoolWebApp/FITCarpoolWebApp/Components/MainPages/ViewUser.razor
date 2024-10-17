@@ -1,5 +1,6 @@
 ﻿@inject NavigationManager NavigationManager
 @inject IUsersData _dbUsers
+@inject IReviewsData _dbReviews
 @inject NotificationService NotificationService
 
 @using DataAccessLibrary.Data.Database
@@ -71,10 +72,6 @@
 </RadzenRow>
 
 
-
-
-
-
 <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-0">Pronouns</RadzenText>
 <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">She/Her, He/Him, etc.</RadzenText>
 
@@ -82,20 +79,25 @@
 <RadzenTextArea class="w-60" aria-label="TextArea" />
 
 
-
-
-<RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews </RadzenText>
-
-<RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">J... L...: Very pleasant ride!!</RadzenText>
-<RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">R... P...: Sweet person. Nice conversation.</RadzenText>
-<RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">B... O...: Dirty Car</RadzenText>
-
-
 <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
 <RadzenRating @bind-Value=@value ReadOnly=true />
 
+<RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
 
-    </RadzenCard>
+    @if (userReviews != null && userReviews.Any())
+    {
+        @foreach (var reviewText in userReviews)
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">@reviewText</RadzenText>
+        }
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Subtitle1" class="rz-display-flex rz-mt-2 rz-my-0">No reviews yet.</RadzenText>
+    }
+
+
+</RadzenCard>
 
 
 
@@ -139,7 +141,6 @@
     }
 
 
-    // Code for displaying other users' profile
     [Parameter]
     public string UserName { get; set; }
 
@@ -161,17 +162,25 @@
         }
     }
 
+    private List<string> userReviews;
     protected override async Task OnInitializedAsync()
     {
-        UserList = await _dbUsers.GetAllUser(); 
+        var users = await _dbUsers.GetAllUser();
+        selectedUser = users.FirstOrDefault(user => user.Email.Equals(UserName, StringComparison.OrdinalIgnoreCase));
 
-        selectedUser = UserList.FirstOrDefault(user => user.Email.Equals(UserName, StringComparison.OrdinalIgnoreCase));
-
-        if (selectedUser == null)
+        if (selectedUser != null)
+        {
+            userReviews = await _dbReviews.GetReviewsText(selectedUser.UserId);
+        }
+        else
         {
             NavigationManager.NavigateTo("/Group");
         }
     }
+}
+
+
+
 }
 
 

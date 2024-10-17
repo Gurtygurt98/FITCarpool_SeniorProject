@@ -40,7 +40,7 @@ namespace DataAccessLibrary.Data.Database
 
         public async Task AddFriend(FriendsModel friend)
         {
-            string sql = @"INSERT INTO Friends (UserID1, UserID2, Status, CreatedDate, FriendshipID) VALUES (@UserId1, @UserId2, @Status, @CreatedDate, @FriendshipId)";
+            string sql = @"INSERT INTO Friends (UserID1, UserID2, Status, CreatedDate) VALUES (@UserId1, @UserId2, @Status, @CreatedDate)";
             await _db.SaveData(sql, friend);
         }
 

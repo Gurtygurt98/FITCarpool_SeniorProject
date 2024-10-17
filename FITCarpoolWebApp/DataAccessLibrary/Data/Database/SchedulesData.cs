@@ -44,123 +44,62 @@ namespace DataAccessLibrary.Data.Database
                    VALUES (@UserId, @Day, @Start, @End, @Text)";
             await _db.SaveData(sql, schedule);
         }
-        public async Task<List<RecomendedGroup>> GetMatchingSchedules(int GoalUserID,List<string> Days)
+        public async Task<List<UserInfoModel>> GetMatchingSchedules(int GoalUserID, List<string> RequestDays, string TravelDirection)
         {
-            // Query to get all the matching groups 
-            string sql = $@"
-                    SELECT s2.GroupID, CG.GroupName, s2.Direction
-                    FROM Schedules s1
-                    JOIN GroupSchedule s2 on
-                        s1.Day = s2.Day 
-                        AND s1.Text = s2.Direction
-                        AND (s1.Start <= s2.End AND s1.End >= s2.Start)
-                    JOIN Users u on s1.UserID = u.UserID
-                    LEFT JOIN GroupMembers GM on GM.GroupID = s2.GroupID AND GM.UserID = s1.UserID
-                    JOIN CarpoolGroups CG on s2.GroupID = CG.GroupID
-                    WHERE s1.UserID = @UserId
-                    AND s1.Day IN @Days AND GM.UserID IS NULL;";
+            string sql = @"SELECT 
+                   u.UserID, 
+                   u.FirstName, 
+                   u.LastName, 
+                   u.UserType, 
+                   u.PickupLocation, 
+                   u.DropoffLocation, 
+                   u.DrivingDistance, 
+                   u.Gender, 
+                   u.BeltCount, 
+                   u.AllowEatDrink, 
+                   u.AllowSmokeVape, 
+                   p.GenderPreference, 
+                   p.EatingPreference, 
+                   p.SmokingPreference, 
+                   p.TemperaturePreference, 
+                   p.MusicPreference,
+                   l.PickupLatitude,
+                   l.PickupLongitude, 
+                   l.DropoffLongitude, 
+                   l.DropoffLatitude, 
+                   u.PhonePrivacy, 
+                   u.AddressPrivacy, 
+                   u.MakeModel, 
+                   u.VehicleColor, 
+                   u.LicensePlate, 
+                   u.LicensePicture, 
+                   u.CarPicture,
+                   u.ProfilePicture,
+                   u.Rating
+            FROM Users u
+            JOIN Locations l ON u.UserID = l.UserID
+            JOIN Preferences p ON u.UserID = p.UserID
+            JOIN Schedules s ON u.UserID = s.UserID
+            WHERE u.UserID != @GoalUserID
+              AND s.Day IN @RequestDays
+              AND s.text = @TravelDirection
+              AND s.Start >= datetime('now', '-1 day')
+              AND EXISTS (
+                    SELECT 1 
+                    FROM Schedules gs 
+                    WHERE gs.UserID = @GoalUserID
+                      AND gs.Day = s.Day
+                      AND gs.text = s.text
+                      AND ABS(strftime('%s', gs.Start) - strftime('%s', s.Start)) <= 1800
+                );";
 
-            List<(int,string, string)> MatchingScheduleGroupIDs = await _db.LoadData<(int,string,string), dynamic>(sql, new { UserId = GoalUserID, Days });
-
-            // Get the user info for the goal model 
-            UserInfoModel GoalUser = await GetUserInfoModel(GoalUserID);
-            List<RecomendedGroup> RecommendedGroups = new List<RecomendedGroup>();
-            foreach ((int GroupID,string GroupName, string direction) in MatchingScheduleGroupIDs)
+            return await _db.LoadData<UserInfoModel, dynamic>(sql, new
             {
-                List<int> GroupMemberIDs = await GetUserIds(GroupID);
-                List<UserInfoModel> GroupMembers = new List<UserInfoModel>();
-                foreach (int MemberID in GroupMemberIDs) 
-                {
-                    GroupMembers.Add(await GetUserInfoModel(MemberID));
-                }
-                RecommendedGroups.Add(new RecomendedGroup(GroupName, GroupID, GroupMembers, GoalUser, direction));
-            }
-            return RecommendedGroups;
+                GoalUserID,
+                RequestDays,
+                TravelDirection
+            });
         }
-        public async Task<UserInfoModel> GetUserInfoModel(int GoalUserID)
-        {
-            Console.WriteLine("Checking for " + GoalUserID);
-
-            string sql = $@"SELECT 
-                u.UserID, 
-                           u.FirstName, 
-                           u.LastName, 
-                           u.UserType, 
-                           u.PickupLocation, 
-                           u.DropoffLocation, 
-                           u.DrivingDistance, 
-                           u.Gender, 
-                           u.BeltCount, 
-                           u.AllowEatDrink, 
-                           u.AllowSmokeVape, 
-                           p.GenderPreference, 
-                           p.EatingPreference, 
-                           p.SmokingPreference, 
-                           p.TemperaturePreference, 
-                           p.MusicPreference,
-                           l.PickupLatitude,
-                           l.PickupLongitude, 
-                           l.DropoffLongitude, 
-                           l.DropoffLatitude, 
-                           u.PhonePrivacy, 
-                           u.AddressPrivacy, 
-                           u.MakeModel, 
-                           u.VehicleColor, 
-                           u.LicensePlate, 
-                           u.LicensePicture, 
-                           u.CarPicture,
-                           u.ProfilePicture,
-                           u.Rating
-                        FROM Users u
-                        JOIN Locations l ON u.UserID = l.UserID
-                        JOIN Preferences p ON u.UserID = p.UserID
-                        WHERE u.UserID = @UserId;";
-            List<UserInfoModel> FoundUsers = await _db.LoadData<UserInfoModel, dynamic>(sql, new { UserId = GoalUserID });
-            if (!FoundUsers.Any())
-            {
-                Console.WriteLine("Goal user not found " + GoalUserID);
-                return new UserInfoModel();
-
-            }
-            return FoundUsers.FirstOrDefault();
-
-        }
-        public async Task<List<int>> GetUserIds(int GroupID)
-        {
-            string sql = @"select UserID from GroupMembers where GroupID = @groupID";
-            return await _db.LoadData<int, dynamic>(sql, new { groupID = GroupID });
-
-        }
-        // Get the current groups a user is apart of 
-        public async Task<List<(int,string,int,int)>> GetCurrentGroups(int GoalUserID)
-        {
-            // Query to get all the matching groups 
-            string sql = $@"
-                    SELECT GM.GroupID, CG.GroupName, CG.CreatorID,GM.UserID
-                    FROM GroupMembers GM
-                    JOIN CarpoolGroups CG on GM.GroupID = CG.GroupID
-                    WHERE GM.UserID = @UserId;";
-
-            return await _db.LoadData<(int, string,int,int), dynamic>(sql, new { UserId = GoalUserID });
-            
-        }
-        public async Task JoinGroup(int GoalUserID, int GoalGroupID)
-        {
-            string sql = $@"
-                INSERT INTO GroupMembers (GroupID, UserID, JoinDate)
-                VALUES (@GroupId, @UserId, CURRENT_TIMESTAMP);";
-
-            await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
-        }
-        public async Task RemoveGroupMember(int GoalUserID, int GoalGroupID)
-        {
-            string sql = @"
-                DELETE FROM GroupMembers
-                WHERE UserID = @UserId AND GroupID = @GroupId;";
-
-            await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
-        }
-
 
     }
 }
