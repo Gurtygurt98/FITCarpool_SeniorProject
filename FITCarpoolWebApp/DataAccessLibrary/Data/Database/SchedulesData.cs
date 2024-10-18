@@ -46,7 +46,7 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task<List<UserInfoModel>> GetMatchingSchedules(int GoalUserID, List<string> RequestDays, string TravelDirection)
         {
-            string sql = @"SELECT 
+            string sql = @"SELECT distinct
                    u.UserID, 
                    u.FirstName, 
                    u.LastName, 

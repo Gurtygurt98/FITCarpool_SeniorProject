@@ -212,9 +212,34 @@ namespace DataAccessLibrary.Data.Database
             UserInfoModel GoalUserModel = await _dbUsers.GetUserInfoModel(GoalUserID);
             // Get a list of User Info Model, this repersents all the user that the Goal User can be in a group with 
             List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
+            List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
+            //
+            MatchingUserList = MatchingUserList.Where(user => GenderPreferencesMatch(GoalUserModel, user)).ToList();
+            Console.WriteLine($"After filtering, {MatchingUserList.Count} users remain.");
+            List<List<UserInfoModel>> clusters = MatchingUserList.Select(user => new List<UserInfoModel> { user }).ToList();
+            int n = clusters.Count;
+            double[,] distanceMatrix = new double[n, n];
+
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = i + 1; j < n; j++)
+                {
+                    double distance = ComputeClusterDistance(clusters[i], clusters[j]);
+                    distanceMatrix[i, j] = distance;
+                    distanceMatrix[j, i] = distance; // Symmetric
+                }
+            }
+            PrintDistanceMatrix(distanceMatrix, MatchingUserList);
+
+
+
+
+            Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count()} group(s) for you!");
+
+            /*
             // Cluster these users by their longitude and latitude using grid quadrants 
             List<List<UserInfoModel>> ClusterUserList = ClusterUsersbyLocation(MatchingUserList, GoalUserModel);
-            List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
+            
             foreach(List < UserInfoModel > UserCluster in ClusterUserList)
             {
                 Console.WriteLine("Processing Cluster of size " + UserCluster.Count);
@@ -223,8 +248,7 @@ namespace DataAccessLibrary.Data.Database
                 Console.WriteLine(GroupsFromCluster.Count + " groups created from HAC");
                 GroupList.AddRange(GroupsFromCluster);
             }
-
-            Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count()} group(s) for you!");
+            */
             return GroupList;
         }
 
@@ -325,8 +349,6 @@ namespace DataAccessLibrary.Data.Database
             return recommendedGroups;
         }
 
-
-
         // Computes the distance between two clusters using average linkage.
         private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB)
         {
@@ -339,8 +361,11 @@ namespace DataAccessLibrary.Data.Database
                 foreach (var userB in clusterB)
                 {
                     double distance = ComputeUserDistance(userA, userB);
-                    totalDistance += distance;
-                    count++;
+                    if (distance != double.MaxValue) // Exclude pairs that don't match gender preferences
+                    {
+                        totalDistance += distance;
+                        count++;
+                    }
                 }
             }
 
@@ -349,25 +374,40 @@ namespace DataAccessLibrary.Data.Database
 
             return totalDistance / count;
         }
-
-        //Computes the distance between two users based on their preference match.
+        // Computes the distance between two users based on their preference match and geographical distance.
         private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB)
         {
-            // Calculate preference match score
-            double matchScore = CalculatePreferenceMatch(userA, userB);
-            // Convert match score to distance (0 = perfect match, 1 = no match)
-            double distance = 1.0 - (matchScore / 100.0);
-            return distance;
+            // First, check if users match each other's gender preferences
+            if (!GenderPreferencesMatch(userA, userB))
+            {
+                // Return a very high distance if gender preferences do not match
+                return double.MaxValue;
+            }
+
+            // Calculate preference match score (0 to 1)
+            double preferenceScore = CalculatePreferenceMatch(userA, userB);
+
+            // Calculate geographical distance in meters
+            double geoDistanceMeters = CalculateDistance(userA.PickupLatitude, userA.PickupLongitude, userB.PickupLatitude, userB.PickupLongitude);
+
+            // Normalize geographical distance (0 to 1)
+            double normalizedGeoDistance = geoDistanceMeters / 50000;
+
+            // Combine preference score and geographical distance into overall distance
+            double weightPreference = 0.5;
+            double weightGeographical = 0.5;
+
+            double overallDistance = weightPreference * (1.0 - preferenceScore) + weightGeographical * normalizedGeoDistance;
+
+            return overallDistance;
         }
 
-        //Calculates the preference match score between two users.
+        // Calculates the preference match score between two users (without gender).
         private double CalculatePreferenceMatch(UserInfoModel user1, UserInfoModel user2)
         {
             int matchScore = 0;
-            int totalPreferences = 5;
+            int totalPreferences = 4; 
 
-            if (user1.GenderPreference == user2.Gender || user1.GenderPreference == "No Preference")
-                matchScore++;
             if (user1.SmokingPreference == user2.AllowSmokeVape || user1.SmokingPreference == "No Preference")
                 matchScore++;
             if (user1.EatingPreference == user2.AllowEatDrink || user1.EatingPreference == "No Preference")
@@ -377,7 +417,93 @@ namespace DataAccessLibrary.Data.Database
             if (user1.MusicPreference == user2.MusicPreference || user1.MusicPreference == "No Preference")
                 matchScore++;
 
-            return (double)matchScore / totalPreferences * 100;
+            return (double)matchScore / totalPreferences;
+        }
+        // Checks if two users match each other's gender preferences.
+        private bool GenderPreferencesMatch(UserInfoModel userA, UserInfoModel userB)
+        {
+            bool userAMatchesUserBPreference = DoesUserMatchGenderPreference(userA, userB);
+            bool userBMatchesUserAPreference = DoesUserMatchGenderPreference(userB, userA);
+            return userAMatchesUserBPreference && userBMatchesUserAPreference;
+        }
+
+        // Determines if 'targetUser' matches 'user's gender preference.
+        private bool DoesUserMatchGenderPreference(UserInfoModel user, UserInfoModel targetUser)
+        {
+
+            string userPreference = user.GenderPreference;
+            string targetGenderCategory = CategorizeGender(targetUser.Gender);
+            if (userPreference == "No Preference")
+            {
+                return true;
+            }
+            else if (userPreference == "Same Gender")
+            {
+                string userGenderCategory = CategorizeGender(user.Gender);
+                bool result = userGenderCategory == targetGenderCategory;
+                return result;
+            }
+            else if (userPreference == "Women and Non-binary Only")
+            {
+                bool result = targetGenderCategory == "Woman" || targetGenderCategory == "Non-binary";
+                return result;
+            }
+            else if (userPreference == "Non-binary Only")
+            {
+                bool result = targetGenderCategory == "Non-binary";
+                return result;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        // Categorizes gender into "Man", "Woman", or "Non-binary".
+        private string CategorizeGender(string gender)
+        {
+            if (gender == "Man")
+            {
+                return "Man";
+            }
+            else if (gender == "Woman")
+            {
+                return "Woman";
+            }
+            else
+            {
+                // All other genders are categorized as "Non-binary"
+                return "Non-binary";
+            }
+        }
+        // Function to print the distance matrix
+        private void PrintDistanceMatrix(double[,] matrix, List<UserInfoModel> users)
+        {
+            int n = users.Count;
+            Console.WriteLine("Distance Matrix:");
+            Console.Write("          ");
+            for (int i = 0; i < n; i++)
+            {
+                Console.Write($"{users[i].UserID,8}");
+            }
+            Console.WriteLine();
+            for (int i = 0; i < n; i++)
+            {
+                Console.Write($"{users[i].UserID,8} ");
+                for (int j = 0; j < n; j++)
+                {
+                    double distance = matrix[i, j];
+                    if (double.IsPositiveInfinity(distance) || distance == double.MaxValue)
+                    {
+                        Console.Write($"{"Inf",8}");
+                    }
+                    else
+                    {
+                        Console.Write($"{distance,8:F2}");
+                    }
+                }
+                Console.WriteLine();
+            }
         }
     }
 }
