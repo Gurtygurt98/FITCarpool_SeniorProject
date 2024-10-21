@@ -20,7 +20,7 @@ namespace DataAccessLibrary.Data.Database
         {
             _db = db;
             _dbUsers = usersData;
-            _dbSchedule = schedules;   
+            _dbSchedule = schedules;
         }
         // build a groups from groups that dont exist 
         public async Task<List<RecomendedGroup>> GetRecomendedGroups(int GoalUserID, string Direction)
@@ -203,19 +203,19 @@ namespace DataAccessLibrary.Data.Database
         // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
         public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection)
         {
-            if(!TravelDirection.Equals("arrival") && !TravelDirection.Equals("departure"))
+            if (!TravelDirection.Equals("arrival") && !TravelDirection.Equals("departure"))
             {
-                Console.WriteLine("Error - Invalid Direction " + TravelDirection); 
+                Console.WriteLine("Error - Invalid Direction " + TravelDirection);
                 return null;
             }
             // Build the user info model for the goal user
             UserInfoModel GoalUserModel = await _dbUsers.GetUserInfoModel(GoalUserID);
             // Get a list of User Info Model, this repersents all the user that the Goal User can be in a group with 
-            List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
+            //List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
+            List<UserInfoModel> MatchingUserList = GenerateTestUserInfoModels(32);
             List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
-            //
+            // Find users that have matching genders 
             MatchingUserList = MatchingUserList.Where(user => GenderPreferencesMatch(GoalUserModel, user)).ToList();
-            Console.WriteLine($"After filtering, {MatchingUserList.Count} users remain.");
             List<List<UserInfoModel>> clusters = MatchingUserList.Select(user => new List<UserInfoModel> { user }).ToList();
             int n = clusters.Count;
             double[,] distanceMatrix = new double[n, n];
@@ -235,72 +235,14 @@ namespace DataAccessLibrary.Data.Database
 
 
             Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count()} group(s) for you!");
-
-            /*
-            // Cluster these users by their longitude and latitude using grid quadrants 
-            List<List<UserInfoModel>> ClusterUserList = ClusterUsersbyLocation(MatchingUserList, GoalUserModel);
-            
-            foreach(List < UserInfoModel > UserCluster in ClusterUserList)
-            {
-                Console.WriteLine("Processing Cluster of size " + UserCluster.Count);
-                // Build groups from the cluster using HAC
-                List<RecomendedGroup> GroupsFromCluster = HACGroupBuilder(UserCluster, GoalUserModel, TravelDirection, 4);
-                Console.WriteLine(GroupsFromCluster.Count + " groups created from HAC");
-                GroupList.AddRange(GroupsFromCluster);
-            }
-            */
             return GroupList;
-        }
-
-        // Clusters users by their location using a grid, need 
-        public List<List<UserInfoModel>> ClusterUsersbyLocation(List<UserInfoModel> UserList, UserInfoModel GoalUserModel)
-        {
-            // Initialize the clusters (one for each quadrant)
-            List<List<UserInfoModel>> clusters = new List<List<UserInfoModel>>()
-            {
-                new List<UserInfoModel>(),
-                new List<UserInfoModel>(), 
-                new List<UserInfoModel>(),
-                new List<UserInfoModel>()  
-            };
-
-            // Center of the grid 
-            double centerLat = GoalUserModel.PickupLatitude;
-            double centerLon = GoalUserModel.PickupLongitude;
-
-            // Iterate over all users and place them into quadrants
-            foreach (var user in UserList)
-            {
-                double userLat = user.PickupLatitude;
-                double userLon = user.PickupLongitude;
-
-                // Determine the quadrant based on the relative position to the center
-                if (userLat >= centerLat && userLon >= centerLon)
-                {
-                    clusters[0].Add(user);
-                }
-                else if (userLat >= centerLat && userLon < centerLon)
-                {
-                    clusters[1].Add(user);
-                }
-                else if (userLat < centerLat && userLon < centerLon)
-                {
-                    clusters[2].Add(user);
-                }
-                else if (userLat < centerLat && userLon >= centerLon)
-                {
-                    clusters[3].Add(user);
-                }
-            }
-
-            return clusters;
         }
 
         // Haversine formula to calculate the distance between two lat/lon points in meters.
         private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
             // Earth's radius in meters
-            double R = 6371e3; 
+            double R = 6371e3;
             double lat1Rad = lat1 * Math.PI / 180;
             double lat2Rad = lat2 * Math.PI / 180;
             double deltaLat = (lat2 - lat1) * Math.PI / 180;
@@ -316,38 +258,6 @@ namespace DataAccessLibrary.Data.Database
             return distance;
         }
 
-        public List<RecomendedGroup> HACGroupBuilder(List<UserInfoModel> UserCluster, UserInfoModel GoalUserModel, string direction, int n)
-        {
-            // Step 1: Remove duplicate users based on UserId
-            List<UserInfoModel> distinctUsers = UserCluster.Distinct().ToList();
-
-            // Step 2: Shuffle the users to ensure random distribution into groups
-            Random rand = new Random();
-            distinctUsers = distinctUsers.OrderBy(user => rand.Next()).ToList();
-
-            // Step 3: Initialize the list to hold the recommended groups
-            List<RecomendedGroup> recommendedGroups = new List<RecomendedGroup>();
-
-            // Step 4: Assign users to groups of size 'n'
-            for (int i = 0; i < distinctUsers.Count; i += n)
-            {
-                // Get the next 'n' users to form a group
-                List<UserInfoModel> currentGroup = distinctUsers.Skip(i).Take(n).ToList();
-
-                // Create a RecomendedGroup instance for the current group
-                RecomendedGroup group = new RecomendedGroup(
-                    groupName: string.Join(" ", currentGroup.Select(user => user.FirstName)),
-                    groupID: -1,
-                    groupMembers: currentGroup,
-                    requestUser: GoalUserModel,
-                    direction: direction
-                );
-
-                recommendedGroups.Add(group);
-            }
-
-            return recommendedGroups;
-        }
 
         // Computes the distance between two clusters using average linkage.
         private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB)
@@ -406,7 +316,7 @@ namespace DataAccessLibrary.Data.Database
         private double CalculatePreferenceMatch(UserInfoModel user1, UserInfoModel user2)
         {
             int matchScore = 0;
-            int totalPreferences = 4; 
+            int totalPreferences = 4;
 
             if (user1.SmokingPreference == user2.AllowSmokeVape || user1.SmokingPreference == "No Preference")
                 matchScore++;
@@ -505,5 +415,128 @@ namespace DataAccessLibrary.Data.Database
                 Console.WriteLine();
             }
         }
+        public List<UserInfoModel> GenerateTestUserInfoModels(int ListSize)
+        {
+            List<UserInfoModel> userList = new List<UserInfoModel>();
+
+            // Fixed drop-off location
+            double dropoffLatitude = 28.066750;
+            double dropoffLongitude = -80.623032;
+
+            // Maximum offset in degrees for pickup locations (approx. 5 km radius)
+            double maxOffsetDegrees = 0.045; // Adjust this value to increase or decrease the spread
+
+            Random random = new Random();
+
+            // Define possible values for preferences
+            List<string> genderValues = new List<string> { "No Preference", "Women and Non-binary Only", "Same Gender", "Non-binary Only" };
+            List<string> carSmokingValues = new List<string> { "No Preference", "Vehicle allows smoking", "Vehicle does not allow smoking" };
+            List<string> carEatingValues = new List<string> { "No Preference", "Vehicle allows eating", "Vehicle does not allow eating" };
+            List<string> carTempValues = new List<string> { "No Preference", "Warmer", "Colder" };
+
+            List<MusicGenre> musicGenres = new List<MusicGenre>
+                {
+                    new MusicGenre { Id = "2", Name = "Pop" },
+                    new MusicGenre { Id = "3", Name = "Rock" },
+                    new MusicGenre { Id = "4", Name = "Hip Hop" },
+                    new MusicGenre { Id = "5", Name = "R&B" },
+                    new MusicGenre { Id = "6", Name = "Country" },
+                    new MusicGenre { Id = "7", Name = "Folk" },
+                    new MusicGenre { Id = "8", Name = "Classical" }
+                };
+
+            for (int i = 0; i < ListSize; i++)
+            {
+                UserInfoModel user = new UserInfoModel();
+
+                // Assign incremental UserID starting from 1
+                user.UserID = i + 1;
+
+                // Set dummy names
+                user.FirstName = $"FirstName{user.UserID}";
+                user.LastName = $"LastName{user.UserID}";
+
+                // Randomly assign "Driver" or "Passenger"
+                user.UserType = (random.Next(2) == 0) ? "Driver" : "Passenger";
+
+                // Randomly assign Gender
+                user.Gender = (random.Next(2) == 0) ? "Man" : "Woman";
+
+                // Fixed drop-off location
+                user.DropoffLocation = "Destination";
+                user.DropoffLatitude = dropoffLatitude;
+                user.DropoffLongitude = dropoffLongitude;
+
+                // Generate random pickup location within a circle around drop-off
+                double radius = maxOffsetDegrees * Math.Sqrt(random.NextDouble());
+                double angle = random.NextDouble() * 2 * Math.PI;
+
+                double latOffset = radius * Math.Cos(angle);
+                double lonOffset = radius * Math.Sin(angle) / Math.Cos(dropoffLatitude * Math.PI / 180);
+
+                user.PickupLatitude = dropoffLatitude + latOffset;
+                user.PickupLongitude = dropoffLongitude + lonOffset;
+
+                user.PickupLocation = $"Pickup Location {user.UserID}";
+
+                // Set other properties with default or dummy values
+                user.DrivingDistance = random.Next(5, 50); // Random distance in miles between 5 and 50
+                user.BeltCount = random.Next(1, 6); // Random belt count between 1 and 5
+
+                user.AllowEatDrink = (random.Next(2) == 0) ? "Yes" : "No";
+                user.AllowSmokeVape = (random.Next(2) == 0) ? "Yes" : "No";
+
+                // Assign random GenderPreference from genderValues
+                user.GenderPreference = genderValues[random.Next(genderValues.Count)];
+
+                // Assign random SmokingPreference from carSmokingValues
+                user.SmokingPreference = carSmokingValues[random.Next(carSmokingValues.Count)];
+
+                // Assign random EatingPreference from carEatingValues
+                user.EatingPreference = carEatingValues[random.Next(carEatingValues.Count)];
+
+                // Assign random TemperaturePreference from carTempValues
+                user.TemperaturePreference = carTempValues[random.Next(carTempValues.Count)];
+
+                // Assign random MusicPreference from musicGenres
+                bool noMusicPreference = (random.Next(2) == 0);
+                if (noMusicPreference)
+                {
+                    user.MusicPreference = "No Preference";
+                }
+                else
+                {
+                    // Randomly select some genres
+                    int numGenres = random.Next(1, musicGenres.Count + 1); // At least one genre
+                    var selectedGenres = musicGenres.OrderBy(x => random.Next()).Take(numGenres).Select(g => g.Name);
+                    user.MusicPreference = string.Join(", ", selectedGenres);
+                }
+
+                user.PhonePrivacy = "Share With No One";
+                user.AddressPrivacy = "Share With No One";
+
+                user.MakeModel = $"MakeModel{user.UserID}";
+                user.VehicleColor = $"Color{user.UserID}";
+                user.LicensePlate = $"Plate{user.UserID}";
+
+                user.LicensePicture = null;
+                user.CarPicture = null;
+                user.ProfilePicture = null;
+
+                user.Rating = random.Next(1, 6); // Random rating between 1 and 5
+
+                // Add the user to the list
+                userList.Add(user);
+                Console.WriteLine(user);
+            }
+
+            return userList;
+        }
+        class MusicGenre
+        {
+            public string Id { get; set; }
+            public string Name { get; set; }
+        }
+
     }
 }
