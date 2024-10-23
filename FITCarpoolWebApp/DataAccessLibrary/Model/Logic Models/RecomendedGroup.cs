@@ -80,6 +80,7 @@ namespace DataAccessLibrary.Model.Logic_Models
 
         public double CalculatePreferenceMatch(UserInfoModel user1, UserInfoModel user2)
         {
+            if(user1 == null || user2 == null) return 0;  
             int matchScore = 0;
             int totalPreferences = 5;
 

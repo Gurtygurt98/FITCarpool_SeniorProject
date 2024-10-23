@@ -132,6 +132,26 @@ namespace DataAccessLibrary.Data.Database
             var data = await _db.LoadData<int, dynamic>(sql, new { GroupName, CreatorID });
             return data.FirstOrDefault();
         }
+        public async Task<RecomendedGroup> GetSingleGroup(int GroupID)
+        {
+            string sqlGroup = @"select * from CarpoolGroups where GroupID = @GroupID";
+            List<CarpoolGroupsModel> groupsModels = await _db.LoadData<CarpoolGroupsModel,dynamic>(sqlGroup, new { GroupID });
+            CarpoolGroupsModel carpoolGroupsModel = groupsModels.FirstOrDefault();
+            string sqlMembers = @"select UserID from GroupMembers where GroupID = @GroupID";
+            List<int> IDS = await _db.LoadData<int, dynamic>(sqlMembers, new { GroupID });
+            List<UserInfoModel> GroupMems = new();
+            foreach (int userid in IDS) { 
+                Console.WriteLine(userid);
+                GroupMems.Add(await _dbUsers.GetUserInfoModel(userid));
+            }
+            return new RecomendedGroup
+            {
+                GroupID = GroupID,
+                GroupName = carpoolGroupsModel.GroupName,
+                GroupMembers = GroupMems
+            };
+
+        }
         public async Task<List<RecomendedGroup>> GetAvailableGroups(int GoalUserID, List<string> Days)
         {
             // Query to get all the matching groups 
@@ -208,15 +228,26 @@ namespace DataAccessLibrary.Data.Database
                 Console.WriteLine("Error - Invalid Direction " + TravelDirection);
                 return null;
             }
+
             // Build the user info model for the goal user
             UserInfoModel GoalUserModel = await _dbUsers.GetUserInfoModel(GoalUserID);
-            // Get a list of User Info Model, this repersents all the user that the Goal User can be in a group with 
+
+            // Get a list of UserInfoModel, representing all users that the Goal User can be in a group with
             //List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
-            List<UserInfoModel> MatchingUserList = GenerateTestUserInfoModels(32);
-            List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
-            // Find users that have matching genders 
+
+            // For testing purposes, you can generate test users
+             List<UserInfoModel> MatchingUserList = GenerateTestUserInfoModels(32);
+
+            // Filter users based on gender preferences
             MatchingUserList = MatchingUserList.Where(user => GenderPreferencesMatch(GoalUserModel, user)).ToList();
+
+            // Include the goal user in the list
+            MatchingUserList.Add(GoalUserModel);
+
+            // Initialize clusters (each user is their own cluster)
             List<List<UserInfoModel>> clusters = MatchingUserList.Select(user => new List<UserInfoModel> { user }).ToList();
+
+            // Compute the initial distance matrix
             int n = clusters.Count;
             double[,] distanceMatrix = new double[n, n];
 
@@ -229,12 +260,79 @@ namespace DataAccessLibrary.Data.Database
                     distanceMatrix[j, i] = distance; // Symmetric
                 }
             }
-            PrintDistanceMatrix(distanceMatrix, MatchingUserList);
 
+            // HAC Algorithm parameters
+            int maxGroupSize = 4;
+            int minGroupSize = 2;
+            int iteration = 0;
+            // HAC clustering loop
+            while (true)
+            {
+                double minDistance = double.MaxValue;
+                int minI = -1;
+                int minJ = -1;
 
+                n = clusters.Count;
 
+                // Find the pair of clusters with the minimum distance that can be merged
+                for (int i = 0; i < n; i++)
+                {
+                    if (clusters[i].Count >= maxGroupSize)
+                        continue; // Cannot merge cluster i further
 
-            Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count()} group(s) for you!");
+                    for (int j = i + 1; j < n; j++)
+                    {
+                        if (clusters[j].Count >= maxGroupSize)
+                            continue; // Cannot merge cluster j further
+
+                        // Check if merging exceeds the max group size
+                        if (clusters[i].Count + clusters[j].Count > maxGroupSize)
+                            continue;
+
+                        double distance = ComputeClusterDistance(clusters[i], clusters[j]);
+                        if (distance < minDistance)
+                        {
+                            minDistance = distance;
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+
+                // No more clusters can be merged
+                if (minI == -1 || minJ == -1)
+                    break;
+
+                // Merge clusters[minI] and clusters[minJ]
+                clusters[minI].AddRange(clusters[minJ]);
+                clusters.RemoveAt(minJ);
+
+                // Update distance matrix
+                distanceMatrix = UpdateDistanceMatrix(distanceMatrix, clusters, minI, minJ);
+                n = clusters.Count;
+                iteration++;
+            }
+
+            // Build recommended groups from clusters of acceptable sizes
+            List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
+            int count = 0;
+            foreach (var cluster in clusters)
+            {
+                count++;
+                if (cluster.Count >= minGroupSize && cluster.Count <= maxGroupSize)
+                {
+                    RecomendedGroup group = new RecomendedGroup
+                    {
+                        GroupID = -1, // Assign appropriate GroupID if needed
+                        GroupName = $"Recommended Group {count}",
+                        GroupMembers = cluster
+                    };
+                    GroupList.Add(group);
+                }
+                // Users in smaller clusters are left out
+            }
+
+            Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count} group(s) for you!");
             return GroupList;
         }
 
@@ -536,6 +634,42 @@ namespace DataAccessLibrary.Data.Database
         {
             public string Id { get; set; }
             public string Name { get; set; }
+        }
+        // Helper function to update the distance matrix after merging clusters
+        private double[,] UpdateDistanceMatrix(double[,] oldMatrix, List<List<UserInfoModel>> clusters, int mergedIndex, int removedIndex)
+        {
+            int n = clusters.Count;
+            double[,] newMatrix = new double[n, n];
+
+            int oldIndexI = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (i == removedIndex)
+                    oldIndexI++;
+                int oldIndexJ = 0;
+                for (int j = 0; j < n; j++)
+                {
+                    if (j == removedIndex)
+                        oldIndexJ++;
+                    if (i == j)
+                    {
+                        newMatrix[i, j] = 0;
+                    }
+                    else if (i == mergedIndex || j == mergedIndex)
+                    {
+                        int indexA = mergedIndex < removedIndex ? mergedIndex : mergedIndex + 1;
+                        int indexB = i == mergedIndex ? j : i;
+                        newMatrix[i, j] = ComputeClusterDistance(clusters[mergedIndex], clusters[indexB]);
+                    }
+                    else
+                    {
+                        newMatrix[i, j] = oldMatrix[oldIndexI, oldIndexJ];
+                    }
+                    oldIndexJ++;
+                }
+                oldIndexI++;
+            }
+            return newMatrix;
         }
 
     }

@@ -36,6 +36,8 @@
                                     <MudText>@group.Item2</MudText>
                                 </MudListItemContent>
                                 <MudListItemIcon>
+                                    <MudIconButton OnClick="@(async () => await ShowGroupDetails(group.Item1))" Color="Color.Error" Icon="@Icons.Material.Filled.Search" />
+
                                     <MudIconButton OnClick="@(async () => await LeaveGroup(group))" Color="Color.Error" Icon="@Icons.Material.Filled.ExitToApp" />
                                 </MudListItemIcon>
                             </MudListItem>
@@ -212,11 +214,12 @@
 
     private async Task ShowGroupDetails(RecomendedGroup group)
     {
-        Console.WriteLine(group.GroupName);
         await DialogService.OpenAsync<ViewGroupDialog>("View Group", new Dictionary<string, object> { { "CurrentGroup", group } });
-
     }
-
+    private async Task ShowGroupDetails(int groupID)
+    {
+        await ShowGroupDetails(await _dbGroups.GetSingleGroup(groupID));
+    }
     private async Task OpenGroupDialog()
     {
         await DialogService.OpenAsync<CreateGroupDialog>("Create Group", new Dictionary<string, object> { { "CurrentUser", CurrentUser } });
