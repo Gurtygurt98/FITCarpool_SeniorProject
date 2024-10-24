@@ -20,6 +20,8 @@
 <MudLayout>
 
     <MudAppBar Color="Color.Primary" Elevation="1">
+
+
         <MudButton Variant="MudBlazor.Variant.Text" Color="Color.Inherit" OnClick="@(() => NavigationManager.NavigateTo("/"))" Style="text-transform: none;">
             <MudText Typo="Typo.h6" Color="Color.Inherit">FIT Carpool Group Finder</MudText>
         </MudButton>
@@ -96,7 +98,7 @@
     </MudDrawer>
 
     <MudMainContent>
-        <div class="mud-main-content">
+        <div class="rz-p-4">
             @Body
         </div>
     </MudMainContent>

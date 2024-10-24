@@ -3,29 +3,58 @@
 @using FITCarpoolWebApp.Components.Account.Shared
 @using MudBlazor
 @using Radzen.Blazor
+@inject NotificationService NotificationService
+@using Microsoft.AspNetCore.Authorization
+@using DataAccessLibrary.Model.Database_Models
+@using Microsoft.EntityFrameworkCore
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IUsersData _dbUsers
+@inject IFriendsData _dbFriends
+@inject IGroupScheduleData _dbGroupSchedule
 
 <AuthorizeView>
-    @*User is logged in *@
+    @* User is logged in *@
     <Authorized>
-        <RadzenStack>
-            <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-                <RadzenStack>
-                    <MudText Typo="Typo.h2" Align="Align.Center">Welcome, @userName!</MudText>
-                    <RadzenButton Text="Update Profile" Click="@(() => NavigateTo("Profile"))" />
-                    <RadzenButton Text="Update Preferences" Click="@(() => NavigateTo("Preferences"))" />
-                    <RadzenButton Text="Rider" Click="@(() => NavigateTo("Rider"))" />
-                    <RadzenButton Text="Driver" Click="@(() => NavigateTo("Driver"))" />
-                    <RadzenButton Text="Group Find" Click="@(() => NavigateTo("Group-Find"))" />
-                    <RadzenButton Text="Group Interface" Click="@(() => NavigateTo("Group-Interface"))" />
-                    <RadzenButton Text="Friends List" Click="@(() => NavigateTo("Friends"))" />
-                    <RadzenButton Text="Directions Display" Click="@(() => NavigateTo("Directions"))" />
-                    <RadzenButton Text="User Details" Click="@(() => NavigateTo("User-Details"))" />
-                </RadzenStack>
-            </RadzenCard>
-        </RadzenStack>
+        <MudText Typo="Typo.h2">Welcome, @userName!</MudText>
+
+        <RadzenCard class="rz-my-12" Style="width: 60%; height: auto; margin-left: 0; display: inline-block;">
+            <MudText Typo="Typo.h5"><b>Upcoming Rides</b></MudText>
+            @if (upcomingTrips != null && upcomingTrips.Count > 0)
+            {
+                @foreach (var trip in upcomingTrips)
+                {
+                    <MudText Typo="Typo.h6">Day: @trip.Day</MudText>
+                    <MudText Typo="Typo.h6">Start Time: @trip.Start.ToString("hh:mm tt")</MudText>
+                    <MudText Typo="Typo.h6">Direction: @trip.Direction</MudText>
+                    <MudDivider />
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+            }
+        </RadzenCard>
+
+        <RadzenCard class="rz-my-12" Style="width: 30%; height: auto; display: inline-block; vertical-align: top;">
+            <MudText Typo="Typo.h5"><b>Friends List</b></MudText>
+            @if (friends != null && friends.Count > 0)
+            {
+                @foreach (var friend in friends)
+                {
+                    <MudText Typo="Typo.h6">@friend.Name</MudText>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">No friends found.</MudText>
+            }
+        </RadzenCard>
     </Authorized>
+
+
 
     @*User is not logged in *@
     <NotAuthorized>
@@ -53,8 +82,12 @@
     </NotAuthorized>
 </AuthorizeView>
 
+
 @code {
-    private string userName = "Not found";
+    private string userName;
+    private List<GroupScheduleModel> upcomingTrips = new();
+    private List<Friend> friends = new();
+    private int ID = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,15 +97,49 @@
         if (user.Identity.IsAuthenticated)
         {
             userName = user.Identity.Name;
-        }
-        else
-        {
-            userName = "Not found";
+
+            // GroupID for testing
+            int groupIDValue = 10;
+
+            var groupSchedules = await _dbGroupSchedule.GetScheduleForGroup(groupIDValue);
+            if (groupSchedules != null)
+            {
+                upcomingTrips.AddRange(groupSchedules);
+            }
+
+            // Get user ID
+            var userList = await _dbUsers.GetUser(userName);
+            if (userList.Any())
+            {
+                var inputModel = userList.First();
+                ID = inputModel.UserId;
+
+                // Fetch friends
+                var friendList = await _dbFriends.GetFriends(ID);
+                foreach (var dataFriend in friendList)
+                {
+                    List<UsersModel> temp;
+                    if (dataFriend.UserId1 == ID)
+                    {
+                        temp = await _dbUsers.GetUser(dataFriend.UserId2);
+                    }
+                    else
+                    {
+                        temp = await _dbUsers.GetUser(dataFriend.UserId1);
+                    }
+
+                    if (dataFriend.Status.Equals("accepted") && temp.Any())
+                    {
+                        friends.Add(new Friend { Name = $"{temp.First().FirstName} {temp.First().LastName}" });
+                    }
+                }
+            }
         }
     }
 
-    private void NavigateTo(string page)
+    public class Friend
     {
-        NavigationManager.NavigateTo($"/{page}");
+        public string Name { get; set; }
     }
 }
+

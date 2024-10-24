@@ -87,6 +87,25 @@
             }
         </RadzenStack>
     </RadzenCard>
+
+
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+            <RadzenStack>
+            <MudText Typo="Typo.h5" Style=""> Consider downloading Fl Tech Safe App for safety features!</MudText>
+            <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
+                      Alt="Profile"
+                      Style="width: 100px; height: 100px; cursor: pointer;"
+                      Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" 
+                      />
+            <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
+                      Alt="Profile"
+                      Style="width: 100px; height: 100px; cursor: pointer;"
+                      Click="@(() => NavigateTo("https://apps.apple.com/us/app/florida-tech-safe/id6446256387"))" />
+
+    </RadzenStack>
+
+    </RadzenCard>
+
 </RadzenStack>
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
@@ -268,5 +287,10 @@
     public void Dispose()
     {
         locationRefreshTimer?.Dispose();
+    }
+
+    private void NavigateTo(string url)
+    {
+        NavigationManager.NavigateTo(url, true);
     }
 }
