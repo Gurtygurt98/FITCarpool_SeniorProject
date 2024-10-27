@@ -25,7 +25,7 @@ namespace DataAccessLibrary.Model.Logic_Models
             Direction = direction;
 
             DistanceScore = CalculateDistanceScore();
-            Console.WriteLine("DistanceScore " + GroupName);
+            Console.WriteLine("DistanceScore " + DistanceScore);
 
             PreferenceScore = CalculateTotalMatchScore();
             Console.WriteLine("PreferenceScore " + PreferenceScore);
@@ -85,8 +85,7 @@ namespace DataAccessLibrary.Model.Logic_Models
             int totalPreferences = 5;
 
             if (user1.GenderPreference == user2.Gender || user1.GenderPreference == "No Preference")
-                matchScore++;
-
+                matchScore++;  
             if (user1.SmokingPreference == user2.AllowSmokeVape || user1.SmokingPreference == "No Preference")
                 matchScore++;
 

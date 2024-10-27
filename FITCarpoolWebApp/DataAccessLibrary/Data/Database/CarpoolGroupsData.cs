@@ -214,8 +214,7 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task RemoveGroupMember(int GoalUserID, int GoalGroupID)
         {
-            string sql = @"
-                DELETE FROM GroupMembers
+            string sql = @" DELETE FROM GroupMembers
                 WHERE UserID = @UserId AND GroupID = @GroupId;";
 
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
@@ -321,11 +320,13 @@ namespace DataAccessLibrary.Data.Database
                 count++;
                 if (cluster.Count >= minGroupSize && cluster.Count <= maxGroupSize)
                 {
+                    var filteredCluster = cluster.Where(user => user.UserID != GoalUserModel.UserID).ToList();
                     RecomendedGroup group = new RecomendedGroup
                     {
+                        RequestingUser = GoalUserModel,
                         GroupID = -1, // Assign appropriate GroupID if needed
                         GroupName = $"Recommended Group {count}",
-                        GroupMembers = cluster
+                        GroupMembers = filteredCluster
                     };
                     GroupList.Add(group);
                 }
@@ -625,7 +626,6 @@ namespace DataAccessLibrary.Data.Database
 
                 // Add the user to the list
                 userList.Add(user);
-                Console.WriteLine(user);
             }
 
             return userList;

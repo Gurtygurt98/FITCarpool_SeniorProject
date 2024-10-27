@@ -214,8 +214,15 @@
 
     private async Task ShowGroupDetails(RecomendedGroup group)
     {
-        await DialogService.OpenAsync<ViewGroupDialog>("View Group", new Dictionary<string, object> { { "CurrentGroup", group } });
+        var parameters = new Dictionary<string, object> { { "CurrentGroup", group } };
+        var options = new Radzen.DialogOptions
+            {
+                Width = "100%",   // Sets the dialog width to 100% of the screen
+            };
+
+        await DialogService.OpenAsync<ViewGroupDialog>("View Group", parameters, options);
     }
+
     private async Task ShowGroupDetails(int groupID)
     {
         await ShowGroupDetails(await _dbGroups.GetSingleGroup(groupID));
