@@ -132,6 +132,28 @@ namespace DataAccessLibrary.Data.Database
             var data = await _db.LoadData<int, dynamic>(sql, new { GroupName, CreatorID });
             return data.FirstOrDefault();
         }
+        public async Task<RecomendedGroup> GetSingleGroup(int GroupID, int RequestingUserID)
+        {
+            string sqlGroup = @"select * from CarpoolGroups where GroupID = @GroupID";
+            List<CarpoolGroupsModel> groupsModels = await _db.LoadData<CarpoolGroupsModel,dynamic>(sqlGroup, new { GroupID });
+            CarpoolGroupsModel carpoolGroupsModel = groupsModels.FirstOrDefault();
+            UserInfoModel requestingUser = await _dbUsers.GetUserInfoModel(RequestingUserID);
+            string sqlMembers = @"select UserID from GroupMembers where GroupID = @GroupID";
+            List<int> IDS = await _db.LoadData<int, dynamic>(sqlMembers, new { GroupID });
+            List<UserInfoModel> GroupMems = new();
+            IDS = IDS.Where(I => I != RequestingUserID).ToList();
+            foreach (int userid in IDS) { 
+                GroupMems.Add(await _dbUsers.GetUserInfoModel(userid));
+            }
+            return new RecomendedGroup
+            {
+                RequestingUser = requestingUser,
+                GroupID = GroupID,
+                GroupName = carpoolGroupsModel.GroupName,
+                GroupMembers = GroupMems
+            };
+
+        }
         public async Task<List<RecomendedGroup>> GetAvailableGroups(int GoalUserID, List<string> Days)
         {
             // Query to get all the matching groups 
@@ -194,47 +216,131 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task RemoveGroupMember(int GoalUserID, int GoalGroupID)
         {
-            string sql = @"
-                DELETE FROM GroupMembers
+            string sql = @" DELETE FROM GroupMembers
                 WHERE UserID = @UserId AND GroupID = @GroupId;";
 
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
         // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
-        public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection)
+        // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
+        public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection, int DistanceWeight, int PreferenceWeight)
         {
             if (!TravelDirection.Equals("arrival") && !TravelDirection.Equals("departure"))
             {
                 Console.WriteLine("Error - Invalid Direction " + TravelDirection);
                 return null;
             }
+
             // Build the user info model for the goal user
             UserInfoModel GoalUserModel = await _dbUsers.GetUserInfoModel(GoalUserID);
-            // Get a list of User Info Model, this repersents all the user that the Goal User can be in a group with 
-            //List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
+
+            // Get a list of UserInfoModel, representing all users that the Goal User can be in a group with
+            // For testing purposes, you can generate test users
             List<UserInfoModel> MatchingUserList = GenerateTestUserInfoModels(32);
-            List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
-            // Find users that have matching genders 
+
+            // Filter users based on gender preferences
             MatchingUserList = MatchingUserList.Where(user => GenderPreferencesMatch(GoalUserModel, user)).ToList();
+
+            // Include the goal user in the list
+            MatchingUserList.Add(GoalUserModel);
+
+            // Initialize clusters (each user is their own cluster)
             List<List<UserInfoModel>> clusters = MatchingUserList.Select(user => new List<UserInfoModel> { user }).ToList();
+
+            // Compute the initial distance matrix
             int n = clusters.Count;
             double[,] distanceMatrix = new double[n, n];
+
+            // Calculate normalized weights
+            double totalWeight = DistanceWeight + PreferenceWeight;
+            if (totalWeight == 0) totalWeight = 1; // avoid division by zero
+            double weightPreference = PreferenceWeight / totalWeight;
+            double weightGeographical = DistanceWeight / totalWeight;
 
             for (int i = 0; i < n; i++)
             {
                 for (int j = i + 1; j < n; j++)
                 {
-                    double distance = ComputeClusterDistance(clusters[i], clusters[j]);
+                    double distance = ComputeClusterDistance(clusters[i], clusters[j], weightPreference, weightGeographical);
                     distanceMatrix[i, j] = distance;
                     distanceMatrix[j, i] = distance; // Symmetric
                 }
             }
-            PrintDistanceMatrix(distanceMatrix, MatchingUserList);
 
+            // HAC Algorithm parameters
+            int maxGroupSize = 4;
+            int minGroupSize = 2;
+            int iteration = 0;
+            // HAC clustering loop
+            while (true)
+            {
+                double minDistance = double.MaxValue;
+                int minI = -1;
+                int minJ = -1;
 
+                n = clusters.Count;
 
+                // Find the pair of clusters with the minimum distance that can be merged
+                for (int i = 0; i < n; i++)
+                {
+                    if (clusters[i].Count >= maxGroupSize)
+                        continue; // Cannot merge cluster i further
 
-            Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count()} group(s) for you!");
+                    for (int j = i + 1; j < n; j++)
+                    {
+                        if (clusters[j].Count >= maxGroupSize)
+                            continue; // Cannot merge cluster j further
+
+                        // Check if merging exceeds the max group size
+                        if (clusters[i].Count + clusters[j].Count > maxGroupSize)
+                            continue;
+
+                        double distance = ComputeClusterDistance(clusters[i], clusters[j], weightPreference, weightGeographical);
+                        if (distance < minDistance)
+                        {
+                            minDistance = distance;
+                            minI = i;
+                            minJ = j;
+                        }
+                    }
+                }
+
+                // No more clusters can be merged
+                if (minI == -1 || minJ == -1)
+                    break;
+
+                // Merge clusters[minI] and clusters[minJ]
+                clusters[minI].AddRange(clusters[minJ]);
+                clusters.RemoveAt(minJ);
+
+                // Update distance matrix
+                distanceMatrix = UpdateDistanceMatrix(distanceMatrix, clusters, minI, minJ, weightPreference, weightGeographical);
+                n = clusters.Count;
+                iteration++;
+            }
+
+            // Build recommended groups from clusters of acceptable sizes
+            List<RecomendedGroup> GroupList = new List<RecomendedGroup>();
+            int count = 0;
+            foreach (var cluster in clusters)
+            {
+                count++;
+                if (cluster.Count >= minGroupSize && cluster.Count <= maxGroupSize)
+                {
+                    var filteredCluster = cluster.Where(user => user.UserID != GoalUserModel.UserID).ToList();
+                    RecomendedGroup group = new RecomendedGroup
+                    {
+                        RequestingUser = GoalUserModel,
+                        GroupID = -1, // Assign appropriate GroupID if needed
+                        GroupName = $"Recommended Group {count}",
+                        GroupMembers = filteredCluster
+                    };
+                    GroupList.Add(group);
+                }
+                // Users in smaller clusters are left out
+            }
+
+            Console.WriteLine($"The Recommendation Algorithm Found {GroupList.Count} group(s) for you!");
             return GroupList;
         }
 
@@ -257,10 +363,8 @@ namespace DataAccessLibrary.Data.Database
             double distance = R * c;
             return distance;
         }
-
-
         // Computes the distance between two clusters using average linkage.
-        private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB)
+        private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB, double weightPreference, double weightGeographical)
         {
             // Use average linkage: average distance between all pairs of users in the two clusters
             double totalDistance = 0;
@@ -270,7 +374,7 @@ namespace DataAccessLibrary.Data.Database
             {
                 foreach (var userB in clusterB)
                 {
-                    double distance = ComputeUserDistance(userA, userB);
+                    double distance = ComputeUserDistance(userA, userB, weightPreference, weightGeographical);
                     if (distance != double.MaxValue) // Exclude pairs that don't match gender preferences
                     {
                         totalDistance += distance;
@@ -283,9 +387,9 @@ namespace DataAccessLibrary.Data.Database
                 return double.MaxValue;
 
             return totalDistance / count;
-        }
+        }        // Computes the distance between two users based on their preference match and geographical distance.
         // Computes the distance between two users based on their preference match and geographical distance.
-        private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB)
+        private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB, double weightPreference, double weightGeographical)
         {
             // First, check if users match each other's gender preferences
             if (!GenderPreferencesMatch(userA, userB))
@@ -304,9 +408,6 @@ namespace DataAccessLibrary.Data.Database
             double normalizedGeoDistance = geoDistanceMeters / 50000;
 
             // Combine preference score and geographical distance into overall distance
-            double weightPreference = 0.5;
-            double weightGeographical = 0.5;
-
             double overallDistance = weightPreference * (1.0 - preferenceScore) + weightGeographical * normalizedGeoDistance;
 
             return overallDistance;
@@ -452,10 +553,6 @@ namespace DataAccessLibrary.Data.Database
                 // Assign incremental UserID starting from 1
                 user.UserID = i + 1;
 
-                // Set dummy names
-                user.FirstName = $"FirstName{user.UserID}";
-                user.LastName = $"LastName{user.UserID}";
-
                 // Randomly assign "Driver" or "Passenger"
                 user.UserType = (random.Next(2) == 0) ? "Driver" : "Passenger";
 
@@ -524,10 +621,16 @@ namespace DataAccessLibrary.Data.Database
                 user.ProfilePicture = null;
 
                 user.Rating = random.Next(1, 6); // Random rating between 1 and 5
+                // Calculate direction from campus (dropoff location)
+                string direction = GetDirection(user.PickupLatitude, user.PickupLongitude, dropoffLatitude, dropoffLongitude);
 
+                // Set first name based on direction
+                user.FirstName = direction;
+
+                // Set last name as "TestUser{UserID}"
+                user.LastName = $"TestUser{user.UserID}";
                 // Add the user to the list
                 userList.Add(user);
-                Console.WriteLine(user);
             }
 
             return userList;
@@ -537,6 +640,62 @@ namespace DataAccessLibrary.Data.Database
             public string Id { get; set; }
             public string Name { get; set; }
         }
+        // Helper function to calculate the direction from campus
+        private string GetDirection(double pickupLat, double pickupLon, double dropoffLat, double dropoffLon)
+        {
+            double deltaLat = pickupLat - dropoffLat;
+            double deltaLon = pickupLon - dropoffLon;
 
+            if (Math.Abs(deltaLat) > Math.Abs(deltaLon))
+            {
+                if (deltaLat > 0)
+                    return "North";
+                else
+                    return "South";
+            }
+            else
+            {
+                if (deltaLon > 0)
+                    return "East";
+                else
+                    return "West";
+            }
+        }
+        // Helper function to update the distance matrix after merging clusters
+        private double[,] UpdateDistanceMatrix(double[,] oldMatrix, List<List<UserInfoModel>> clusters, int mergedIndex, int removedIndex, double weightPreference, double weightGeographical)
+        {
+            int n = clusters.Count;
+            double[,] newMatrix = new double[n, n];
+
+            int oldIndexI = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (i == removedIndex)
+                    oldIndexI++;
+                int oldIndexJ = 0;
+                for (int j = 0; j < n; j++)
+                {
+                    if (j == removedIndex)
+                        oldIndexJ++;
+                    if (i == j)
+                    {
+                        newMatrix[i, j] = 0;
+                    }
+                    else if (i == mergedIndex || j == mergedIndex)
+                    {
+                        int indexA = mergedIndex < removedIndex ? mergedIndex : mergedIndex + 1;
+                        int indexB = i == mergedIndex ? j : i;
+                        newMatrix[i, j] = ComputeClusterDistance(clusters[mergedIndex], clusters[indexB], weightPreference, weightGeographical);
+                    }
+                    else
+                    {
+                        newMatrix[i, j] = oldMatrix[oldIndexI, oldIndexJ];
+                    }
+                    oldIndexJ++;
+                }
+                oldIndexI++;
+            }
+            return newMatrix;
+        }
     }
 }
