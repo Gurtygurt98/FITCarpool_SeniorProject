@@ -1,0 +1,44 @@
+﻿@using DataAccessLibrary.Data.API
+@using DataAccessLibrary.Model.Logic_Models
+@inject IJSRuntime JSRuntime
+@inject IGMapsAPI _GmapKey
+
+@code {
+    [Parameter] public RecomendedGroup GroupRecommendation { get; set; }
+    private string MapApiKey;
+    private string MapId = "groupMap";
+    private bool isMapInitialized = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Initialize Google Maps API Key
+        MapApiKey = _GmapKey.MapAPI;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isMapInitialized)
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        // Create a list of locations to display
+        var locations = GroupRecommendation.GroupMembers.Select(member => new
+        {
+            Latitude = GroupRecommendation.Direction == "Arriving" ? member.DropoffLatitude : member.PickupLatitude,
+            Longitude = GroupRecommendation.Direction == "Arriving" ? member.DropoffLongitude : member.PickupLongitude,
+            Name = member.FirstName + " " + member.LastName
+        }).ToList();
+
+        // JavaScript initialization for Google Maps
+        await JSRuntime.InvokeVoidAsync("initializeGroupMap", MapId, MapApiKey, locations);
+        isMapInitialized = true;
+    }   
+}
+
+<div class="map-container">
+    <div id="@MapId" style="width: 100%; height: 500px;"></div>
+</div>

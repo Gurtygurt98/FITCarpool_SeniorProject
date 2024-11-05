@@ -132,20 +132,22 @@ namespace DataAccessLibrary.Data.Database
             var data = await _db.LoadData<int, dynamic>(sql, new { GroupName, CreatorID });
             return data.FirstOrDefault();
         }
-        public async Task<RecomendedGroup> GetSingleGroup(int GroupID)
+        public async Task<RecomendedGroup> GetSingleGroup(int GroupID, int RequestingUserID)
         {
             string sqlGroup = @"select * from CarpoolGroups where GroupID = @GroupID";
             List<CarpoolGroupsModel> groupsModels = await _db.LoadData<CarpoolGroupsModel,dynamic>(sqlGroup, new { GroupID });
             CarpoolGroupsModel carpoolGroupsModel = groupsModels.FirstOrDefault();
+            UserInfoModel requestingUser = await _dbUsers.GetUserInfoModel(RequestingUserID);
             string sqlMembers = @"select UserID from GroupMembers where GroupID = @GroupID";
             List<int> IDS = await _db.LoadData<int, dynamic>(sqlMembers, new { GroupID });
             List<UserInfoModel> GroupMems = new();
+            IDS = IDS.Where(I => I != RequestingUserID).ToList();
             foreach (int userid in IDS) { 
-                Console.WriteLine(userid);
                 GroupMems.Add(await _dbUsers.GetUserInfoModel(userid));
             }
             return new RecomendedGroup
             {
+                RequestingUser = requestingUser,
                 GroupID = GroupID,
                 GroupName = carpoolGroupsModel.GroupName,
                 GroupMembers = GroupMems
@@ -551,10 +553,6 @@ namespace DataAccessLibrary.Data.Database
                 // Assign incremental UserID starting from 1
                 user.UserID = i + 1;
 
-                // Set dummy names
-                user.FirstName = $"FirstName{user.UserID}";
-                user.LastName = $"LastName{user.UserID}";
-
                 // Randomly assign "Driver" or "Passenger"
                 user.UserType = (random.Next(2) == 0) ? "Driver" : "Passenger";
 
@@ -623,7 +621,14 @@ namespace DataAccessLibrary.Data.Database
                 user.ProfilePicture = null;
 
                 user.Rating = random.Next(1, 6); // Random rating between 1 and 5
+                // Calculate direction from campus (dropoff location)
+                string direction = GetDirection(user.PickupLatitude, user.PickupLongitude, dropoffLatitude, dropoffLongitude);
 
+                // Set first name based on direction
+                user.FirstName = direction;
+
+                // Set last name as "TestUser{UserID}"
+                user.LastName = $"TestUser{user.UserID}";
                 // Add the user to the list
                 userList.Add(user);
             }
@@ -634,6 +639,27 @@ namespace DataAccessLibrary.Data.Database
         {
             public string Id { get; set; }
             public string Name { get; set; }
+        }
+        // Helper function to calculate the direction from campus
+        private string GetDirection(double pickupLat, double pickupLon, double dropoffLat, double dropoffLon)
+        {
+            double deltaLat = pickupLat - dropoffLat;
+            double deltaLon = pickupLon - dropoffLon;
+
+            if (Math.Abs(deltaLat) > Math.Abs(deltaLon))
+            {
+                if (deltaLat > 0)
+                    return "North";
+                else
+                    return "South";
+            }
+            else
+            {
+                if (deltaLon > 0)
+                    return "East";
+                else
+                    return "West";
+            }
         }
         // Helper function to update the distance matrix after merging clusters
         private double[,] UpdateDistanceMatrix(double[,] oldMatrix, List<List<UserInfoModel>> clusters, int mergedIndex, int removedIndex)

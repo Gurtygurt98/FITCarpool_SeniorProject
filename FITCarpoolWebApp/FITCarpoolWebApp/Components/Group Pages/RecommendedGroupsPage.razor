@@ -3,6 +3,7 @@
 @using DataAccessLibrary.Model.Database_Models;
 @using DataAccessLibrary.Model.Logic_Models;
 @using FITCarpoolWebApp.Components.Group_Pages.CreateGroupComponents;
+@using FITCarpoolWebApp.Components.Group_Pages.GroupViewComponents
 @using Microsoft.AspNetCore.Authorization;
 @using MudBlazor;
 @inject Radzen.DialogService DialogService;
@@ -85,8 +86,8 @@
                                             <MudText Typo="Typo.h6">@group.GroupName</MudText>
                                         </MudCardHeader>
                                         <MudCardContent>
-                                            <MudText>Distance Score: @group.DistanceScore:F2</MudText>
-                                            <MudText>Preference Score: @group.PreferenceScore:F2</MudText>
+                                            <MudText>Distance Score: @group.DistanceScore</MudText>
+                                            <MudText>Preference Score: @group.PreferenceScore</MudText>
                                         </MudCardContent>
                                         <MudCardActions>
                                             <MudButton Color="Color.Primary" OnClick="@(async () => await CreateGroupFromRecommendation(group))">Create Group</MudButton>
@@ -115,8 +116,8 @@
                                             <MudText Typo="Typo.h6">@group.GroupName</MudText>
                                         </MudCardHeader>
                                         <MudCardContent>
-                                            <MudText>Distance Score: @group.DistanceScore:F2</MudText>
-                                            <MudText>Preference Score: @group.PreferenceScore:F2</MudText>
+                                            <MudText>Distance Score: @group.DistanceScore</MudText>
+                                            <MudText>Preference Score: @group.PreferenceScore</MudText>
                                         </MudCardContent>
                                         <MudCardActions>
                                             <MudButton Color="Color.Primary" OnClick="@(async () => await AddGroup(group))">Join Group</MudButton>
@@ -216,16 +217,17 @@
     {
         var parameters = new Dictionary<string, object> { { "CurrentGroup", group } };
         var options = new Radzen.DialogOptions
-            {
-                Width = "100%",   // Sets the dialog width to 100% of the screen
-            };
+        {
+            Width = "100%",
+            CloseDialogOnOverlayClick = true
+        };
 
         await DialogService.OpenAsync<ViewGroupDialog>("View Group", parameters, options);
     }
 
     private async Task ShowGroupDetails(int groupID)
     {
-        await ShowGroupDetails(await _dbGroups.GetSingleGroup(groupID));
+        await ShowGroupDetails(await _dbGroups.GetSingleGroup(groupID, CurrentUser.UserId));
     }
     private async Task OpenGroupDialog()
     {

@@ -117,6 +117,7 @@ namespace DataAccessLibrary.Data.Database
                            u.FirstName, 
                            u.LastName, 
                            u.UserType, 
+                           u.Email as 'UserName',
                            u.PickupLocation, 
                            u.DropoffLocation, 
                            u.DrivingDistance, 

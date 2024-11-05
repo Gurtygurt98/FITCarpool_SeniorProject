@@ -5,7 +5,7 @@ namespace DataAccessLibrary.Data.Database
 {
     public interface ICarpoolGroupsData
     {
-        Task<RecomendedGroup> GetSingleGroup(int GroupID);
+        Task<RecomendedGroup> GetSingleGroup(int GroupID, int requestingUser);
         Task CreateNewGroup(CarpoolGroupsModel carpoolGroup);
         Task DeleteCarpoolGroup(CarpoolGroupsModel group);
         Task<List<CarpoolGroupsModel>> GetAllCarpoolGroups();
