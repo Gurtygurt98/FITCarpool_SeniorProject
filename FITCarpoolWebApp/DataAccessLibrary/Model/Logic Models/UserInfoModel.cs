@@ -10,21 +10,22 @@ namespace DataAccessLibrary.Model.Logic_Models
     public class UserInfoModel
     {
         public long UserID { get; set; }
+        public string UserName { get; set; } = string.Empty;
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string UserType { get; set; }
         public string PickupLocation { get; set; }
         public string DropoffLocation { get; set; }
         public long DrivingDistance { get; set; }
-        public string Gender { get; set; }
+        public string Gender { get; set; } = "Non-binary";
         public long BeltCount { get; set; }
-        public string AllowEatDrink { get; set; }
-        public string AllowSmokeVape { get; set; }
-        public string GenderPreference { get; set; }
-        public string EatingPreference { get; set; }
-        public string SmokingPreference { get; set; }
-        public string TemperaturePreference { get; set; }
-        public string MusicPreference { get; set; }
+        public string AllowEatDrink { get; set; } = "No Preference";
+        public string AllowSmokeVape { get; set; } = "No Preference";
+        public string GenderPreference { get; set; } = "No Preference";
+        public string EatingPreference { get; set; } = "No Preference";
+        public string SmokingPreference { get; set; } = "No Preference";
+        public string TemperaturePreference { get; set; } = "No Preference";
+        public string MusicPreference { get; set; } = "No Preference";
         public double PickupLatitude { get; set; }
         public double PickupLongitude { get; set; }
         public double DropoffLatitude { get; set; }

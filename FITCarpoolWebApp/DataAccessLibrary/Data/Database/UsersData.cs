@@ -112,13 +112,12 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task<UserInfoModel> GetUserInfoModel(int GoalUserID)
         {
-            Console.WriteLine("Checking for " + GoalUserID);
-
             string sql = $@"SELECT 
                 u.UserID, 
                            u.FirstName, 
                            u.LastName, 
                            u.UserType, 
+                           u.Email as 'UserName',
                            u.PickupLocation, 
                            u.DropoffLocation, 
                            u.DrivingDistance, 
