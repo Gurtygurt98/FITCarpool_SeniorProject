@@ -222,7 +222,8 @@ namespace DataAccessLibrary.Data.Database
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
         // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
-        public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection)
+        // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
+        public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection, int DistanceWeight, int PreferenceWeight)
         {
             if (!TravelDirection.Equals("arrival") && !TravelDirection.Equals("departure"))
             {
@@ -234,10 +235,8 @@ namespace DataAccessLibrary.Data.Database
             UserInfoModel GoalUserModel = await _dbUsers.GetUserInfoModel(GoalUserID);
 
             // Get a list of UserInfoModel, representing all users that the Goal User can be in a group with
-            //List<UserInfoModel> MatchingUserList = await _dbSchedule.GetMatchingSchedules(GoalUserID, Days, TravelDirection);
-
             // For testing purposes, you can generate test users
-             List<UserInfoModel> MatchingUserList = GenerateTestUserInfoModels(32);
+            List<UserInfoModel> MatchingUserList = GenerateTestUserInfoModels(32);
 
             // Filter users based on gender preferences
             MatchingUserList = MatchingUserList.Where(user => GenderPreferencesMatch(GoalUserModel, user)).ToList();
@@ -252,11 +251,17 @@ namespace DataAccessLibrary.Data.Database
             int n = clusters.Count;
             double[,] distanceMatrix = new double[n, n];
 
+            // Calculate normalized weights
+            double totalWeight = DistanceWeight + PreferenceWeight;
+            if (totalWeight == 0) totalWeight = 1; // avoid division by zero
+            double weightPreference = PreferenceWeight / totalWeight;
+            double weightGeographical = DistanceWeight / totalWeight;
+
             for (int i = 0; i < n; i++)
             {
                 for (int j = i + 1; j < n; j++)
                 {
-                    double distance = ComputeClusterDistance(clusters[i], clusters[j]);
+                    double distance = ComputeClusterDistance(clusters[i], clusters[j], weightPreference, weightGeographical);
                     distanceMatrix[i, j] = distance;
                     distanceMatrix[j, i] = distance; // Symmetric
                 }
@@ -290,7 +295,7 @@ namespace DataAccessLibrary.Data.Database
                         if (clusters[i].Count + clusters[j].Count > maxGroupSize)
                             continue;
 
-                        double distance = ComputeClusterDistance(clusters[i], clusters[j]);
+                        double distance = ComputeClusterDistance(clusters[i], clusters[j], weightPreference, weightGeographical);
                         if (distance < minDistance)
                         {
                             minDistance = distance;
@@ -309,7 +314,7 @@ namespace DataAccessLibrary.Data.Database
                 clusters.RemoveAt(minJ);
 
                 // Update distance matrix
-                distanceMatrix = UpdateDistanceMatrix(distanceMatrix, clusters, minI, minJ);
+                distanceMatrix = UpdateDistanceMatrix(distanceMatrix, clusters, minI, minJ, weightPreference, weightGeographical);
                 n = clusters.Count;
                 iteration++;
             }
@@ -358,10 +363,8 @@ namespace DataAccessLibrary.Data.Database
             double distance = R * c;
             return distance;
         }
-
-
         // Computes the distance between two clusters using average linkage.
-        private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB)
+        private double ComputeClusterDistance(List<UserInfoModel> clusterA, List<UserInfoModel> clusterB, double weightPreference, double weightGeographical)
         {
             // Use average linkage: average distance between all pairs of users in the two clusters
             double totalDistance = 0;
@@ -371,7 +374,7 @@ namespace DataAccessLibrary.Data.Database
             {
                 foreach (var userB in clusterB)
                 {
-                    double distance = ComputeUserDistance(userA, userB);
+                    double distance = ComputeUserDistance(userA, userB, weightPreference, weightGeographical);
                     if (distance != double.MaxValue) // Exclude pairs that don't match gender preferences
                     {
                         totalDistance += distance;
@@ -384,9 +387,9 @@ namespace DataAccessLibrary.Data.Database
                 return double.MaxValue;
 
             return totalDistance / count;
-        }
+        }        // Computes the distance between two users based on their preference match and geographical distance.
         // Computes the distance between two users based on their preference match and geographical distance.
-        private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB)
+        private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB, double weightPreference, double weightGeographical)
         {
             // First, check if users match each other's gender preferences
             if (!GenderPreferencesMatch(userA, userB))
@@ -405,9 +408,6 @@ namespace DataAccessLibrary.Data.Database
             double normalizedGeoDistance = geoDistanceMeters / 50000;
 
             // Combine preference score and geographical distance into overall distance
-            double weightPreference = 0.5;
-            double weightGeographical = 0.5;
-
             double overallDistance = weightPreference * (1.0 - preferenceScore) + weightGeographical * normalizedGeoDistance;
 
             return overallDistance;
@@ -662,7 +662,7 @@ namespace DataAccessLibrary.Data.Database
             }
         }
         // Helper function to update the distance matrix after merging clusters
-        private double[,] UpdateDistanceMatrix(double[,] oldMatrix, List<List<UserInfoModel>> clusters, int mergedIndex, int removedIndex)
+        private double[,] UpdateDistanceMatrix(double[,] oldMatrix, List<List<UserInfoModel>> clusters, int mergedIndex, int removedIndex, double weightPreference, double weightGeographical)
         {
             int n = clusters.Count;
             double[,] newMatrix = new double[n, n];
@@ -685,7 +685,7 @@ namespace DataAccessLibrary.Data.Database
                     {
                         int indexA = mergedIndex < removedIndex ? mergedIndex : mergedIndex + 1;
                         int indexB = i == mergedIndex ? j : i;
-                        newMatrix[i, j] = ComputeClusterDistance(clusters[mergedIndex], clusters[indexB]);
+                        newMatrix[i, j] = ComputeClusterDistance(clusters[mergedIndex], clusters[indexB], weightPreference, weightGeographical);
                     }
                     else
                     {
@@ -697,6 +697,5 @@ namespace DataAccessLibrary.Data.Database
             }
             return newMatrix;
         }
-
     }
 }

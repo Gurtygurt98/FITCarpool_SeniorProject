@@ -43,16 +43,20 @@
                 <MudButton FullWidth="true" Color="Color.Error" Class="close-button" OnClick="CloseDialog">Close</MudButton>
             </MudItem>
         </MudGrid>
-        <MudGrid>
-            @if (selectedView.Equals(map))
-            {    <div class="Group-Member-Class">
+        <MudGrid Justify="Justify.Center">
+            <MudItem xs="12">
+                @if (selectedView.Equals(map))
+                {
+                        <div class="Group-Member-Class">
+                        <GroupMapViewComponent GroupRecommendation="CurrentGroup"></GroupMapViewComponent>
+                    </div>
+                }
+                else
+                {
 
-                    <GroupMapViewComponent GroupRecommendation="CurrentGroup"></GroupMapViewComponent>   
-                </div>
-            } else
-            {
-                
-            }
+                }
+            </MudItem>
+
 
         </MudGrid>
     </div>

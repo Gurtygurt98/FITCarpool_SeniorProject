@@ -19,52 +19,18 @@
     <Routes @rendermode="RenderModeForPage" />
     <script src="_framework/blazor.web.js"></script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
-    <script>
-        function requestUserLocation(dotNetReference) {
-            navigator.geolocation.getCurrentPosition(
-                position => dotNetReference.invokeMethodAsync('HandleSuccess', position.coords.latitude, position.coords.longitude),
-                error => dotNetReference.invokeMethodAsync('HandleError', error.message)
-            );
-        }
-        function openInNewTab(url) {
-            window.open(url, '_blank');
-        }
-        window.initializeGroupMap = (mapId, apiKey, locations) => {
-            if (!window.google || !window.google.maps) {
-                const script = document.createElement('script');
-                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
-                script.async = true;
-                script.onerror = () => console.error('Google Maps script failed to load');
-                document.head.appendChild(script);
-            }
-
-            window.initMap = () => {
-                if (!locations || locations.length === 0) {
-                    console.error('No locations provided for the map');
-                    return;
-                }
-
-                const map = new google.maps.Map(document.getElementById(mapId), {
-                    zoom: 12,
-                    center: { lat: locations[0].Latitude, lng: locations[0].Longitude },
-                    gestureHandling: 'greedy'
-                });
-
-                locations.forEach(location => {
-                    const marker = new google.maps.Marker({
-                        position: { lat: location.Latitude, lng: location.Longitude },
-                        map: map,
-                        title: location.Name
-                    });
-                    console.log('Added marker:', location);
-                });
-            };
-        };
-
-
-    </script>
-
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>
+<script>
+    function requestUserLocation(dotNetReference) {
+        navigator.geolocation.getCurrentPosition(
+            position => dotNetReference.invokeMethodAsync('HandleSuccess', position.coords.latitude, position.coords.longitude),
+            error => dotNetReference.invokeMethodAsync('HandleError', error.message)
+        );
+    }
+    function openInNewTab(url) {
+        window.open(url, '_blank');
+    }
+</script>
 
 
 </body>
