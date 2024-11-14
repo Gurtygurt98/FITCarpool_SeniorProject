@@ -5,6 +5,7 @@ namespace DataAccessLibrary.Data.Database
 {
     public interface ICarpoolGroupsData
     {
+        Task<RecomendedGroup> GetSingleGroup(int GroupID, int requestingUser);
         Task CreateNewGroup(CarpoolGroupsModel carpoolGroup);
         Task DeleteCarpoolGroup(CarpoolGroupsModel group);
         Task<List<CarpoolGroupsModel>> GetAllCarpoolGroups();
@@ -19,5 +20,6 @@ namespace DataAccessLibrary.Data.Database
         Task JoinGroup(int GoalUserID, int GoalGroupID);
         Task RemoveGroupMember(int GoalUserID, int GoalGroupID);
         Task UpdateCarpoolGroup(CarpoolGroupsModel group);
+        Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection, int DistanceWeight, int PreferenceWeight);
     }
 }
