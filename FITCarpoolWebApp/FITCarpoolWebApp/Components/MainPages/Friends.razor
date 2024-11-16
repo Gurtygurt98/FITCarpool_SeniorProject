@@ -151,16 +151,8 @@
     }
     private void DeclineFriendRequest(Friend f)
     {
-        _dbFriends.UpdateFriend(new FriendsModel { FriendshipId = f.FriendId, UserId1 = f.ID1, UserId2 = f.ID2, CreatedDate = DateTime.Now, Status = "rejected" });
+        _dbFriends.DeleteFriend(f.FriendId);
         requests.Remove(f);
-    }
-    private void UpdateRejects(List<Friend> rejects)
-    {
-        foreach(Friend f in rejects)
-        {
-            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Rejected Friend Request from " + f.Name, Duration = 10000});
-            _dbFriends.DeleteFriend(f.FriendId);
-        }
     }
     private int ID = 0;
     private string userName = "Not Found";
@@ -169,7 +161,6 @@
     private List<Friend> friends;
     private List<Friend> requests;
     private List<Friend> outgoingRequests;
-    private List<Friend> rejectedRequests;
     UsersModel InputModel = null;
 
     // Code for searching other users
@@ -201,7 +192,6 @@
         friends = new List<Friend> {};
         requests = new List<Friend> {};
         outgoingRequests = new List<Friend> { };
-        rejectedRequests = new List<Friend> { };
         foreach(FriendsModel dataFriend in FriendList)
         {
             List<UsersModel> temp = null;
@@ -219,29 +209,17 @@
             {
                 friends.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
-            else if (dataFriend.UserId1 != ID && dataFriend.Status.Equals("pending"))
+            else if(dataFriend.UserId1 != ID)
             {
                 requests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
-            else if (dataFriend.UserId1 == ID && dataFriend.Status.Equals("pending"))
+            else
             {
                 outgoingRequests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
-            }
-            else if (dataFriend.UserId1 == ID && dataFriend.Status.Equals("rejected"))
-            {
-                rejectedRequests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
         }
 
         AccountList = await _dbUsers.GetAllUser();
-
-    }
-    override protected  async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            UpdateRejects(rejectedRequests);
-        }
     }
 
     public class Friend

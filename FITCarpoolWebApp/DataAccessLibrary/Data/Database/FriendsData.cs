@@ -1,8 +1,6 @@
 ﻿using DataAccessLibrary.Model;
 using DataAccessLibrary.Model.Database_Models;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Diagnostics.Metrics;
 using System.Threading.Tasks;
 
 namespace DataAccessLibrary.Data.Database
