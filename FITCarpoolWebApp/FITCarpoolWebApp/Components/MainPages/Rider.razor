@@ -63,24 +63,24 @@
                         Group Name: @CurrentGroup?.GroupName
                     </RadzenText>
                     <MudText Typo="Typo.h3">Driver Location @@ @DriverLocation.Timestamp:</MudText>
-                </RadzenStack>
-                <MudCardContent>
-                    <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
+                    </RadzenStack>
+                    <MudCardContent>
+                        <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
                                          Center="new GoogleMapPosition() { Lat = DriverLocation.Latitude, Lng = DriverLocation.Longitude }" Zoom="zoom">
-                        <Markers>
-                            <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @DriverLocation.Latitude, Lng = @DriverLocation.Longitude }) />
-                        </Markers>
-                    </RadzenGoogleMap>
-                </MudCardContent>
-            </MudCollapse>
-            <MudText Typo="Typo.h3" style="cursor:pointer;" @onclick="UserClickDriverInfo">View Driver Information</MudText>
-            <MudCollapse Expanded="driverInfoCollapsable">
-                <MudCardContent>
-                    <MudGrid>
-                        @if (DriverProfile.ProfilePicture != null)
+                            <Markers>
+                                <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @DriverLocation.Latitude, Lng = @DriverLocation.Longitude }) />
+                            </Markers>
+                        </RadzenGoogleMap>
+                    </MudCardContent>
+                </MudCollapse>
+                <MudText Typo="Typo.h3" style="cursor:pointer;" @onclick="UserClickDriverInfo">View Driver Information</MudText>
+                <MudCollapse Expanded="driverInfoCollapsable">
+                    <MudCardContent>
+                        <MudGrid>
+                            @if (DriverProfile.ProfilePicture != null)
                         {
                             <MudItem xs="12" md="4">
-                            <RadzenText Text="Driver Picture" Style="margin-bottom: 10px;" />
+                                <RadzenText Text="Driver Picture" Style="margin-bottom: 10px;" />
                                 <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(DriverProfile.ProfilePicture)}")" AlternateText="binary image" Style="max-width:200px; max-height:200px; display:block;  margin-bottom:5px;" />
                             </MudItem>
                         }
@@ -102,6 +102,21 @@
                 </MudCardContent>
             </MudCollapse>
 
+
+        </RadzenCard>
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+            <RadzenStack>
+                <MudText Typo="Typo.h5" Style=""> Consider downloading Fl Tech Safe App for safety features!</MudText>
+                <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
+                          Alt="Profile"
+                          Style="width: 100px; height: 100px; cursor: pointer;"
+                          Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
+                <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
+                          Alt="Profile"
+                          Style="width: 100px; height: 100px; cursor: pointer;"
+                          Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
+
+            </RadzenStack>
 
         </RadzenCard>
 
@@ -133,7 +148,7 @@
     private UsersModel DriverProfile = new();
     protected override async Task OnInitializedAsync()
     {
-        // Get google maps api key for location services later 
+        // Get google maps api key for location services later
         MapApi = _GmapKey.MapAPI;
         // Get user profile information
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -144,7 +159,7 @@
         }
         else
         {
-            // Force the user back to the home page if no authentication is present 
+            // Force the user back to the home page if no authentication is present
             // Program should never arrive here but added to avoid errors
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
@@ -159,7 +174,7 @@
             // Program should never arrive here but added to avoid errors
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
-        // Check if the user is part of trip that has started 
+        // Check if the user is part of trip that has started
         DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
         carpoolInProgress = DriverLocationList.Any();
         GroupList = await _dbGroups.GetRiderGroups(InputModel.UserId);
@@ -178,7 +193,7 @@
     {
         DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
         DriverLocation = DriverLocationList.FirstOrDefault();
-        if(DriverLocation == null)
+        if (DriverLocation == null)
         {
             NavigationManager.NavigateTo("/rider", forceLoad: true);
 
@@ -225,5 +240,9 @@
     {
         driverInfoCollapsable = !driverInfoCollapsable;
         StateHasChanged();
+    }
+    private void NavigateTo(string url)
+    {
+        NavigationManager.NavigateTo(url, true);
     }
 }

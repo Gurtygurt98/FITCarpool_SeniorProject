@@ -105,7 +105,7 @@ namespace DataAccessLibrary.Data.Database
             await _db.SaveData(sql, new { UserId = userId, CarPic = carPicture });
         }
 
-        public async Task UpdateRating(int userId, int rating)
+        public async Task UpdateRating(int userId, double rating)
         {
             string sql = "UPDATE Users SET Rating = @Rating WHERE UserId = @UserId";
             await _db.SaveData(sql, new { UserId = userId, Rating = rating });

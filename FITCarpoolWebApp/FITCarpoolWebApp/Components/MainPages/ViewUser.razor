@@ -80,7 +80,8 @@
 
 
 <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Current Rating </RadzenText>
-<RadzenRating @bind-Value=@value ReadOnly=true />
+<RadzenRating Value="@(Convert.ToInt32(Math.Round(ratingValue)))" Max="5" ReadOnly="true" Style="margin-right: 10px;" />
+    <MudText Typo="Typo.body1">Rating Value: @ratingValue.ToString("0.00")</MudText>
 
 <RadzenText TextStyle="TextStyle.H6" class="rz-display-flex rz-mt-2 rz-my-2">Reviews</RadzenText>
 
@@ -148,8 +149,8 @@
     private string selectedUserName => selectedUser?.FirstName + " " + selectedUser?.LastName ?? "No user selected";
     private List<UsersModel> UserList = new();
 
-    private int noValue;
-    public int value
+    private double noValue;
+    public double ratingValue
     {
         get => selectedUser?.Rating ?? noValue;
         set

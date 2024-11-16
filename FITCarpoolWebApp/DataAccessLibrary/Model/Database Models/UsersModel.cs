@@ -30,10 +30,10 @@ namespace DataAccessLibrary.Model
         public byte[] CarPicture { get; set; }
         public string AllowEatDrink { get; set; } = "false";
         public string AllowSmokeVape { get; set; } = "false";
-        public int Rating { get; set; }
+        public double Rating { get; set; }
         public UsersModel() { }
 
-        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, int rating)
+        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, double rating)
         {
             UserId = userId;
             Email = email;
@@ -48,7 +48,7 @@ namespace DataAccessLibrary.Model
             Rating = rating;
         }
 
-        public UsersModel(string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, int rating)
+        public UsersModel(string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, double rating)
         {
 
             Email = email;
@@ -62,7 +62,7 @@ namespace DataAccessLibrary.Model
             DrivingDistance = drivingDistance;
             Rating = rating;
         }
-        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, string phonePrivacy, string gender, byte[] profilePicture, string addressPrivacy, int? beltCount, string makeModel, string vehicleColor, string licensePlate, byte[] licensePicture, byte[] carPicture, string allowEatDrink, string allowSmokeVape, int rating)
+        public UsersModel(int userId, string email, string firstName, string lastName, string phone, string userType, string userLocation, string pickupLocation, string dropoffLocation, int drivingDistance, string phonePrivacy, string gender, byte[] profilePicture, string addressPrivacy, int? beltCount, string makeModel, string vehicleColor, string licensePlate, byte[] licensePicture, byte[] carPicture, string allowEatDrink, string allowSmokeVape, double rating)
         {
             UserId = userId;
             Email = email;

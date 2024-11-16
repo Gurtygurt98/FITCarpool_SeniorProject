@@ -94,7 +94,7 @@
     string PickupLocation = "";
     string DropLocation = "150 W University Blvd, Melbourne, FL 32901";
     int DrivingDistance = 30;
-    int Rating;
+    double Rating;
     bool isHomeDiffPick = false;
     private IEnumerable<IdentityError>? identityErrors;
 
@@ -240,7 +240,7 @@
         [Display(Name = "Driving Distance (miles)")]
         public int DrivingDistance { get; set; } = 30;
 
-        public int Rating { get; set; }
+        public double Rating { get; set; }
     }
     public class EmailDomainAttribute : ValidationAttribute
     {
