@@ -12,7 +12,7 @@ namespace DataAccessLibrary.Data.Database
         Task<List<UsersModel>> GetUser(int id);
         Task<List<UsersModel>> GetUser(string email);
         Task<UserInfoModel> GetUserInfoModel(int GoalUserID);
-        Task UpdateRating(int userId, double rating);
+        Task UpdateRating(int userId, int rating);
         Task UpdateUser(UsersModel user);
         Task UpdateUserCarPicture(int userId, byte[] carPicture);
         Task UpdateUserLicensePicture(int userId, byte[] licensePicture);
