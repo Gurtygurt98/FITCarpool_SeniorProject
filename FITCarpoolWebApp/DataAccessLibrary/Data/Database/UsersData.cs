@@ -112,12 +112,13 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task<UserInfoModel> GetUserInfoModel(int GoalUserID)
         {
+            Console.WriteLine("Checking for " + GoalUserID);
+
             string sql = $@"SELECT 
                 u.UserID, 
                            u.FirstName, 
                            u.LastName, 
                            u.UserType, 
-                           u.Email as 'UserName',
                            u.PickupLocation, 
                            u.DropoffLocation, 
                            u.DrivingDistance, 
@@ -141,7 +142,7 @@ namespace DataAccessLibrary.Data.Database
                            u.LicensePlate, 
                            u.LicensePicture, 
                            u.CarPicture,
-                           u.ProfilePicture, 
+                           u.ProfilePicture,
                            u.Rating
                         FROM Users u
                         JOIN Locations l ON u.UserID = l.UserID
@@ -151,10 +152,7 @@ namespace DataAccessLibrary.Data.Database
             if (!FoundUsers.Any())
             {
                 Console.WriteLine("Goal user not found " + GoalUserID);
-                var defaultPreference = new PreferencesModel(GoalUserID);
-                string sql2 = @"INSERT INTO Preferences (UserID, GenderPreference, EatingPreference, SmokingPreference, TemperaturePreference, MusicPreference) VALUES (@UserId, @GenderPreference, @EatingPreference, @SmokingPreference, @TemperaturePreference, @MusicPreference)";
-                await _db.SaveData(sql2, defaultPreference);
-                return await GetUserInfoModel(GoalUserID);
+                return new UserInfoModel();
 
             }
             return FoundUsers.FirstOrDefault();
