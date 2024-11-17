@@ -26,7 +26,7 @@
 
     <!-- Collapsible content -->
     <MudCollapse Expanded="@isUserListExpanded">
-        <MudDataGrid T="UserScheduleEntry" Items="UserList" Bordered="true" Dense="true" ReadOnly="true" Virtualize="true" RowsPerPage="100">
+        <MudDataGrid T="UserScheduleEntry" Items="UserList" Bordered="true" Dense="true" ReadOnly="true" Virtualize="true" RowsPerPage="10">
             <Columns>
                 <PropertyColumn Property="x => x.UserID" Title="User ID" />
                 <PropertyColumn Property="x => x.Start" Title="Start" />
@@ -117,14 +117,62 @@
         public DateTime EndDate { get; set; }   // Friday
         public string DisplayString { get; set; }
     }
+    public class TimeWindow
+    {
+        public DateTime Start { get; set; }
+        public DateTime End { get; set; }  
+        public string Direction { get; set; }
+        public TimeWindow(DateTime start, DateTime end, string direction)
+        {
+            Start = start;
+            End = end;
+            Direction = direction;
+        }
+    }
+    private List<TimeWindow> GenerateTimeSlots(Week week)
+    {
+        DateTime currentDay = week.StartDate;
+        DateTime endTime = week.EndDate.AddDays(1); // Include the last day fully
+        List<TimeWindow> timeSlots = new();
+
+        while (currentDay < endTime)
+        {
+            // Create arrival time slots (7 AM to 12 PM)
+            DateTime arrivalStart = currentDay.AddHours(7);
+            DateTime arrivalEnd = currentDay.AddHours(12);
+            while (arrivalStart < arrivalEnd)
+            {
+                timeSlots.Add(new TimeWindow(arrivalStart, arrivalStart.AddHours(1), "arrival"));
+                arrivalStart = arrivalStart.AddHours(1);
+            }
+
+            // Create departure time slots (1 PM to 7 PM)
+            DateTime departureStart = currentDay.AddHours(13);
+            DateTime departureEnd = currentDay.AddHours(19);
+            while (departureStart < departureEnd)
+            {
+                timeSlots.Add(new TimeWindow(departureStart, departureStart.AddHours(1), "departure"));
+                departureStart = departureStart.AddHours(1);
+            }
+
+            // Move to the next day
+            currentDay = currentDay.AddDays(1);
+        }
+
+        return timeSlots;
+    }
     public async Task GenerateGroups()
     {
-        // Get users from 
+
+        // Get users from Database that has schedules during the week 
         UserList = await _dbSchedules.GetScheduleEntries(selectedWeek.StartDate, selectedWeek.EndDate);
         // Get list of time slots for that week, run for each
-
+        List<TimeWindow> timeSlots = GenerateTimeSlots(selectedWeek);
         // For each time slot get the users that are in it
-        
+        foreach (TimeWindow timeWindow in timeSlots)
+        {
+            
+        }
         // Get the list of user info models 
 
         // Run algo on that list of users to get the best groups, add them to the running list of groups, this will then be displayed in a heirarchacle 
