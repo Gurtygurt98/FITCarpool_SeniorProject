@@ -17,18 +17,25 @@
 @inject IRolesData _dbRoles
 
 <AuthorizeView>
+    @*User is logged in *@
     <Authorized>
         <MudText Typo="Typo.h2">Welcome, @userName!</MudText>
 
-            <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
-                <MudText Typo="Typo.h3" Align="Align.Start"><b>Upcoming Rides</b></MudText>
-                <div style="display: flex; flex-direction: row; gap: 20px;">
-                    @if (upcomingTrips != null && upcomingTrips.Count > 0)
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
+            <MudText Typo="Typo.h3" Align="Align.Start"><b>Today's Trip</b></MudText>
+            <div style="display: flex; flex-direction: row; gap: 20px;">
+                @if (upcomingTrips != null && upcomingTrips.Count > 0)
                 {
-                    @foreach (var trip in upcomingTrips)
+                    var today = DateTime.Today;
+
+                    var todayTrips = upcomingTrips.Where(trip => trip.Start.Date == today).ToList();
+
+                    if (todayTrips.Count > 0)
                     {
-                        <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
-                            <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
+                        @foreach (var trip in todayTrips)
+                        {
+                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                                <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
                                 <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
                                 <MudText Typo="Typo.h6" Align="Align.Center">
                                     Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
@@ -37,37 +44,100 @@
 
                                 <RadzenButton Text="Confirm Ride" Click="@(() => NavigateTo("Rider-Confirmation"))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
                             </RadzenCard>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6">No rides today.</MudText>
                     }
                 }
                 else
                 {
-                    <MudText Typo="Typo.h6">No upcoming rides found:/</MudText>
+                    <MudText Typo="Typo.h6">No rides today.</MudText>
+                }
+            </div>
+
+
+        </RadzenCard>
+
+
+        @* Schedule Card on top *@
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
+            <RadzenRow>
+                <RadzenColumn Width="70%">
+                    <MudText Typo="Typo.h3" Align="Align.Start"><b>Future Trips</b></MudText>
+                </RadzenColumn>
+                <RadzenColumn Width="30%" Style="text-align: right;">
+                    <RadzenButton Text="Find a Group!" Click="@(() => NavigateTo("FindGroups"))" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+            </RadzenRow>
+
+            <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
+                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                {
+                    var today = DateTime.Today;
+
+                    // Filter and sort trips by start date
+                    var allTrips = upcomingTrips
+                    .Where(trip => trip.Start.Date != today)
+                    .OrderBy(trip => trip.Start)
+                    .ToList();
+
+                    if (allTrips.Count > 0)
+                    {
+                        @foreach (var trip in allTrips)
+                        {
+                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                                <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
+                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
+                                <MudText Typo="Typo.h6" Align="Align.Center">
+                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                                </MudText>
+                                <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
+
+                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateTo("Rider-Confirmation"))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                            </RadzenCard>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
                 }
             </div>
         </RadzenCard>
 
 
+
+        @* Friends List Card on bottom *@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <MudText Typo="Typo.h3" Align="Align.Start"><b>Friends List</b></MudText>
             @if (friends != null && friends.Count > 0)
             {
                 @foreach (var friend in friends)
                 {
-                    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:60%; padding: 16px; display: flex; align-items: center; gap: 16px;">
-                        @if (!string.IsNullOrEmpty(friend.ProfilePicture))
-                        {
-                            <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(Convert.FromBase64String(friend.ProfilePicture))}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
-                        }
-                        else
-                        {
-                            <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
-                        }
+                    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
 
-                        <div>
-                            <MudText Typo="Typo.h6">@friend.Name</MudText>
-                                <RadzenButton Text="View User" Click="@(() => ViewUser(friend.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
-                            </div>
-                        </RadzenCard>
+                        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Start" AlignItems="Radzen.AlignItems.Center" Gap="1rem" class="rz-p-4">
+                            @if (!string.IsNullOrEmpty(friend.ProfilePicture))
+                            {
+                                //<RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(friend.ProfilePicture)}")" Style="width: 100px; height: 100px; border-radius: 50%;" />
+                            }
+                            else
+                            {
+                                <RadzenImage Path="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" Style="width: 100px; height: 100px; border-radius: 50%;" />
+                            }
+                            <RadzenStack Gap="0">
+                                <RadzenText TextStyle="TextStyle.H5">@friend.Name</RadzenText>
+                            </RadzenStack>
+                            <RadzenButton Text="View User" Click="@(() => ViewUser(friend.Email))" Style="margin-left:auto" />
+                        </RadzenStack>
+                    </RadzenCard>
+
                 }
             }
             else
@@ -101,7 +171,7 @@
 @code {
 
     private string userName;
-    private string userRole = "rider"; 
+    private string userRole = "rider";
     private List<GroupScheduleModel> upcomingTrips = new();
     private List<Friend> friends = new();
     private int ID = 0;
