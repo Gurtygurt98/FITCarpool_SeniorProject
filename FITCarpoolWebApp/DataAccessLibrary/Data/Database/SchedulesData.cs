@@ -44,9 +44,9 @@ namespace DataAccessLibrary.Data.Database
                    VALUES (@UserId, @Day, @Start, @End, @Text)";
             await _db.SaveData(sql, schedule);
         }
-        public async Task<List<UserInfoModel>> GetMatchingSchedules(int GoalUserID, List<string> RequestDays, string TravelDirection)
+        public async Task<List<UserInfoModel>> GetMatchingSchedules(int GoalUserID, List<string> RequestDays, List<string> TravelDirection)
         {
-            string sql = @"SELECT distinct
+            string sql = @"SELECT 
                    u.UserID, 
                    u.FirstName, 
                    u.LastName, 
@@ -82,15 +82,16 @@ namespace DataAccessLibrary.Data.Database
             JOIN Schedules s ON u.UserID = s.UserID
             WHERE u.UserID != @GoalUserID
               AND s.Day IN @RequestDays
-              AND s.text = @TravelDirection
-              AND s.Start >= datetime('now', '-1 day')
+              AND s.TravelDirection IN @TravelDirection
+              AND s.StartDate >= DATEADD(DAY, -1, GETDATE())
               AND EXISTS (
                     SELECT 1 
                     FROM Schedules gs 
                     WHERE gs.UserID = @GoalUserID
                       AND gs.Day = s.Day
-                      AND gs.text = s.text
-                      AND ABS(strftime('%s', gs.Start) - strftime('%s', s.Start)) <= 1800
+                      AND gs.TravelDirection = s.TravelDirection
+                      AND ABS(DATEDIFF(MINUTE, gs.DepartureTime, s.DepartureTime)) <= 30
+                      AND ABS(DATEDIFF(MINUTE, gs.ArrivalTime, s.ArrivalTime)) <= 30
                 );";
 
             return await _db.LoadData<UserInfoModel, dynamic>(sql, new

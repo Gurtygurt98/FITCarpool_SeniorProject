@@ -17,7 +17,7 @@
 @inject IRolesData _dbRoles
 
 <AuthorizeView>
-    @* User is logged in *@
+    @*User is logged in *@
     <Authorized>
         <MudText Typo="Typo.h2">Welcome, @userName!</MudText>
 
@@ -147,7 +147,6 @@
         </RadzenCard>
     </Authorized>
 
-    @* User is not logged in *@
     <NotAuthorized>
         <MudGrid>
             <MudItem xs="12" sm="6" md="6" lg="6">
@@ -249,6 +248,6 @@
     {
         public string Name { get; set; }
         public string ProfilePicture { get; set; }
-        public string Email { get; set; } // Add email property to navigate to user details
+        public string Email { get; set; } 
     }
 }

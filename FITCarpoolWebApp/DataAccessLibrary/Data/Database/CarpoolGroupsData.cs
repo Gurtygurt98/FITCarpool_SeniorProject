@@ -135,14 +135,15 @@ namespace DataAccessLibrary.Data.Database
         public async Task<RecomendedGroup> GetSingleGroup(int GroupID, int RequestingUserID)
         {
             string sqlGroup = @"select * from CarpoolGroups where GroupID = @GroupID";
-            List<CarpoolGroupsModel> groupsModels = await _db.LoadData<CarpoolGroupsModel,dynamic>(sqlGroup, new { GroupID });
+            List<CarpoolGroupsModel> groupsModels = await _db.LoadData<CarpoolGroupsModel, dynamic>(sqlGroup, new { GroupID });
             CarpoolGroupsModel carpoolGroupsModel = groupsModels.FirstOrDefault();
             UserInfoModel requestingUser = await _dbUsers.GetUserInfoModel(RequestingUserID);
             string sqlMembers = @"select UserID from GroupMembers where GroupID = @GroupID";
             List<int> IDS = await _db.LoadData<int, dynamic>(sqlMembers, new { GroupID });
             List<UserInfoModel> GroupMems = new();
             IDS = IDS.Where(I => I != RequestingUserID).ToList();
-            foreach (int userid in IDS) { 
+            foreach (int userid in IDS)
+            {
                 GroupMems.Add(await _dbUsers.GetUserInfoModel(userid));
             }
             return new RecomendedGroup

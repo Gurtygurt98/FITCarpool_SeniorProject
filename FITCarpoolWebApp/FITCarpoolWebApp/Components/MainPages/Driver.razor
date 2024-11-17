@@ -31,12 +31,12 @@
                 // Display Data Grid to allow user to start trips based on GroupList Retrivied in Intialization Method
                 <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H5" class="rz-color-primary">Please Select a Group to Start</RadzenText>
                 <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
-                                WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)" 
+                                WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)"
                                 Data="@GroupList" TItem="CarpoolGroupsModel" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
                     <Template Context="group">
                         <RadzenCard Style="width: 100%; padding: 0;">
                             <RadzenStack Gap="1">
-                            
+
                                 <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-primary">Group: @(group.GroupName)</RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Destination: @(group.Destination)</RadzenText>
                                 <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Riders: @(group.ListRiderNames())</RadzenText>
@@ -53,11 +53,12 @@
             {
                 <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You aren't a driver for any group!</RadzenText>
 
-            } else
+            }
+            else
             {
                 <RadzenText Style="font-size: 16px;" Tag="h5" Class="text-primary">
                     Group Name: @CurrentGroup?.GroupName
-                </RadzenText>                
+                </RadzenText>
                 @if (!locationAvailable)
                 {
                     <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Please click below to allow location services</RadzenText>
@@ -75,34 +76,33 @@
                     <div>
                         <RadzenText>Current Location:</RadzenText>
                         <RadzenText>Latitude: @userLocation.Latitude, Longitude: @userLocation.Longitude</RadzenText>
-                        <MudButton OnClick="@EndRoute" Style="margin-top: 20px;">End Route</MudButton>
-                    </div>
+                            <MudButton OnClick="@EndRoute" Style="margin-top: 20px;">End Route</MudButton>
+                        </div>
                 }
 
-                // Need to make calls to get the users location in this 
+                // Need to make calls to get the users location in this
 
-                // A button that allows the user to cancel starting this trip, this sets carpoolInProgress back to false which brings the user to the if statement 
+                // A button that allows the user to cancel starting this trip, this sets carpoolInProgress back to false which brings the user to the if statement
                 // Once the user allows location and the trip starts every 30 seconds ( possibly add a dial for this) this page will update the database with the drivers current location
-                
+
             }
         </RadzenStack>
     </RadzenCard>
 
 
-        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-            <RadzenStack>
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
+        <RadzenStack>
             <MudText Typo="Typo.h5" Style=""> Consider downloading Fl Tech Safe App for safety features!</MudText>
             <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
                       Alt="Profile"
                       Style="width: 100px; height: 100px; cursor: pointer;"
-                      Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" 
-                      />
+                      Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
             <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
                       Alt="Profile"
                       Style="width: 100px; height: 100px; cursor: pointer;"
-                      Click="@(() => NavigateTo("https://apps.apple.com/us/app/florida-tech-safe/id6446256387"))" />
+                      Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
 
-    </RadzenStack>
+        </RadzenStack>
 
     </RadzenCard>
 
@@ -127,7 +127,7 @@
 
 @code {
     List<CarpoolGroupsModel> GroupList = new();
-    GroupMemberLocationsModel DriverLocation =  new();
+    GroupMemberLocationsModel DriverLocation = new();
     List<GroupMembersModel> GroupMembersList = new();
     CarpoolGroupsModel CurrentGroup = new();
     private string? MapApi = null;
@@ -143,16 +143,17 @@
     private System.Threading.Timer? locationRefreshTimer;
     protected override async Task OnInitializedAsync()
     {
-        // Retrive the google maps api key 
+        // Retrive the google maps api key
         MapApi = _GmapKey.MapAPI;
-        // Get user profile information 
+        // Get user profile information
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
         if (user.Identity.IsAuthenticated)
         {
             userName = user.Identity.Name;
-        } else
+        }
+        else
         {
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
@@ -166,7 +167,7 @@
         {
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
-        // Check if the user is already in progress of route 
+        // Check if the user is already in progress of route
         List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
         carpoolInProgress = DriverLocationList.Any();
         // Get what Groups the user is a driver of since they dont have any routes in progress
@@ -177,7 +178,7 @@
             // Current driver location object, send this along with updated location to the database for riders to grab
             DriverLocation = DriverLocationList.First();
             CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
-        }  
+        }
     }
     List<string> pickupAddresses = new List<string>
     {
@@ -191,7 +192,8 @@
         {
             await JSRuntime.InvokeVoidAsync("requestUserLocation", DotNetObjectReference.Create(this));
         }
-        else{
+        else
+        {
             locationAvailable = await JSRuntime.InvokeAsync<bool>("confirm", "Allow this site to access your location, please exit page if you don't want to allow?");
             OnRefreshRateChanged(LocationRefreshRate);
 
@@ -216,12 +218,13 @@
         if (DriverLocation.LocationId == 0)
         {
             //GroupMemberLocationsModel(int locationId, int userId, int groupId, double latitude, double longitude, DateTime timestamp)
-            DriverLocation = new GroupMemberLocationsModel(InputModel.UserId,CurrentGroup.GroupId,latitude,longitude,currentTime);
+            DriverLocation = new GroupMemberLocationsModel(InputModel.UserId, CurrentGroup.GroupId, latitude, longitude, currentTime);
             await _dbLocation.AddGroupMemberLocation(DriverLocation);
             List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
             DriverLocation = DriverLocationList.FirstOrDefault();
 
-        } else
+        }
+        else
         {
             DriverLocation.Latitude = latitude;
             DriverLocation.Longitude = longitude;
@@ -229,7 +232,7 @@
             CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
             await _dbLocation.UpdateGroupMemberLocation(DriverLocation);
         }
-        // Need to create call to either add or update user location in database 
+        // Need to create call to either add or update user location in database
         InvokeAsync(StateHasChanged); // Ensure UI is updated with new location
     }
 

@@ -9,6 +9,7 @@
 @inject NotificationService NotificationService
 @inject Radzen.DialogService DialogService
 @inject IUsersData _dbUsers
+@inject IRatingsData _dbRatings
 @inject IReportsData _dbReports
 @inject IReviewsData _dbReviews
 
@@ -22,7 +23,7 @@
         {
             if (GroupRecommendations[group])
             {
-                
+
                 <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
                     <Columns>
 
@@ -54,27 +55,29 @@
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Title="Rating" Width="140px">
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Rating" Width="200px">
                             <Template Context="user">
-                                <RadzenRating @bind-Value="@user.Rating" Max="5" Change="@(args => StoreRating(args, user))" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                        <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
-                            <Template Context="user">
-                                <div style="display: inline-flex;">
-                                    <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
-                                </div>
-                            </Template>
-                        </RadzenDataGridColumn>
+                                <RadzenRating Value="@GetUserRating(user.UserId)" Max="5" Change="@(args => StoreRating(args, user.UserId))" Style="margin-right: 10px;" />
+                                <MudText Typo="Typo.body1">Rating Value: @user.Rating.ToString("0.00")</MudText>
+                                </Template>
+                            </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
-                            <Template>
-                            <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
-                            </Template>
-                        </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
+                                <Template Context="user">
+                                    <div style="display: inline-flex;">
+                                        <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
+                                    </div>
+                                </Template>
+                            </RadzenDataGridColumn>
 
-                    </Columns>
-                </RadzenDataGrid>
+                            <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
+                                <Template>
+                                    <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
+                                </Template>
+                            </RadzenDataGridColumn>
+
+                        </Columns>
+                    </RadzenDataGrid>
             }
         }
 
@@ -85,11 +88,10 @@
     </RadzenCard>
 </RadzenStack>
 
-
-
 @code {
     private Dictionary<int, bool> GroupRecommendations = new();
     private Dictionary<int, List<UsersModel>> RecommendationData = new();
+    private Dictionary<int, int> Ratings = new(); // Stores selected ratings for each user by UserId
 
     protected override async Task OnInitializedAsync()
     {
@@ -99,40 +101,25 @@
         foreach (var key in RecommendationData.Keys)
         {
             GroupRecommendations[key] = true;
+
+            foreach (var user in RecommendationData[key])
+            {
+                user.Rating = await _dbRatings.GetRatings(user.UserId); // Get average rating as double
+            }
         }
     }
 
-
-    bool _busyUpdate = false;
-    UsersModel InputModel = new();
-    async Task UpdateRatings(int rating, UsersModel user)
-    {       
-        _busyUpdate = true;
-
-        try
-        {
-            await _dbUsers.UpdateUser(user);
-        }
-
-        finally
-        {
-            NavigationManager.NavigateTo("/After-Trip", forceLoad: true);
-        }
-
-    }
-
-    private Dictionary<int, int> Ratings = new();
-    private void StoreRating(int rating, UsersModel user)
+    private int GetUserRating(int userId)
     {
-        if (Ratings.ContainsKey(user.UserId))
-        {
-            Ratings[user.UserId] = rating;
-        }
-        else
-        {
-            Ratings.Add(user.UserId, rating);
-        }
+        // Returns the selected rating if available; otherwise, defaults to rounded average
+        return Ratings.ContainsKey(userId) ? Ratings[userId] : Convert.ToInt32(RecommendationData[0].FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
     }
+
+    private void StoreRating(int rating, int userId)
+    {
+        Ratings[userId] = rating;
+    }
+
     private async Task SubmitRatings()
     {
         foreach (var rating in Ratings)
@@ -140,15 +127,29 @@
             var user = RecommendationData[0].FirstOrDefault(u => u.UserId == rating.Key);
             if (user != null)
             {
-                user.Rating = rating.Value;
-                await _dbUsers.UpdateUser(user); 
+                // Store individual rating in the Ratings table
+                var newRating = new RatingsModel
+                {
+                    RatedUserID = user.UserId,
+                    Rating = rating.Value
+                };
+                await _dbRatings.CreateNewRating(newRating);
+
+                // Fetch the latest average rating from the Ratings table
+                var latestAverageRating = await _dbRatings.GetRatings(user.UserId);
+
+                // Update the UserModel with the latest average rating (with decimal value)
+                user.Rating = latestAverageRating;
+
+                // Update the UserModel in the database
+                await _dbUsers.UpdateUser(user);
             }
         }
+
         NavigationManager.NavigateTo("/After-Trip", forceLoad: true);
-
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Ratings Submitted"});
-
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Ratings Submitted" });
     }
+
 
     private void ViewUser(string userEmail)
     {

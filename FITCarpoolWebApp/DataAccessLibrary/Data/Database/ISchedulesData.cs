@@ -1,5 +1,4 @@
 ﻿using DataAccessLibrary.Model;
-using DataAccessLibrary.Model.Logic_Models;
 
 namespace DataAccessLibrary.Data.Database
 {
@@ -10,6 +9,5 @@ namespace DataAccessLibrary.Data.Database
         Task<List<SchedulesModel>> GetAllSchedules();
         Task<List<SchedulesModel>> GetSchedule(int userID);
         Task UpdateSchedule(SchedulesModel schedule);
-        Task<List<UserInfoModel>> GetMatchingSchedules(int GoalUserID, List<string> RequestDays, string TravelDirection);
     }
 }
