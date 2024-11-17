@@ -1,4 +1,4 @@
-﻿using DataAccessLibrary.Model;
+﻿ using DataAccessLibrary.Model;
 using DataAccessLibrary.Model.Database_Models;
 using DataAccessLibrary.Model.Logic_Models;
 using System.Collections.Generic;
@@ -100,6 +100,17 @@ namespace DataAccessLibrary.Data.Database
                 RequestDays,
                 TravelDirection
             });
+        }
+        public async Task<List<UserScheduleEntry>> GetScheduleEntries(DateTime startDateTime, DateTime endDateTime)
+        {
+            endDateTime = endDateTime.AddDays(1);
+            string sql = @$"SELECT  U.UserId 'UserID' , Start as 'Start', End as 'End' , Text as 'Direction'
+                            FROM Users U
+                            JOIN Schedules S ON U.UserId = S.UserId
+                            WHERE S.Start < @EndDate AND S.End >= @StartDate
+                            ORDER By Start , U.UserId;";
+            var data = await _db.LoadData<UserScheduleEntry, dynamic>(sql, new { StartDate = startDateTime, EndDate = endDateTime });
+            return data;
         }
 
     }
