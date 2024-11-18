@@ -3,6 +3,7 @@
 @using DataAccessLibrary.Model.Logic_Models
 @using MudBlazor
 @inject ISchedulesData _dbSchedules
+@inject IUsersData _dbUsers
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudSelect Value="selectedYear" Label="Select Year" T="int" ValueChanged="OnYearChanged" Class="mb-4">
@@ -38,6 +39,32 @@
             </PagerContent>
         </MudDataGrid>
     </MudCollapse>
+    <!-- Header that toggles the collapse for Group Data grid -->
+
+    <MudPaper Class="pa-2 mb-2" Style="cursor: pointer;" @onclick="ToggleGroupList">
+        <MudText Typo="Typo.h6" Class="mb-0">Group List</MudText>
+    </MudPaper>
+
+    <!-- Collapsible content group data grid s-->
+    <MudCollapse Expanded="@isGroupListExpanded">
+        <MudDataGrid T="DisplayGroupRecModel" Items="displayGroups" Bordered="true" Dense="true" ReadOnly="true" Virtualize="true" RowsPerPage="10">
+            <Columns>
+                <HierarchyColumn T="DisplayGroupRecModel" />
+                <PropertyColumn Property="x => x.window" Title="Arrival/Departure Window"/>
+            </Columns>
+            <ChildRowContent>
+                <MudPaper>
+                    @foreach(RecomendedGroup Group in context.Item.groups)
+                    {
+                        
+                    }
+                </MudPaper>
+            </ChildRowContent>
+            <PagerContent>
+                <MudDataGridPager T="DisplayGroupRecModel" />
+            </PagerContent>
+        </MudDataGrid>
+    </MudCollapse>
 </MudContainer>
 
 @code {
@@ -46,8 +73,11 @@
     private List<Week> weeks = new();
     private Week selectedWeek;
     public List<UserScheduleEntry> UserList = new();
-
+    public List<RecomendedGroup> GroupList = new();
+    public List<TimeWindow> timeSlots = new();
+    public List<DisplayGroupRecModel> displayGroups = new();
     private bool isUserListExpanded = true; // Controls the collapse state
+    private bool isGroupListExpanded = true; // Controls the collapse state
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,7 +140,16 @@
     {
         isUserListExpanded = !isUserListExpanded;
     }
+    private void ToggleGroupList()
+    {
+        isGroupListExpanded = !isGroupListExpanded;
+    }
+    public class DisplayGroupRecModel
+    {
+        public List<RecomendedGroup> groups { get; set; }
+        public TimeWindow window {get;set;}
 
+    }
     public class Week
     {
         public DateTime StartDate { get; set; } // Monday
@@ -163,19 +202,36 @@
     }
     public async Task GenerateGroups()
     {
-
+        // Reset group list 
+        GroupList = new();
         // Get users from Database that has schedules during the week 
         UserList = await _dbSchedules.GetScheduleEntries(selectedWeek.StartDate, selectedWeek.EndDate);
         // Get list of time slots for that week, run for each
-        List<TimeWindow> timeSlots = GenerateTimeSlots(selectedWeek);
+        timeSlots = GenerateTimeSlots(selectedWeek);
         // For each time slot get the users that are in it
         foreach (TimeWindow timeWindow in timeSlots)
         {
-            
+            Console.WriteLine("Time Windows " + timeWindow.Start + " " + timeWindow.End);
+            // Get the list of user info models
+            List<int> UserIds = UserList
+                 .Where(e => e.Start >= timeWindow.Start && e.End <= timeWindow.End)
+                 .Select(e => e.UserID)
+                 .ToList();
+            List<UserInfoModel> usersToGroup = await _dbUsers.GetListUserInfoModel(UserIds);
+            // Run algo on that list of users to get the best groups, add them to the running list of groups, this will then be displayed in a hierarchical display
+            GroupList.AddRange(await HACGrouping(usersToGroup));
+            // Groups ordered by their groups  
+            displayGroups.Add(new DisplayGroupRecModel());
+
         }
-        // Get the list of user info models 
-
-        // Run algo on that list of users to get the best groups, add them to the running list of groups, this will then be displayed in a heirarchacle 
-
     }
+    public async Task<List<RecomendedGroup>> HACGrouping(List<UserInfoModel> UsersToGroup)
+    {
+        List<RecomendedGroup> CreatedGroups = new();
+        List<List<UserInfoModel>> clusters = UsersToGroup.Select(user => new List<UserInfoModel> { user }).ToList();
+
+
+        return CreatedGroups;
+    }
+    
 }

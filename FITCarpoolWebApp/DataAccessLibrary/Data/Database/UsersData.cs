@@ -160,5 +160,56 @@ namespace DataAccessLibrary.Data.Database
             return FoundUsers.FirstOrDefault();
 
         }
+        public async Task<List<UserInfoModel>> GetListUserInfoModel(List<int> userIds)
+        {
+            if (userIds == null || userIds.Count == 0)
+            {
+                return new List<UserInfoModel>();
+            }
+
+            // Create a parameterized SQL query with an IN clause
+            string sql = $@"
+                SELECT 
+                    u.UserID, 
+                    u.FirstName, 
+                    u.LastName, 
+                    u.UserType, 
+                    u.Email as 'UserName',
+                    u.PickupLocation,  
+                    u.DropoffLocation, 
+                    u.DrivingDistance, 
+                    u.Gender, 
+                    u.BeltCount, 
+                    u.AllowEatDrink, 
+                    u.AllowSmokeVape, 
+                    p.GenderPreference, 
+                    p.EatingPreference, 
+                    p.SmokingPreference, 
+                    p.TemperaturePreference, 
+                    p.MusicPreference,
+                    l.PickupLatitude,
+                    l.PickupLongitude, 
+                    l.DropoffLongitude, 
+                    l.DropoffLatitude, 
+                    u.PhonePrivacy, 
+                    u.AddressPrivacy, 
+                    u.MakeModel, 
+                    u.VehicleColor, 
+                    u.LicensePlate, 
+                    u.LicensePicture, 
+                    u.CarPicture,
+                    u.ProfilePicture, 
+                    u.Rating
+                FROM Users u
+                JOIN Locations l ON u.UserID = l.UserID
+                JOIN Preferences p ON u.UserID = p.UserID
+                WHERE u.UserID IN @UserIds;";
+
+            // Query the database for users matching the given IDs
+            List<UserInfoModel> foundUsers = await _db.LoadData<UserInfoModel, dynamic>(sql, new { UserIds = userIds });
+
+            // Return the list of UserInfoModel objects
+            return foundUsers;
+        }
     }
 }

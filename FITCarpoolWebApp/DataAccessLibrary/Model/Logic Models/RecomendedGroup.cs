@@ -13,6 +13,8 @@ namespace DataAccessLibrary.Model.Logic_Models
         public string Direction { get; set; } = "";
         public double DistanceScore { get; private set; }
         public double PreferenceScore { get; private set; }
+        public DateTime StartWindow {  get; set; }
+        public DateTime EndWindow { get; set; }
 
         public RecomendedGroup() { }
 
@@ -31,7 +33,22 @@ namespace DataAccessLibrary.Model.Logic_Models
             Console.WriteLine("PreferenceScore " + PreferenceScore);
 
         }
+        public RecomendedGroup(string groupName, int groupID, List<UserInfoModel> groupMembers, UserInfoModel requestUser, string direction, DateTime startWindow , DateTime endWindow)
+        {
+            GroupName = groupName;
+            GroupID = groupID;
+            GroupMembers = new List<UserInfoModel>(groupMembers);
+            RequestingUser = requestUser;
+            Direction = direction;
 
+            DistanceScore = CalculateDistanceScore();
+            Console.WriteLine("DistanceScore " + GroupName);
+
+            PreferenceScore = CalculateTotalMatchScore();
+            Console.WriteLine("PreferenceScore " + PreferenceScore);
+            StartWindow = startWindow;
+            EndWindow = endWindow;
+        }
         private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
         {
             double R = 6371e3;

@@ -223,7 +223,6 @@ namespace DataAccessLibrary.Data.Database
             await _db.SaveData(sql, new { UserId = GoalUserID, GroupId = GoalGroupID });
         }
         // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
-        // This function will use k clustering and Hierarchical agglomerative clustering (HAC) to form groups of users 
         public async Task<List<RecomendedGroup>> GetRecommendGroups(int GoalUserID, List<string> Days, string TravelDirection, int DistanceWeight, int PreferenceWeight)
         {
             if (!TravelDirection.Equals("arrival") && !TravelDirection.Equals("departure"))
