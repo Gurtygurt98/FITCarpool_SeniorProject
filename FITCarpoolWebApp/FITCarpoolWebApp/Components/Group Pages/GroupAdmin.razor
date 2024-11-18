@@ -1,9 +1,12 @@
 ﻿@page "/GroupAdmin"
+@using DataAccessLibrary.Data
 @using DataAccessLibrary.Data.Database
 @using DataAccessLibrary.Model.Logic_Models
+@using FITCarpoolWebApp.Components.Group_Pages.GroupViewComponents
 @using MudBlazor
 @inject ISchedulesData _dbSchedules
 @inject IUsersData _dbUsers
+@inject Radzen.DialogService DialogService;
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
     <MudSelect Value="selectedYear" Label="Select Year" T="int" ValueChanged="OnYearChanged" Class="mb-4">
@@ -47,21 +50,29 @@
 
     <!-- Collapsible content group data grid s-->
     <MudCollapse Expanded="@isGroupListExpanded">
-        <MudDataGrid T="DisplayGroupRecModel" Items="displayGroups" Bordered="true" Dense="true" ReadOnly="true" Virtualize="true" RowsPerPage="10">
+        <MudDataGrid T="RecomendedGroup" Items="GroupList" Bordered="true" Dense="true" ReadOnly="true" 
+            Virtualize="true" RowsPerPage="50" Groupable="true" GroupExpanded="false">
+            <ToolBarContent>
+                <MudIconButton OnClick="LoadRecomendationsToDatabase" Color="Color.Success" Icon="@Icons.Material.Filled.CloudUpload" />
+
+            </ToolBarContent>
             <Columns>
-                <HierarchyColumn T="DisplayGroupRecModel" />
-                <PropertyColumn Property="x => x.window" Title="Arrival/Departure Window"/>
+                <PropertyColumn Property="x => x.GroupName" Title="Group Name" />
+                <PropertyColumn Property="x => x.Direction" Title="Direction" />
+                <PropertyColumn Property="x => x.StartWindow" Title="Arrival/Departure Window" Grouping GroupBy="@_groupBy">
+                    <GroupTemplate>
+                        <span style="font-weight:bold">Category: @context.Grouping.Key</span>
+                    </GroupTemplate>
+                </PropertyColumn>
+            
+                <TemplateColumn >
+                    <CellTemplate>
+                        <MudIconButton OnClick="@(async () => await ShowGroupDetails(context.Item))" Color="Color.Error" Icon="@Icons.Material.Filled.Search" />
+                    </CellTemplate>
+                </TemplateColumn>
             </Columns>
-            <ChildRowContent>
-                <MudPaper>
-                    @foreach(RecomendedGroup Group in context.Item.groups)
-                    {
-                        
-                    }
-                </MudPaper>
-            </ChildRowContent>
             <PagerContent>
-                <MudDataGridPager T="DisplayGroupRecModel" />
+                <MudDataGridPager T="RecomendedGroup" />
             </PagerContent>
         </MudDataGrid>
     </MudCollapse>
@@ -75,8 +86,7 @@
     public List<UserScheduleEntry> UserList = new();
     public List<RecomendedGroup> GroupList = new();
     public List<TimeWindow> timeSlots = new();
-    public List<DisplayGroupRecModel> displayGroups = new();
-    private bool isUserListExpanded = true; // Controls the collapse state
+    private bool isUserListExpanded = false; // Controls the collapse state
     private bool isGroupListExpanded = true; // Controls the collapse state
 
     protected override async Task OnInitializedAsync()
@@ -87,19 +97,20 @@
         GenerateWeeks(selectedYear);
         await OnWeekChanged(weeks.FirstOrDefault(e => e.StartDate.Date == new DateTime(2024, 11, 25)) ?? weeks.First());
     }
+    public async Task LoadRecomendationsToDatabase()
+    {
 
+    }
     private void OnYearChanged(int newYear)
     {
         selectedYear = newYear;
         GenerateWeeks(selectedYear);
         selectedWeek = null; // Reset selected week
     }
-
     private async Task OnWeekChanged(Week newWeek)
     {
         selectedWeek = newWeek;
     }
-
     private void GenerateWeeks(int year)
     {
         weeks.Clear();
@@ -135,7 +146,6 @@
             date = date.AddDays(7); // Move to next week
         }
     }
-
     private void ToggleUserList()
     {
         isUserListExpanded = !isUserListExpanded;
@@ -144,61 +154,20 @@
     {
         isGroupListExpanded = !isGroupListExpanded;
     }
-    public class DisplayGroupRecModel
+    Func<RecomendedGroup, object> _groupBy = x =>
     {
-        public List<RecomendedGroup> groups { get; set; }
-        public TimeWindow window {get;set;}
-
-    }
-    public class Week
+        return x.StartWindow;
+    };
+    private async Task ShowGroupDetails(RecomendedGroup group)
     {
-        public DateTime StartDate { get; set; } // Monday
-        public DateTime EndDate { get; set; }   // Friday
-        public string DisplayString { get; set; }
-    }
-    public class TimeWindow
-    {
-        public DateTime Start { get; set; }
-        public DateTime End { get; set; }  
-        public string Direction { get; set; }
-        public TimeWindow(DateTime start, DateTime end, string direction)
-        {
-            Start = start;
-            End = end;
-            Direction = direction;
-        }
-    }
-    private List<TimeWindow> GenerateTimeSlots(Week week)
-    {
-        DateTime currentDay = week.StartDate;
-        DateTime endTime = week.EndDate.AddDays(1); // Include the last day fully
-        List<TimeWindow> timeSlots = new();
-
-        while (currentDay < endTime)
-        {
-            // Create arrival time slots (7 AM to 12 PM)
-            DateTime arrivalStart = currentDay.AddHours(7);
-            DateTime arrivalEnd = currentDay.AddHours(12);
-            while (arrivalStart < arrivalEnd)
+        var parameters = new Dictionary<string, object> { { "CurrentGroup", group } };
+        var options = new Radzen.DialogOptions
             {
-                timeSlots.Add(new TimeWindow(arrivalStart, arrivalStart.AddHours(1), "arrival"));
-                arrivalStart = arrivalStart.AddHours(1);
-            }
+                Width = "100%",
+                CloseDialogOnOverlayClick = true
+            };
 
-            // Create departure time slots (1 PM to 7 PM)
-            DateTime departureStart = currentDay.AddHours(13);
-            DateTime departureEnd = currentDay.AddHours(19);
-            while (departureStart < departureEnd)
-            {
-                timeSlots.Add(new TimeWindow(departureStart, departureStart.AddHours(1), "departure"));
-                departureStart = departureStart.AddHours(1);
-            }
-
-            // Move to the next day
-            currentDay = currentDay.AddDays(1);
-        }
-
-        return timeSlots;
+        await DialogService.OpenAsync<ViewGroupDialog>("View Group", parameters, options);
     }
     public async Task GenerateGroups()
     {
@@ -206,32 +175,9 @@
         GroupList = new();
         // Get users from Database that has schedules during the week 
         UserList = await _dbSchedules.GetScheduleEntries(selectedWeek.StartDate, selectedWeek.EndDate);
-        // Get list of time slots for that week, run for each
-        timeSlots = GenerateTimeSlots(selectedWeek);
         // For each time slot get the users that are in it
-        foreach (TimeWindow timeWindow in timeSlots)
-        {
-            Console.WriteLine("Time Windows " + timeWindow.Start + " " + timeWindow.End);
-            // Get the list of user info models
-            List<int> UserIds = UserList
-                 .Where(e => e.Start >= timeWindow.Start && e.End <= timeWindow.End)
-                 .Select(e => e.UserID)
-                 .ToList();
-            List<UserInfoModel> usersToGroup = await _dbUsers.GetListUserInfoModel(UserIds);
-            // Run algo on that list of users to get the best groups, add them to the running list of groups, this will then be displayed in a hierarchical display
-            GroupList.AddRange(await HACGrouping(usersToGroup));
-            // Groups ordered by their groups  
-            displayGroups.Add(new DisplayGroupRecModel());
-
-        }
+        GroupRecomendationLogic createGroupLogic = new GroupRecomendationLogic(UserList, selectedWeek, _dbUsers);
+        GroupList = await createGroupLogic.GetRecomendedGroupsAsync();
     }
-    public async Task<List<RecomendedGroup>> HACGrouping(List<UserInfoModel> UsersToGroup)
-    {
-        List<RecomendedGroup> CreatedGroups = new();
-        List<List<UserInfoModel>> clusters = UsersToGroup.Select(user => new List<UserInfoModel> { user }).ToList();
 
-
-        return CreatedGroups;
-    }
-    
 }

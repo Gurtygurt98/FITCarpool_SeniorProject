@@ -387,7 +387,7 @@ namespace DataAccessLibrary.Data.Database
                 return double.MaxValue;
 
             return totalDistance / count;
-        }        // Computes the distance between two users based on their preference match and geographical distance.
+        }        
         // Computes the distance between two users based on their preference match and geographical distance.
         private double ComputeUserDistance(UserInfoModel userA, UserInfoModel userB, double weightPreference, double weightGeographical)
         {

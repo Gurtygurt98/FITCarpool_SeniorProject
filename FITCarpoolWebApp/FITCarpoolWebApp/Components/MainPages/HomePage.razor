@@ -19,8 +19,7 @@
 <AuthorizeView>
     @*User is logged in *@
     <Authorized>
-        <MudText Typo="Typo.h2">Welcome, @userName!</MudText>
-
+        <MudText Typo="Typo.body1" Class="welcome-text">Welcome, @userModel.FirstName @userModel.LastName!</MudText>
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <MudText Typo="Typo.h3" Align="Align.Start"><b>Today's Trip</b></MudText>
             <div style="display: flex; flex-direction: row; gap: 20px;">
@@ -175,7 +174,7 @@
     private List<GroupScheduleModel> upcomingTrips = new();
     private List<Friend> friends = new();
     private int ID = 0;
-
+    public UsersModel userModel = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -190,8 +189,8 @@
             var userList = await _dbUsers.GetUser(userName);
             if (userList.Any())
             {
-                var inputModel = userList.First();
-                ID = inputModel.UserId;
+                userModel = userList.First();
+                ID = userModel.UserId;
 
                 // Fetch all groups for the user
                 var userGroups = await _dbCarpoolGroups.GetCurrentGroups(ID);
@@ -251,3 +250,15 @@
         public string Email { get; set; } 
     }
 }
+<style>
+    .welcome-text {
+    font-size: 2.5rem; /* Default for larger screens */
+}
+
+    media (max-width: 768px) {
+    .welcome-text {
+        font-size: 1.5rem; /* Smaller font size for mobile */
+        text-align: center; /* Center-align for smaller screens */
+    }
+}
+</style>
