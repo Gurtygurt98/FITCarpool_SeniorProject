@@ -51,7 +51,7 @@
     <!-- Collapsible content group data grid s-->
     <MudCollapse Expanded="@isGroupListExpanded">
         <MudDataGrid T="RecomendedGroup" Items="GroupList" Bordered="true" Dense="true" ReadOnly="true" 
-            Virtualize="true" RowsPerPage="50" Groupable="true" GroupExpanded="false">
+            Virtualize="true" RowsPerPage="50" >
             <ToolBarContent>
                 <MudIconButton OnClick="LoadRecomendationsToDatabase" Color="Color.Success" Icon="@Icons.Material.Filled.CloudUpload" />
 
@@ -59,13 +59,27 @@
             <Columns>
                 <PropertyColumn Property="x => x.GroupName" Title="Group Name" />
                 <PropertyColumn Property="x => x.Direction" Title="Direction" />
-                <PropertyColumn Property="x => x.StartWindow" Title="Arrival/Departure Window" Grouping GroupBy="@_groupBy">
-                    <GroupTemplate>
-                        <span style="font-weight:bold">Category: @context.Grouping.Key</span>
-                    </GroupTemplate>
-                </PropertyColumn>
-            
-                <TemplateColumn >
+                <PropertyColumn Property="x => x.RecurringPattern" Title="Recurring Pattern" />
+                <PropertyColumn Property="x => x.IsRecurring" Title="Recurring?" />
+
+                <TemplateColumn Title="Active Time Slots">
+                    <CellTemplate>
+                        @if (context.Item.ActiveTimeSlots != null && context.Item.ActiveTimeSlots.Any())
+                        {
+                            <MudChipSet>
+                                @foreach (var timeSlot in context.Item.ActiveTimeSlots)
+                                {
+                                    <MudChip>@timeSlot.ToString("g")</MudChip>
+                                }
+                            </MudChipSet>
+                        }
+                        else
+                        {
+                            <span>No time slots</span>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn>
                     <CellTemplate>
                         <MudIconButton OnClick="@(async () => await ShowGroupDetails(context.Item))" Color="Color.Error" Icon="@Icons.Material.Filled.Search" />
                     </CellTemplate>

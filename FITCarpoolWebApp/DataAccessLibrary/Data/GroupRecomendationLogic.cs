@@ -34,7 +34,7 @@ namespace DataAccessLibrary.Data
                 List<RecomendedGroup> recomendedGroups = await HACGrouping(usersToGroup, timeWindow);
                 GroupList.AddRange(recomendedGroups);
             }
-            return GroupList;
+            return await CompressGroupsAsync(GroupList);
         }
         public async Task<List<RecomendedGroup>> HACGrouping(List<UserInfoModel> UsersToGroup, TimeWindow window)
         {
@@ -115,9 +115,10 @@ namespace DataAccessLibrary.Data
                     GroupMembers = cluster,
                     StartWindow = window.Start,
                     EndWindow = window.End,
-                    Direction = direction
-
+                    Direction = direction,                    
                 };
+                
+
                 GroupList.Add(group);
                 // Users in smaller clusters are left out
             }
@@ -345,6 +346,58 @@ namespace DataAccessLibrary.Data
             }
 
             return timeSlots;
+        }
+        public async Task<List<RecomendedGroup>> CompressGroupsAsync(List<RecomendedGroup> groups)
+        {
+            var compressedGroups = new List<RecomendedGroup>();
+
+            // Group by members and direction to detect recurring patterns
+            var groupedByMembers = groups
+                .GroupBy(g => (string.Join(",", g.GroupMembers.Select(m => m.UserID)), g.Direction))
+                .ToList();
+
+            foreach (var group in groupedByMembers)
+            {
+                var groupedTimes = group
+                .Select(g => (g.StartWindow, g.EndWindow)) // Creates a list of tuples
+                .OrderBy(g => g.StartWindow)
+                .ToList();
+
+                // Extract repeating pattern
+                var recurringPattern = ExtractRecurringPattern(groupedTimes);
+                var firstGroup = group.First();
+
+                var compressedGroup = new RecomendedGroup
+                {
+                    GroupName = firstGroup.GroupName,
+                    GroupMembers = firstGroup.GroupMembers,
+                    Direction = firstGroup.Direction,
+                    StartWindow = groupedTimes.First().StartWindow,
+                    EndWindow = groupedTimes.Last().EndWindow,
+                    RecurringPattern = recurringPattern,
+                    IsRecurring = !string.IsNullOrEmpty(recurringPattern),
+                    ActiveTimeSlots = groupedTimes.Select(g => g.StartWindow).ToList()
+                };
+
+                compressedGroups.Add(compressedGroup);
+            }
+
+            return compressedGroups;
+        }
+
+        private string ExtractRecurringPattern(List<(DateTime StartWindow, DateTime EndWindow)> groupedTimes)
+        {
+            var days = groupedTimes
+                .GroupBy(t => t.StartWindow.DayOfWeek)
+                .Select(g => g.Key.ToString())
+                .OrderBy(d => d)
+                .ToList();
+
+            if (days.Count == 0)
+                return string.Empty;
+
+            var timeRange = $"{groupedTimes.First().StartWindow:hh:mm tt}-{groupedTimes.Last().EndWindow:hh:mm tt}";
+            return $"{string.Join(", ", days)}: {timeRange}";
         }
     }
 }

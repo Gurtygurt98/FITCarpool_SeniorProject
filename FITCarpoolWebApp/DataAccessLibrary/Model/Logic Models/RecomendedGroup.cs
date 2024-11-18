@@ -13,8 +13,11 @@ namespace DataAccessLibrary.Model.Logic_Models
         public string Direction { get; set; } = "";
         public double DistanceScore { get; private set; }
         public double PreferenceScore { get; private set; }
-        public DateTime StartWindow {  get; set; }
+        public DateTime StartWindow { get; set; }
         public DateTime EndWindow { get; set; }
+        public string RecurringPattern { get; set; } = string.Empty; // e.g., "Mon, Wed, Fri: 7-8 AM"
+        public bool IsRecurring { get; set; } = false;
+        public List<DateTime> ActiveTimeSlots { get; set; } = new List<DateTime>(); // Tracks exact time slots
 
         public RecomendedGroup() { }
 
@@ -66,7 +69,7 @@ namespace DataAccessLibrary.Model.Logic_Models
             return distance;
         }
 
-        private double CalculateDistanceScore()
+        public double CalculateDistanceScore()
         {
             double totalDistance = 0;
             int memberCount = 0;
