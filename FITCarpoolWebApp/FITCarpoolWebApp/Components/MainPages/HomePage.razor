@@ -1,5 +1,7 @@
 ﻿@page "/"
+@using DataAccessLibrary.Model.Logic_Models
 @using FITCarpoolWebApp.Components.Account.Shared
+@using FITCarpoolWebApp.Components.Group_Pages.GroupViewComponents
 @using MudBlazor
 @using Radzen.Blazor
 @inject NotificationService NotificationService
@@ -15,11 +17,14 @@
 @inject IGroupScheduleData _dbGroupSchedule
 @inject ICarpoolGroupsData _dbCarpoolGroups
 @inject IRolesData _dbRoles
+@inject IGroupRecommendationData _dbGroupRec
+@inject Radzen.DialogService DialogService;
 
 <AuthorizeView>
     @*User is logged in *@
     <Authorized>
         <MudText Typo="Typo.body1" Class="welcome-text">Welcome, @userModel.FirstName @userModel.LastName!</MudText>
+         @*Todays trips*@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <MudText Typo="Typo.h3" Align="Align.Start"><b>Today's Trip</b></MudText>
             <div style="display: flex; flex-direction: row; gap: 20px;">
@@ -59,15 +64,11 @@
 
         </RadzenCard>
 
-
-        @* Schedule Card on top *@
+        @* Schedule Card on top 
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <RadzenRow>
                 <RadzenColumn Width="70%">
                     <MudText Typo="Typo.h3" Align="Align.Start"><b>Future Trips</b></MudText>
-                </RadzenColumn>
-                <RadzenColumn Width="30%" Style="text-align: right;">
-                    <RadzenButton Text="Find a Group!" Click="@(() => NavigateTo("FindGroups"))" ButtonStyle="ButtonStyle.Primary" />
                 </RadzenColumn>
             </RadzenRow>
 
@@ -93,7 +94,6 @@
                                     Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
                                 </MudText>
                                 <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
-
                                 <RadzenButton Text="Confirm Ride" Click="@(() => NavigateTo("Rider-Confirmation"))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
                             </RadzenCard>
                         }
@@ -110,8 +110,59 @@
             </div>
         </RadzenCard>
 
+        *@
+        @* Recommend Groups Card on top *@
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
+            <RadzenRow>
+                <RadzenColumn Width="70%">
+                    <MudText Typo="Typo.h3" Align="Align.Start"><b>Upcoming Recommended Groups</b></MudText>
+                </RadzenColumn>
+                <RadzenColumn Width="30%" Style="text-align: right;">
+                    <RadzenButton Text="Find a Group!" Click="@(() => NavigateTo("FindGroups"))" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenColumn>
+            </RadzenRow>
+            @*Group Recommendation for the Upcoming Week*@
+            <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
+                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                {
+                    var today = DateTime.Today;
 
+                    // Filter and sort trips by start date
+                    var allTrips = upcomingTrips
+                    .Where(trip => trip.Start.Date != today)
+                    .OrderBy(trip => trip.Start)
+                    .ToList();
 
+                    if (NextWeekRecommendations.Count > 0)
+                    {
+                        @foreach (var recommendation in NextWeekRecommendations)
+                        {
+                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                                <MudText Typo="Typo.h4" Align="Align.Center">@recommendation.GetDaysOfWeek()</MudText>
+                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @recommendation.GetFormattedDateRange()</MudText>
+                                <MudText Typo="Typo.h6" Align="Align.Center">
+                                    Direction: @(recommendation.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                                </MudText>
+                                <MudStack>
+                                    <RadzenButton Text="Accept" Click="@(() => AcceptGroupRecommendation(recommendation))" Style="width: 100%; background-color: green;" />
+                                    <RadzenButton Text="Decline" Click="@(() => DeclineGroupRecommendation(recommendation))" Style="width: 100%; background-color: red;" />
+                                    <RadzenButton Text="View" Click="@(() => ShowGroupDetails(recommendation))" Style="width: 100%; background-color: blue;" />
+
+                                </MudStack>
+                            </RadzenCard>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6">No Pending Group Recommendations.</MudText>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.h6">No Pending Group Recommendations.</MudText>
+                }
+            </div>
+        </RadzenCard>
         @* Friends List Card on bottom *@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <MudText Typo="Typo.h3" Align="Align.Start"><b>Friends List</b></MudText>
@@ -175,61 +226,71 @@
     private List<Friend> friends = new();
     private int ID = 0;
     public UsersModel userModel = new();
-
+    private List<RecomendedGroup> NextWeekRecommendations = new ();
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
-        if (user.Identity.IsAuthenticated)
+        if (!user.Identity.IsAuthenticated)
         {
-            userName = user.Identity.Name;
+            return;
+        }
+        userName = user.Identity.Name;
+        var userList = await _dbUsers.GetUser(userName);
+        if (!userList.Any())
+        {
+            return;
+        }
+        // Fetch user details
 
-            // Fetch user details
-            var userList = await _dbUsers.GetUser(userName);
-            if (userList.Any())
+        userModel = userList.First();
+        ID = userModel.UserId;
+
+        // Fetch all groups for the user
+        var userGroups = await _dbCarpoolGroups.GetCurrentGroups(ID);
+        if (userGroups.Any())
+        {
+            foreach (var group in userGroups)
             {
-                userModel = userList.First();
-                ID = userModel.UserId;
+                int groupID = group.Item1;
 
-                // Fetch all groups for the user
-                var userGroups = await _dbCarpoolGroups.GetCurrentGroups(ID);
-                if (userGroups.Any())
+                // Use each retrieved group ID to get the schedule
+                var groupSchedules = await _dbGroupSchedule.GetScheduleForGroup(groupID);
+                if (groupSchedules != null)
                 {
-                    foreach (var group in userGroups)
-                    {
-                        int groupID = group.Item1;
-
-                        // Use each retrieved group ID to get the schedule
-                        var groupSchedules = await _dbGroupSchedule.GetScheduleForGroup(groupID);
-                        if (groupSchedules != null)
-                        {
-                            upcomingTrips.AddRange(groupSchedules);
-                        }
-
-                    }
+                    upcomingTrips.AddRange(groupSchedules);
                 }
 
-
-                var friendList = await _dbFriends.GetFriends(ID);
-                foreach (var dataFriend in friendList)
-                {
-                    List<UsersModel> temp;
-                    if (dataFriend.UserId1 == ID)
-                    {
-                        temp = await _dbUsers.GetUser(dataFriend.UserId2);
-                    }
-                    else
-                    {
-                        temp = await _dbUsers.GetUser(dataFriend.UserId1);
-                    }
-
-                    if (dataFriend.Status.Equals("accepted") && temp.Any())
-                    {
-                        friends.Add(new Friend { Name = $"{temp.First().FirstName} {temp.First().LastName}" });
-                    }
-                }
             }
+        }
+        // Fetch friends
+        var friendList = await _dbFriends.GetFriends(ID);
+        foreach (var dataFriend in friendList)
+        {
+            List<UsersModel> temp;
+            if (dataFriend.UserId1 == ID)
+            {
+                temp = await _dbUsers.GetUser(dataFriend.UserId2);
+            }
+            else
+            {
+                temp = await _dbUsers.GetUser(dataFriend.UserId1);
+            }
+
+            if (dataFriend.Status.Equals("accepted") && temp.Any())
+            {
+                friends.Add(new Friend { Name = $"{temp.First().FirstName} {temp.First().LastName}" });
+            }
+        }
+        // Pull Next Week Recomendation from the GroupRecomendation & GroupRecomendation Membership table 
+        var GroupRec = await _dbGroupRec.GetUsersUpcomingRecommendations(userModel.UserId);
+        if (GroupRec != null)
+        {
+            NextWeekRecommendations.AddRange(GroupRec);
+        }else
+        {
+            Console.WriteLine("No Groups Found");
         }
     }
 
@@ -242,12 +303,32 @@
     {
         NavigationManager.NavigateTo($"/{page}");
     }
+    private async Task ShowGroupDetails(RecomendedGroup group)
+    {
+        var parameters = new Dictionary<string, object> { { "CurrentGroup", group } };
+        var options = new Radzen.DialogOptions
+            {
+                Width = "100%",
+                CloseDialogOnOverlayClick = true
+            };
 
+        await DialogService.OpenAsync<ViewGroupDialog>("View Group", parameters, options);
+    }
     public class Friend
     {
         public string Name { get; set; }
         public string ProfilePicture { get; set; }
         public string Email { get; set; } 
+    }
+    public async Task DeclineGroupRecommendation(RecomendedGroup group)
+    {
+        await _dbGroupRec.DeclineGroupRec(group, userModel.UserId);
+        NextWeekRecommendations.Remove(group);
+    }
+    public async Task AcceptGroupRecommendation(RecomendedGroup group)
+    {
+        await _dbGroupRec.AcceptGroupRec(group, userModel.UserId);
+        NextWeekRecommendations.Remove(group);
     }
 }
 <style>

@@ -36,7 +36,7 @@ builder.Services.AddTransient<IGMapsAPI, GMapsAPI>();
 
 // Database Connection services
 builder.Services.AddTransient<IGroupScheduleData, GroupScheduleData>();
-
+builder.Services.AddTransient<IGroupRecommendationData, GroupRecomendationData>();
 builder.Services.AddTransient<ICarpoolGroupsData, CarpoolGroupsData>();
 builder.Services.AddTransient<IFriendsData, FriendsData>();
 builder.Services.AddTransient<IGroupMemberLocationsData, GroupMemberLocationsData>();
