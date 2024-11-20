@@ -157,9 +157,18 @@ namespace DataAccessLibrary.Data.Database
             if(groupIDs != null || groupIDs.Count() == 0)
             {
 
+
             }
 
 
+        }
+        public async Task CreateRealGroupFromRec(RecomendedGroup group)
+        {
+
+            string sql = @"INSERT INTO CarpoolGroupTable (Name, Direction) Values (@name, @direction)";
+            var parameters = new {name = group.GroupName, direction = group.Direction};
+            int GroupId = await _db.SaveDataAndGetLastId(sql, parameters);
+            // Add Group mems
         }
         public async Task DeclineGroupRec(RecomendedGroup group, int UserID)
         {
