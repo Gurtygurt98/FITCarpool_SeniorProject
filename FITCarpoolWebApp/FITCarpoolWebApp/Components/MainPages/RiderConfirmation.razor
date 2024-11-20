@@ -27,18 +27,18 @@
 <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
     <MudText Typo="Typo.h2" Align="Align.Center">Upcoming Trip</MudText>
     <MudText Typo="Typo.h3" Align="Align.Center">Date: @upcomingTrip?.Start.ToString("dddd, MMM. d, hh:mm tt")</MudText>
-        <MudText Typo="Typo.h4" Align="Align.Center">Group Name: @carpoolGroup?.GroupName</MudText>
+    <MudText Typo="Typo.h4" Align="Align.Center">Group Name: @carpoolGroup?.GroupName</MudText>
 
-        <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
-            <RadzenButton Text="Accept Ride" ButtonStyle="ButtonStyle.Success" Click="@AcceptRide" />
-            <RadzenButton Text="Cancel Ride" ButtonStyle="ButtonStyle.Danger" Click="@CancelRide" />
-        </RadzenStack>
+    <RadzenStack Orientation="Radzen.Orientation.Horizontal" AlignItems="Radzen.AlignItems.Center" JustifyContent="JustifyContent.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+        <RadzenButton Text="Accept Ride" ButtonStyle="ButtonStyle.Success" Click="@AcceptRide" />
+        <RadzenButton Text="Cancel Ride" ButtonStyle="ButtonStyle.Danger" Click="@CancelRide" />
+    </RadzenStack>
 
-        <!-- Driver Information -->
-        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:65%">
-            <MudText Typo="Typo.h4" Align="Align.Center">Driver's Information</MudText>
-            <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Start" AlignItems="Radzen.AlignItems.Center" Gap="1rem" class="rz-p-4">
-                @if (driver != null)
+    <!-- Driver Information -->
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:65%">
+        <MudText Typo="Typo.h4" Align="Align.Center">Driver's Information</MudText>
+        <RadzenStack Orientation="Radzen.Orientation.Horizontal" JustifyContent="Radzen.JustifyContent.Start" AlignItems="Radzen.AlignItems.Center" Gap="1rem" class="rz-p-4">
+            @if (driver != null)
             {
                 @if (driver.ProfilePicture != null)
                 {
@@ -50,8 +50,8 @@
                 }
                 <RadzenStack Gap="0">
                     <RadzenText TextStyle="TextStyle.H5">Driver: @driver.FirstName @driver.LastName</RadzenText>
-                        <RadzenText TextStyle="TextStyle.H5">Contact: @driver.Phone</RadzenText>
-                    </RadzenStack>
+                    <RadzenText TextStyle="TextStyle.H5">Contact: @driver.Phone</RadzenText>
+                </RadzenStack>
             }
         </RadzenStack>
 
@@ -67,15 +67,15 @@
             }
             <RadzenStack Gap="0">
                 <RadzenText TextStyle="TextStyle.H5">Make and Model: @driver.MakeModel</RadzenText>
-                    <RadzenText TextStyle="TextStyle.H5">License Plate: @driver.LicensePlate</RadzenText>
-                </RadzenStack>
+                <RadzenText TextStyle="TextStyle.H5">License Plate: @driver.LicensePlate</RadzenText>
             </RadzenStack>
-        </RadzenCard>
+        </RadzenStack>
+    </RadzenCard>
 
-        <!-- Passenger Information -->
-        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:65%">
-            <MudText Typo="Typo.h4" Align="Align.Center">Passengers</MudText>
-            @if (passengers != null && passengers.Any())
+    <!-- Passenger Information -->
+    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:65%">
+        <MudText Typo="Typo.h4" Align="Align.Center">Passengers</MudText>
+        @if (passengers != null && passengers.Any())
         {
             @foreach (var passenger in passengers)
             {
@@ -90,21 +90,24 @@
                     }
                     <RadzenStack Gap="0">
                         <RadzenText TextStyle="TextStyle.H5">@passenger.FirstName @passenger.LastName</RadzenText>
-                        </RadzenStack>
-                        <RadzenButton Text="View User" Click="@(() => ViewUser(passenger.Email))" Style="margin-left:auto" />
                     </RadzenStack>
+                    <RadzenButton Text="View User" Click="@(() => ViewUser(passenger.Email))" Style="margin-left:auto" />
+                </RadzenStack>
             }
         }
     </RadzenCard>
 </RadzenCard>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int groupId { get; set; }
+
     private GroupScheduleModel upcomingTrip;
     private CarpoolGroupsModel carpoolGroup;
     private UsersModel driver;
     private List<UsersModel> passengers = new();
-    private int groupIDValue = 10; 
-    private int userId; 
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,20 +123,19 @@
             }
         }
 
-        var schedules = await _dbGroupSchedule.GetScheduleForGroup(groupIDValue);
+        var schedules = await _dbGroupSchedule.GetScheduleForGroup(groupId);
         if (schedules?.Any() == true)
         {
             upcomingTrip = schedules.First();
         }
 
-        var groups = await _dbCarpoolGroups.GetCarpoolGroup(groupIDValue);
+        var groups = await _dbCarpoolGroups.GetCarpoolGroup(groupId);
         if (groups?.Any() == true)
         {
             carpoolGroup = groups.First();
         }
 
         if (carpoolGroup != null)
-
         {
             var driverList = await _dbUsers.GetUser(carpoolGroup.DriverId);
             driver = driverList.FirstOrDefault();
@@ -142,7 +144,7 @@
         if (carpoolGroup != null)
         {
             var allMembers = await _dbGroupMembers.GetAllGroupMembers();
-            var groupMembers = allMembers.Where(m => m.GroupId == groupIDValue).ToList();
+            var groupMembers = allMembers.Where(m => m.GroupId == groupId).ToList();
 
             foreach (var member in groupMembers)
             {
@@ -177,3 +179,4 @@
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Ride Cancelled" });
     }
 }
+
