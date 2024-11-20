@@ -121,7 +121,7 @@ namespace DataAccessLibrary.Data.Database
             var today = DateTime.Today;
             var startDate = today.AddDays(((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7);
             var endDate = startDate.AddDays(4); // Friday after Monday
-            string sql = @"SELECT 
+            string sql = @"SELECT DISTINCT
                                 GR.GroupID,
                                 GR.GroupName,
                                 GR.Start AS StartWindow,
@@ -132,8 +132,14 @@ namespace DataAccessLibrary.Data.Database
                                 GR.ActiveTimeSlots AS ActiveTimeSlotsSerialized,
 	                            GRm.UserID
                             FROM GroupRecomendation GR
-                            LEFT JOIN GroupRecomendationMembership GRM on GR.GroupID = GRM.GroupID
-                            WHERE GRM.UserID = @Userid AND Start <= @EndDate AND End >= @StartDate";
+                                LEFT JOIN GroupRecomendationMembership GRM ON GR.GroupID = GRM.GroupID
+                                LEFT JOIN MapRecommendToReal MRR ON GR.GroupID = MRR.RecommendGroupID
+                                LEFT JOIN CarpoolGroupMemberTable CGMT ON MRR.CreatedGroupID = CGMT.GroupID
+                            WHERE GRM.UserID = @Userid AND Start <= @EndDate   AND NOT EXISTS ( SELECT 1
+                                                                                                FROM CarpoolGroupMemberTable CGMT_Sub
+                                                                                                    JOIN MapRecommendToReal MRR_Sub ON CGMT_Sub.GroupID = MRR_Sub.CreatedGroupID
+                                                                                                WHERE MRR_Sub.RecommendGroupID = GR.GroupID AND CGMT_Sub.UserID = GRM.UserID);";
+            // add back if needed to show only the next week and not before  AND End >= @StartDate;
             var parameters = new { StartDate = startDate, EndDate = endDate, Userid = userID };
             var groups = await _db.LoadData<RecomendedGroup, dynamic>(sql, parameters);
             // Deserialize ActiveTimeSlots and collect GroupIDs
@@ -154,21 +160,58 @@ namespace DataAccessLibrary.Data.Database
         {
             string sql = @"select CreatedGroupID from MapRecommendToReal where RecommendGroupID = @RecGroupID"; 
             var groupIDs = await _db.LoadData<int, dynamic>(sql, new {RecGroupID = group.GroupID});
-            if(groupIDs != null || groupIDs.Count() == 0)
+            if(groupIDs == null || groupIDs.Count() == 0)
             {
-
-
+                // Group doesn't exist yet 
+                await CreateRealGroupFromRec(group, UserID);
+            }
+            else
+            {
+                // Group Already Exists just add user to the trips and to the group 
+                int GroupID = groupIDs.FirstOrDefault();
+                await AddMemberToGroup(UserID, GroupID);
+                await AddMemberAsPending(UserID, GroupID);
             }
 
 
         }
-        public async Task CreateRealGroupFromRec(RecomendedGroup group)
+        public async Task CreateRealGroupFromRec(RecomendedGroup group, int UserID)
         {
-
-            string sql = @"INSERT INTO CarpoolGroupTable (Name, Direction) Values (@name, @direction)";
-            var parameters = new {name = group.GroupName, direction = group.Direction};
+            // Insert group into the groups table 
+            string sql = @"INSERT INTO CarpoolGroupTable (Name, Direction, CreateDate) Values (@name, @direction, CURRENT_TIMESTAMP)";
+            var parameters = new { name = group.GroupName, direction = group.Direction };
             int GroupId = await _db.SaveDataAndGetLastId(sql, parameters);
-            // Add Group mems
+            // Add Group mem that intiaed to that group 
+            await AddMemberToGroup(UserID, GroupId);
+            // Create Trips for each time slots  
+            foreach (DateTime TripStart in group.ActiveTimeSlots)
+            {
+                string TripSQL = @"INSERT INTO CarpoolTrips (GroupID, Start, End) Values (@GroupId, @TripStart, @TripEnd)";
+                var TripParameters = new { GroupId, TripStart, TripEnd = TripStart.AddHours(1) };
+                int TripID = await _db.SaveDataAndGetLastId(TripSQL, TripParameters);
+            }
+            // Add Group Creator as pending invite 
+            await AddMemberAsPending(UserID, GroupId);
+            string sqlInsertMapping = @"INSERT INTO MapRecommendToReal VALUES (@RecGroupID, @NewGroupID);";
+            await _db.SaveData(sqlInsertMapping, new {RecGroupID = group.GroupID, NewGroupID = GroupId});
+        }
+        public async Task AddMemberToGroup(int UserID, int GroupID)
+        {
+            string sql = @"INSERT INTO CarpoolGroupMemberTable (GroupID, UserID) Values (@GroupID, @UserID)";
+            var parameters = new { GroupID, UserID};
+            await _db.SaveData(sql, parameters);
+        }
+        // Adds the member as pending for each trip 
+        public async Task AddMemberAsPending(int UserID, int GroupID)
+        {
+            string sqlGetTripIds = @"select ID from CarpoolTrips where GroupID = @GroupID";
+            List<int> TripIDs = await _db.LoadData<int, dynamic>(sqlGetTripIds, new { GroupID });
+            foreach (int TripID in TripIDs)
+            {
+                string sqlInsert = "INSERT INTO CarpoolTripMembers (TripID, UserID, Status) Values (@TripID, @UserID, @Status)";
+                var para = new { TripID, UserID, Status = "Pending" };
+                await _db.SaveData(sqlInsert, para);
+            }
         }
         public async Task DeclineGroupRec(RecomendedGroup group, int UserID)
         {

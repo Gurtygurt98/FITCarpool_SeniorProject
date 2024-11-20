@@ -77,38 +77,23 @@
             </RadzenRow>
             @*Group Recommendation for the Upcoming Week*@
             <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
-                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                @if (NextWeekRecommendations.Count > 0)
                 {
-                    var today = DateTime.Today;
-
-                    // Filter and sort trips by start date
-                    var allTrips = upcomingTrips
-                    .Where(trip => trip.Start.Date != today)
-                    .OrderBy(trip => trip.Start)
-                    .ToList();
-
-                    if (NextWeekRecommendations.Count > 0)
+                    @foreach (var recommendation in NextWeekRecommendations)
                     {
-                        @foreach (var recommendation in NextWeekRecommendations)
-                        {
-                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
-                                <MudText Typo="Typo.h4" Align="Align.Center">@recommendation.GetDaysOfWeek()</MudText>
-                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @recommendation.GetFormattedDateRange()</MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">
-                                    Direction: @(recommendation.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
-                                </MudText>
-                                <MudStack>
-                                    <RadzenButton Text="Accept" Click="@(() => AcceptGroupRecommendation(recommendation))" Style="width: 100%; background-color: green;" />
-                                    <RadzenButton Text="Decline" Click="@(() => DeclineGroupRecommendation(recommendation))" Style="width: 100%; background-color: red;" />
-                                    <RadzenButton Text="View" Click="@(() => ShowGroupDetails(recommendation))" Style="width: 100%; background-color: blue;" />
+                        <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                            <MudText Typo="Typo.h4" Align="Align.Center">@recommendation.GetDaysOfWeek()</MudText>
+                            <MudText Typo="Typo.h5" Align="Align.Center">Date: @recommendation.GetFormattedDateRange()</MudText>
+                            <MudText Typo="Typo.h6" Align="Align.Center">
+                                Direction: @(recommendation.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                            </MudText>
+                            <MudStack>
+                                <RadzenButton Text="Accept" Click="@(() => AcceptGroupRecommendation(recommendation))" Style="width: 100%; background-color: green;" />
+                                <RadzenButton Text="Decline" Click="@(() => DeclineGroupRecommendation(recommendation))" Style="width: 100%; background-color: red;" />
+                                <RadzenButton Text="View" Click="@(() => ShowGroupDetails(recommendation))" Style="width: 100%; background-color: blue;" />
 
-                                </MudStack>
-                            </RadzenCard>
-                        }
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h6">No Pending Group Recommendations.</MudText>
+                            </MudStack>
+                        </RadzenCard>
                     }
                 }
                 else
@@ -268,7 +253,6 @@
 
         userModel = userList.First();
         ID = userModel.UserId;
-
         // Fetch all groups for the user
         var userGroups = await _dbCarpoolGroups.GetCurrentGroups(ID);
         if (userGroups.Any())
