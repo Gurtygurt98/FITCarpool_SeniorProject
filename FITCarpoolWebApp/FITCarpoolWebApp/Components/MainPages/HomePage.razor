@@ -41,7 +41,8 @@
                                 </MudText>
                                 <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
 
-                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateTo("Rider-Confirmation"))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                                    <RadzenButton Text="Confirm Ride" Click="@(() => NavigateToRiderConfirmation(@trip.GroupID))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+
                             </RadzenCard>
                         }
                     }
@@ -94,8 +95,8 @@
                                 </MudText>
                                 <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
 
-                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateTo("Rider-Confirmation"))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
-                            </RadzenCard>
+                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateToRiderConfirmation(trip.GroupID))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                                </RadzenCard>
                         }
                     }
                     else
@@ -233,6 +234,12 @@
         }
     }
 
+    private void NavigateToRiderConfirmation(int groupId)
+    {
+        // Construct the Rider-Confirmation page URL with the groupId as a query parameter
+        var url = $"/Rider-Confirmation?groupId={Uri.EscapeDataString(groupId.ToString())}";
+        NavigationManager.NavigateTo(url);
+    }
 
     private void ViewUser(string email)
     {

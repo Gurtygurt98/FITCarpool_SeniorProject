@@ -99,12 +99,15 @@
 </RadzenCard>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int groupId { get; set; }
+    
     private GroupScheduleModel upcomingTrip;
     private CarpoolGroupsModel carpoolGroup;
     private UsersModel driver;
     private List<UsersModel> passengers = new();
-    private int groupIDValue = 10; 
-    private int userId; 
+    private int userId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,13 +123,13 @@
             }
         }
 
-        var schedules = await _dbGroupSchedule.GetScheduleForGroup(groupIDValue);
+        var schedules = await _dbGroupSchedule.GetScheduleForGroup(groupId);
         if (schedules?.Any() == true)
         {
             upcomingTrip = schedules.First();
         }
 
-        var groups = await _dbCarpoolGroups.GetCarpoolGroup(groupIDValue);
+        var groups = await _dbCarpoolGroups.GetCarpoolGroup(groupId);
         if (groups?.Any() == true)
         {
             carpoolGroup = groups.First();
@@ -141,7 +144,7 @@
         if (carpoolGroup != null)
         {
             var allMembers = await _dbGroupMembers.GetAllGroupMembers();
-            var groupMembers = allMembers.Where(m => m.GroupId == groupIDValue).ToList();
+            var groupMembers = allMembers.Where(m => m.GroupId == groupId).ToList();
 
             foreach (var member in groupMembers)
             {
