@@ -21,13 +21,15 @@
     <Authorized>
         <MudText Typo="Typo.body1" Class="welcome-text">Welcome, @userModel.FirstName @userModel.LastName!</MudText>
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
+            @*Today's Trips *@
+
             <MudText Typo="Typo.h3" Align="Align.Start"><b>Today's Trip</b></MudText>
             <div style="display: flex; flex-direction: row; gap: 20px;">
-                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                @if (trips != null && trips.Count > 0)
                 {
                     var today = DateTime.Today;
 
-                    var todayTrips = upcomingTrips.Where(trip => trip.Start.Date == today).ToList();
+                    var todayTrips = trips.Where(trip => trip.Start.Date == today).ToList();
 
                     if (todayTrips.Count > 0)
                     {
@@ -60,7 +62,7 @@
         </RadzenCard>
 
 
-        @* Schedule Card on top *@
+        @* Future Trips *@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <RadzenRow>
                 <RadzenColumn Width="70%">
@@ -72,19 +74,19 @@
             </RadzenRow>
 
             <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
-                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                @if (trips != null && trips.Count > 0)
                 {
                     var today = DateTime.Today;
 
-                    // Filter and sort trips by start date
-                    var allTrips = upcomingTrips
-                    .Where(trip => trip.Start.Date != today)
-                    .OrderBy(trip => trip.Start)
+                    var futureTrips = trips
+                    .Where(trip => trip.Start.Date > today) 
+                    .OrderBy(trip => trip.Start)           
                     .ToList();
 
-                    if (allTrips.Count > 0)
+
+                    if (futureTrips.Count > 0)
                     {
-                        @foreach (var trip in allTrips)
+                        @foreach (var trip in futureTrips)
                         {
                             <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
                                 <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
@@ -109,6 +111,56 @@
                 }
             </div>
         </RadzenCard>
+
+        @* Past Trips *@
+        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
+            <RadzenRow>
+                <RadzenColumn Width="70%">
+                    <MudText Typo="Typo.h3" Align="Align.Start"><b>Past Trips</b></MudText>
+                </RadzenColumn>
+               
+            </RadzenRow>
+
+            <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
+                @if (trips != null && trips.Count > 0)
+                {
+                    var today = DateTime.Today;
+
+                    var pastTrips = trips
+                    .Where(trip => trip.Start.Date < today)
+                    .OrderBy(trip => trip.Start)
+                    .ToList();
+
+                    if (pastTrips.Count > 0)
+                    {
+                        @foreach (var trip in pastTrips)
+                        {
+                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                                <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
+                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
+                                <MudText Typo="Typo.h6" Align="Align.Center">
+                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                                </MudText>
+                                <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
+
+                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateTo("Rider-Confirmation"))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                            </RadzenCard>
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+                    }
+                }
+                else
+                {
+                    <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+                }
+            </div>
+        </RadzenCard>
+
+
+
 
 
 
@@ -171,7 +223,7 @@
 
     private string userName;
     private string userRole = "rider";
-    private List<GroupScheduleModel> upcomingTrips = new();
+    private List<GroupScheduleModel> trips = new();
     private List<Friend> friends = new();
     private int ID = 0;
     public UsersModel userModel = new();
@@ -204,7 +256,7 @@
                         var groupSchedules = await _dbGroupSchedule.GetScheduleForGroup(groupID);
                         if (groupSchedules != null)
                         {
-                            upcomingTrips.AddRange(groupSchedules);
+                            trips.AddRange(groupSchedules);
                         }
 
                     }
