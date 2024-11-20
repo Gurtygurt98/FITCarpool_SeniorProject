@@ -375,7 +375,7 @@ namespace DataAccessLibrary.Data
                     StartWindow = groupedTimes.First().StartWindow,
                     EndWindow = groupedTimes.Last().EndWindow,
                     RecurringPattern = recurringPattern,
-                    IsRecurring = !string.IsNullOrEmpty(recurringPattern),
+                    IsRecurring = !string.IsNullOrEmpty(recurringPattern) ? "Yes"  : "No",
                     ActiveTimeSlots = groupedTimes.Select(g => g.StartWindow).ToList()
                 };
 
