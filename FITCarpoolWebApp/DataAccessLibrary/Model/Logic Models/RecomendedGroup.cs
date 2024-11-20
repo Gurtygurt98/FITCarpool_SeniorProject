@@ -8,7 +8,7 @@ namespace DataAccessLibrary.Model.Logic_Models
     {
         public string GroupName { get; set; } = string.Empty;
         public int GroupID { get; set; }
-        public List<UserInfoModel> GroupMembers { get; set; }
+        public List<UserInfoModel> GroupMembers { get; set; } = new();
         public UserInfoModel RequestingUser { get; set; }
         public string Direction { get; set; } = "";
         public double DistanceScore { get; private set; }
@@ -16,8 +16,9 @@ namespace DataAccessLibrary.Model.Logic_Models
         public DateTime StartWindow { get; set; }
         public DateTime EndWindow { get; set; }
         public string RecurringPattern { get; set; } = string.Empty; // e.g., "Mon, Wed, Fri: 7-8 AM"
-        public bool IsRecurring { get; set; } = false;
+        public string IsRecurring { get; set; } = "No";
         public List<DateTime> ActiveTimeSlots { get; set; } = new List<DateTime>(); // Tracks exact time slots
+        public string ActiveTimeSlotsSerialized { get; set; }
 
         public RecomendedGroup() { }
 
@@ -140,6 +141,57 @@ namespace DataAccessLibrary.Model.Logic_Models
                 return 0;
 
             return totalScore / memberCount; 
+        }
+        public string GetDaysOfWeek()
+        {
+            if (ActiveTimeSlots != null && ActiveTimeSlots.Any())
+            {
+
+                var daysOfWeek = ActiveTimeSlots
+                    .Select(date => ShortenDayOfTheWeek(date.DayOfWeek.ToString()))
+                    .Distinct()
+                    .ToList();
+                Console.WriteLine(daysOfWeek.FirstOrDefault() + " Here2");
+
+                return string.Join(", ", daysOfWeek);
+            }
+
+            return "No specific days provided.";
+        }
+
+        public string GetFormattedDateRange()
+        {
+            if (StartWindow != default && EndWindow != default)
+            {
+                return $"{StartWindow.ToString("MM/dd/yyyy")} - {EndWindow.ToString("MM/dd/yyyy")}";
+            }
+
+            return "Date not Found";
+        }
+        public string ShortenDayOfTheWeek(string DayOfWeek)
+        {
+            Console.WriteLine(DayOfWeek);
+            if (DayOfWeek == null) return string.Empty;
+
+            switch (DayOfWeek)
+            {
+                case "Monday":
+                    return "M";
+                case "Tuesday":
+                    return "T";
+                case "Wednesday":
+                    return "W";
+                case "Thursday":
+                    return "Th";
+                case "Friday":
+                    return "F";
+                case "Saturday":
+                    return "Sa";
+                case "Sunday":
+                    return "Su";
+                default:
+                    return string.Empty; // Handle invalid input
+            }
         }
 
         public override string ToString()

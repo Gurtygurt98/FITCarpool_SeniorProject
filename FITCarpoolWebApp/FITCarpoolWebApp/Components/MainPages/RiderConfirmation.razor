@@ -133,6 +133,7 @@
         }
 
         if (carpoolGroup != null)
+
         {
             var driverList = await _dbUsers.GetUser(carpoolGroup.DriverId);
             driver = driverList.FirstOrDefault();

@@ -6,6 +6,8 @@
 @using MudBlazor
 @inject ISchedulesData _dbSchedules
 @inject IUsersData _dbUsers
+@inject IGroupRecommendationData _dbGroupRec
+
 @inject Radzen.DialogService DialogService;
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
@@ -50,11 +52,25 @@
 
     <!-- Collapsible content group data grid s-->
     <MudCollapse Expanded="@isGroupListExpanded">
-        <MudDataGrid T="RecomendedGroup" Items="GroupList" Bordered="true" Dense="true" ReadOnly="true" 
+        <MudDataGrid T="RecomendedGroup" Items="GroupList" Bordered="true" Dense="true" ReadOnly="true" Loading="loading" 
             Virtualize="true" RowsPerPage="50" >
             <ToolBarContent>
-                <MudIconButton OnClick="LoadRecomendationsToDatabase" Color="Color.Success" Icon="@Icons.Material.Filled.CloudUpload" />
-
+                @if (loading)
+                {
+                    <MudProgressCircular Color="Color.Info" Indeterminate="true" />
+                }
+                else
+                {
+                    @if (ShowInsertBtn){
+                        <MudIconButton OnClick = "LoadRecomendationsToDatabase" Color = "Color.Success" Icon = "@Icons.Material.Filled.CloudUpload" />
+                    }
+                    @if (ShowDeleteBtn)
+                    {
+                        <MudIconButton OnClick="DeleteFromDB" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" />
+                    }
+                    <MudSpacer></MudSpacer>
+                    <MudText>@GroupDataStatus</MudText>
+                }
             </ToolBarContent>
             <Columns>
                 <PropertyColumn Property="x => x.GroupName" Title="Group Name" />
@@ -102,7 +118,10 @@
     public List<TimeWindow> timeSlots = new();
     private bool isUserListExpanded = false; // Controls the collapse state
     private bool isGroupListExpanded = true; // Controls the collapse state
-
+    private bool ShowDeleteBtn = false;
+    private bool ShowInsertBtn = false;
+    private bool loading = false;
+    public string GroupDataStatus = "";
     protected override async Task OnInitializedAsync()
     {
         int currentYear = DateTime.Now.Year;
@@ -113,7 +132,17 @@
     }
     public async Task LoadRecomendationsToDatabase()
     {
+        loading = true;
 
+        await _dbGroupRec.InsertRecommendedGroups(GroupList);
+        ShowDeleteBtn = true;
+        ShowInsertBtn = false;
+        loading = false;
+    }
+    public async Task DeleteFromDB()
+    {
+        loading = true;
+        loading = false;
     }
     private void OnYearChanged(int newYear)
     {
@@ -168,10 +197,6 @@
     {
         isGroupListExpanded = !isGroupListExpanded;
     }
-    Func<RecomendedGroup, object> _groupBy = x =>
-    {
-        return x.StartWindow;
-    };
     private async Task ShowGroupDetails(RecomendedGroup group)
     {
         var parameters = new Dictionary<string, object> { { "CurrentGroup", group } };
@@ -185,13 +210,25 @@
     }
     public async Task GenerateGroups()
     {
+        ShowDeleteBtn = false;
+        ShowInsertBtn = false;
         // Reset group list 
-        GroupList = new();
-        // Get users from Database that has schedules during the week 
-        UserList = await _dbSchedules.GetScheduleEntries(selectedWeek.StartDate, selectedWeek.EndDate);
-        // For each time slot get the users that are in it
-        GroupRecomendationLogic createGroupLogic = new GroupRecomendationLogic(UserList, selectedWeek, _dbUsers);
-        GroupList = await createGroupLogic.GetRecomendedGroupsAsync();
-    }
+        GroupList = await _dbGroupRec.GetRecommendedGroupsForTimePeriod(selectedWeek);
+        if(GroupList == null || !GroupList.Any())
+        {
+            GroupDataStatus = "Groups created and ready to send database";
+            // Get users from Database that has schedules during the week
+            UserList = await _dbSchedules.GetScheduleEntries(selectedWeek.StartDate, selectedWeek.EndDate);
+            // For each time slot get the users that are in it
+            GroupRecomendationLogic createGroupLogic = new GroupRecomendationLogic(UserList, selectedWeek, _dbUsers);
+            GroupList = await createGroupLogic.GetRecomendedGroupsAsync();
+            ShowInsertBtn = true;
 
+        } else
+        {
+            GroupDataStatus = "Data Loaded from Database";
+            ShowDeleteBtn = true;
+        }
+
+    }
 }
