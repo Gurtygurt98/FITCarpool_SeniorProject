@@ -26,8 +26,7 @@
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack style="margin-bottom: 50px;">
             <MudText Typo="Typo.h2" Align="Align.Center">Friends List</MudText>
-            <MudAutocomplete 
-                             SearchFunc="@SearchUser"
+            <MudAutocomplete SearchFunc="@SearchUser"
                              T="UsersModel" @bind-Value="selectedUser"
                              Placeholder="Search for other users..."
                              Dense="true"
@@ -88,7 +87,7 @@
 @code {
     private void OnClick(string message)
     {
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message});
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = message });
     }
     private void OnClick2(string message)
     {
@@ -107,19 +106,19 @@
     }
     private void SendRequest(UsersModel u)
     {
-        if(u!=null)
+        if (u != null)
         {
-            if (Find(outgoingRequests, u.UserId) != null)
+            if (u.UserId == ID)
             {
-                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Friend Request Already Sent" });
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Can Not Friend Yourself" });
             }
             else if (Find(friends, u.UserId) != null)
             {
                 NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "User Already Friended" });
             }
-            else if (u.UserId == ID)
+            else if (Find(outgoingRequests, u.UserId) != null)
             {
-                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Can Not Friend Yourself" });
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Friend Request Already Sent" });
             }
             else if (Find(requests, u.UserId) != null)
             {
@@ -128,8 +127,8 @@
             else
             {
                 _dbFriends.AddFriend(new FriendsModel { UserId1 = ID, UserId2 = u.UserId, CreatedDate = DateTime.Now, Status = "pending" });
-                outgoingRequests.Add(new Friend{FriendId = -1, ID1 = ID, ID2 = u.UserId, Name = u.FirstName + " " + u.LastName, Status = "Recently Online"});
-                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Friend Request Sent" });
+                outgoingRequests.Add(new Friend { FriendId = -1, ID1 = ID, ID2 = u.UserId, Name = u.FirstName + " " + u.LastName, Status = "Recently Online" });
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Friend Request Sent to " + u.FirstName + " " + u.LastName});
             }
         }
         else
@@ -145,14 +144,23 @@
     }
     private void AcceptFriendRequest(Friend f)
     {
-        _dbFriends.UpdateFriend(new FriendsModel{FriendshipId = f.FriendId, UserId1 = f.ID1, UserId2 = f.ID2, CreatedDate = DateTime.Now, Status = "accepted"});
+        _dbFriends.UpdateFriend(new FriendsModel { FriendshipId = f.FriendId, UserId1 = f.ID1, UserId2 = f.ID2, CreatedDate = DateTime.Now, Status = "accepted" });
         friends.Add(f);
         requests.Remove(f);
     }
     private void DeclineFriendRequest(Friend f)
     {
-        _dbFriends.DeleteFriend(f.FriendId);
+        _dbFriends.UpdateFriend(new FriendsModel { FriendshipId = f.FriendId, UserId1 = f.ID1, UserId2 = f.ID2, CreatedDate = DateTime.Now, Status = "rejected" });
         requests.Remove(f);
+    }
+    private void UpdateRejects(List<Friend> rejects)
+    {
+        foreach (Friend f in rejects)
+        {
+            Console.WriteLine(f.Status);
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Rejected Friend Request from " + f.Name, Duration = 10000 });
+            _dbFriends.DeleteFriend(f.FriendId);
+        }
     }
     private int ID = 0;
     private string userName = "Not Found";
@@ -161,6 +169,7 @@
     private List<Friend> friends;
     private List<Friend> requests;
     private List<Friend> outgoingRequests;
+    private List<Friend> rejectedRequests;
     UsersModel InputModel = null;
 
     // Code for searching other users
@@ -189,10 +198,11 @@
         }
 
         FriendList = await _dbFriends.GetFriends(ID);
-        friends = new List<Friend> {};
-        requests = new List<Friend> {};
+        friends = new List<Friend> { };
+        requests = new List<Friend> { };
         outgoingRequests = new List<Friend> { };
-        foreach(FriendsModel dataFriend in FriendList)
+        rejectedRequests = new List<Friend> { };
+        foreach (FriendsModel dataFriend in FriendList)
         {
             List<UsersModel> temp = null;
 
@@ -205,27 +215,39 @@
                 temp = await _dbUsers.GetUser(dataFriend.UserId1);
             }
 
-            if(dataFriend.Status.Equals("accepted"))
+            if (dataFriend.Status.Equals("accepted"))
             {
                 friends.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
-            else if(dataFriend.UserId1 != ID)
+            else if (dataFriend.UserId1 != ID && dataFriend.Status.Equals("pending"))
             {
                 requests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
-            else
+            else if (dataFriend.UserId1 == ID && dataFriend.Status.Equals("pending"))
             {
                 outgoingRequests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
+            }
+            else if (dataFriend.UserId1 == ID && dataFriend.Status.Equals("rejected"))
+            {
+                rejectedRequests.Add(new Friend() { FriendId = dataFriend.FriendshipId, ID1 = dataFriend.UserId1, ID2 = dataFriend.UserId2, Name = temp.First().FirstName + " " + temp.First().LastName, Status = "Recently Online" });
             }
         }
 
         AccountList = await _dbUsers.GetAllUser();
+
+    }
+    override protected async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            UpdateRejects(rejectedRequests);
+        }
     }
 
     public class Friend
     {
         public int FriendId { get; set; }
-        public int ID1  { get; set; }
+        public int ID1 { get; set; }
         public int ID2 { get; set; }
         public string? Name { get; set; }
         public string? Status { get; set; }
@@ -244,7 +266,7 @@
 
     private string ItemDisplay(UsersModel m)
     {
-        if(m==null)
+        if (m == null)
         {
             return "";
         }
