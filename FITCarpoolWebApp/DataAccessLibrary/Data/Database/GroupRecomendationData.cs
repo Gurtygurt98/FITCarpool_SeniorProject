@@ -150,7 +150,7 @@ namespace DataAccessLibrary.Data.Database
         {
             var today = DateTime.Today;
             var startDate = today.AddDays(((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7);
-            var endDate = startDate.AddDays(4); // Friday after Monday
+            var endDate = startDate.AddDays(5); // Friday after Monday
             string sql = @"SELECT DISTINCT
                                 GR.GroupID,
                                 GR.GroupName,

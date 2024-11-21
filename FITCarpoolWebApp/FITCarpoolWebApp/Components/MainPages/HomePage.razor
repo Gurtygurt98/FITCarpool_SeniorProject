@@ -245,8 +245,8 @@
                             </MudText>
                             @if (trip.DriverID == null)
                             {
-                                <MudText Typo="Typo.h6" Align="Align.Center">No Driver in Group</MudText>
-                                <RadzenButton Text="Join as Driver" Click="@(() => JoinTripAsDriver(trip))" Style="width: 100%; background-color: green;" />
+                                <MudText Typo="Typo.h6" Align="Align.Center">Rider</MudText>
+
                             }
                             else if (trip.DriverID == userModel.UserId)
                             {
@@ -343,6 +343,7 @@
         if (GroupRec != null)
         {
             NextWeekRecommendations.AddRange(GroupRec);
+            NextWeekRecommendations = NextWeekRecommendations.OrderBy(e => e.StartWindow).ToList();
         }
         RefreshTrips();
     }
