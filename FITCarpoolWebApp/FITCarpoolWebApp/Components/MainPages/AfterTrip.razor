@@ -1,4 +1,4 @@
-﻿@page "/After-Trip"
+﻿@page "/After-Trip/{TripID:int}"
 @using Radzen.Blazor
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -13,66 +13,90 @@
 @inject IReportsData _dbReports
 @inject IReviewsData _dbReviews
 @inject IGroupMembersData _dbGroupMembers
+@using DataAccessLibrary.Data.API
+@using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Logic_Models
+@using Microsoft.AspNetCore.Authorization
+@using System.ComponentModel.DataAnnotations
+@using System.Text
+@using System.Text.Encodings.Web
+@using DataAccessLibrary.Data.Database
+@using DataAccessLibrary.Model.Database_Models
+@using FITCarpoolWebApp.Components.MainPages
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.WebUtilities
+@using FITCarpoolWebApp.Data
+@inject Radzen.DialogService DialogService
+@inject HttpClient httpClient
+@inject IUsersData _dbUsers
+@inject IGroupMemberLocationsData _dbLocation
+@inject IGMapsAPI _GmapKey
+@inject IJSRuntime JSRuntime
+@inject ICarpoolGroupsData _dbGroups
+@inject IGroupRecommendationData _dbGroupRec
 
-
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
 @attribute [Authorize]
 
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%;">
         <RadzenHeading Size="H2" Text="Review Your Trip" Style="text-align: center; margin-bottom: 20px;" />
 
-        @foreach (var group in GroupRecommendations.Keys)
+        @if (CurrentTrip != null && GroupMembers != null)
         {
-            if (GroupRecommendations[group])
-            {
-                <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="UsersModel" Width="90px">
-                            <Template Context="user">
-                                @if (user.ProfilePicture != null)
-                                {
-                                    <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
-                                }
-                                else
-                                {
-                                    <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
-                                }
+            <RadzenDataGrid Data="@GroupMembers" TItem="UsersModel" AllowSorting="true">
+                <Columns>
+                    <RadzenDataGridColumn TItem="UsersModel" Width="90px">
+                        <Template Context="user">
+                            @if (user.ProfilePicture != null)
+                            {
+                                <RadzenImage Path="@($"data:image/jpeg;base64,{Convert.ToBase64String(user.ProfilePicture)}")" alt="Profile Picture" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <img src="https://cdn.create.vista.com/api/media/medium/137014128/stock-vector-user-profile-icon?token" alt="Default Profile" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover;" />
+                            }
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="140px">
+                        <Template Context="user">
+                            @user.FirstName @user.LastName
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="165px">
+                        <Template>
+                            <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                        </Template>
+                    </RadzenDataGridColumn>
+
+                    <RadzenDataGridColumn TItem="UsersModel" Title="Rating" Width="200px">
+                        <Template Context="user">
+                            <RadzenRating Value="@GetUserRating(user.UserId)" Max="5" Change="@(args => StoreRating(args, user.UserId))" Style="margin-right: 10px;" />
+                            <MudText Typo="Typo.body1">Rating Value: @user.Rating.ToString("0.00")</MudText>
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="140px">
+                        <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
                             <Template Context="user">
-                                @user.FirstName @user.LastName
+                                <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
                             </Template>
                         </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="165px">
+                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
                             <Template>
-                                <RadzenButton Text="View User" Click="@(() => ViewUser(user.Email))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                                <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
                             </Template>
                         </RadzenDataGridColumn>
-
-                        <RadzenDataGridColumn TItem="UsersModel" Title="Rating" Width="200px">
-                            <Template Context="user">
-                                <RadzenRating Value="@GetUserRating(user.UserId)" Max="5" Change="@(args => StoreRating(args, user.UserId))" Style="margin-right: 10px;" />
-                                <MudText Typo="Typo.body1">Rating Value: @user.Rating.ToString("0.00")</MudText>
-                                </Template>
-                            </RadzenDataGridColumn>
-
-                            <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
-                                <Template Context="user">
-                                    <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
-                                </Template>
-                            </RadzenDataGridColumn>
-
-                            <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
-                                <Template>
-                                    <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
-            }
+                    </Columns>
+                </RadzenDataGrid>
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.H5" Text="Loading trip information..." />
         }
 
         <div style="text-align: center; margin-top: 20px;">
@@ -82,36 +106,49 @@
 </RadzenStack>
 
 @code {
-    private Dictionary<int, bool> GroupRecommendations = new();
-    private Dictionary<int, List<UsersModel>> RecommendationData = new();
-    private Dictionary<int, int> Ratings = new(); // Stores selected ratings for each user by UserId
-    private int groupId = 10; // Hardcoded groupId for demonstration
+    [Parameter]
+    public int TripID { get; set; }
+    private TripModel CurrentTrip { get; set; }
+    private List<UsersModel> GroupMembers { get; set; } = new();
+    private Dictionary<int, int> Ratings = new();
 
     protected override async Task OnInitializedAsync()
     {
-        var groupMembers = await _dbGroupMembers.GetAllGroupMembers();
-        var groupSpecificMembers = groupMembers.Where(m => m.GroupId == groupId).ToList();
-
-        // Retrieve the full user details for all members of the group
-        var userList = new List<UsersModel>();
-        foreach (var member in groupSpecificMembers)
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity.IsAuthenticated)
         {
-            var userDetails = await _dbUsers.GetUser(member.UserId);
-            if (userDetails.Any())
+            var currentUser = await _dbUsers.GetUser(user.Identity.Name);
+            if (currentUser.Any())
             {
-                var user = userDetails.First();
-                user.Rating = await _dbRatings.GetRatings(user.UserId); // Fetch the average rating
-                userList.Add(user);
+                // Get the trip details with confirmed group members
+                CurrentTrip = await _dbGroupRec.GetTripWithMems(TripID);
+                if (CurrentTrip != null)
+                {
+                    var tasks = CurrentTrip.ConfirmedUsers
+                    .Where(member => member.UserID != currentUser.First().UserId)
+                    .Select(async member =>
+                    {
+                        var userRating = await _dbRatings.GetRatings((int)member.UserID);
+                        return new UsersModel
+                                {
+                                    UserId = (int)member.UserID, // Explicit conversion from long to int
+                                    FirstName = member.FirstName,
+                                    LastName = member.LastName,
+                                    ProfilePicture = member.ProfilePicture,
+                                    Rating = userRating
+                                };
+                    });
+
+                    GroupMembers = (await Task.WhenAll(tasks)).ToList();
+                }
             }
         }
-
-        RecommendationData.Add(groupId, userList);
-        GroupRecommendations[groupId] = true;
     }
 
     private int GetUserRating(int userId)
     {
-        return Ratings.ContainsKey(userId) ? Ratings[userId] : Convert.ToInt32(RecommendationData[groupId].FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
+        return Ratings.ContainsKey(userId) ? Ratings[userId] : (int)Math.Round(GroupMembers.FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
     }
 
     private void StoreRating(int rating, int userId)
@@ -123,32 +160,17 @@
     {
         foreach (var rating in Ratings)
         {
-            var user = RecommendationData[0].FirstOrDefault(u => u.UserId == rating.Key);
-            if (user != null)
-            {
-                // Store individual rating in the Ratings table
-                var newRating = new RatingsModel
-                {
-                    RatedUserID = user.UserId,
-                    Rating = rating.Value
-                };
-                await _dbRatings.CreateNewRating(newRating);
-
-                // Fetch the latest average rating from the Ratings table
-                var latestAverageRating = await _dbRatings.GetRatings(user.UserId);
-
-                // Update the UserModel with the latest average rating (with decimal value)
-                user.Rating = latestAverageRating;
-
-                // Update the UserModel in the database
-                await _dbUsers.UpdateUser(user);
-            }
+            var newRating = new RatingsModel
+                    {
+                        RatedUserID = rating.Key,
+                        Rating = rating.Value
+                    };
+            await _dbRatings.CreateNewRating(newRating);
         }
 
-        NavigationManager.NavigateTo("/After-Trip", forceLoad: true);
+        NavigationManager.NavigateTo("/", forceLoad: true);
         NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Ratings Submitted" });
     }
-
 
     private void ViewUser(string userEmail)
     {

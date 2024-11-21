@@ -257,6 +257,7 @@
                             {
                                 <MudText Typo="Typo.h6" Align="Align.Center">Rider</MudText>
                             }
+                            <RadzenButton Text="Review Trip" Click="@(() => NavigateToAfterTrip(trip))" Style="width: 100%; background-color: darkgray;" />
                         </RadzenCard>
                     }
                 }
@@ -353,10 +354,9 @@
         var url = $"/Rider-Confirmation?groupId={Uri.EscapeDataString(groupId.ToString())}";
         NavigationManager.NavigateTo(url);
     }
-    private void NavigateToAfterTrip(int groupId)
+    private void NavigateToAfterTrip(TripModel trip)
     {
-        var url = $"/After-Trip?groupId={Uri.EscapeDataString(groupId.ToString())}";
-        NavigationManager.NavigateTo(url);
+        NavigationManager.NavigateTo($"/After-Trip/{trip.ID}");
     }
     private void ViewUser(string email)
     {
