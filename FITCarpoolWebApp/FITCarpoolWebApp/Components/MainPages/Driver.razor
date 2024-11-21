@@ -194,9 +194,6 @@
         {
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
-        // Check if the user is already in progress of route
-        List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(CurrentUser.UserId, TripID);
-        carpoolInProgress = DriverLocationList.Any();
         // Get the details for the Trip given the TripID param
         await GetTrip();
 
@@ -246,17 +243,26 @@
         DateTime currentTime = DateTime.Now;
         Console.WriteLine($"Updated Location - Latitude: {latitude}, Longitude: {longitude}, Time: {currentTime.ToString("HH:mm:ss")}");
         // Carpool is not started yet, meaning no entry in the database was created
-        if (DriverLocation.LocationId == 0)
+        Console.WriteLine("Update Called " + DriverLocation.LocationId);
+        List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(TripID);
+        carpoolInProgress = DriverLocationList.Any();
+        
+        if (!carpoolInProgress)
         {
+            Console.WriteLine("New entry Called " + DriverLocation.LocationId);
+
             //GroupMemberLocationsModel(int locationId, int userId, int groupId, double latitude, double longitude, DateTime timestamp)
             DriverLocation = new GroupMemberLocationsModel(CurrentUser.UserId, CurrentTrip.ID, latitude, longitude, currentTime);
             await _dbLocation.AddGroupMemberLocation(DriverLocation);
-            List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(CurrentUser.UserId, TripID);
+            DriverLocationList = await _dbLocation.GetGroupMemberLocation(TripID);
             DriverLocation = DriverLocationList.FirstOrDefault();
+            carpoolInProgress = true;
 
         }
         else
         {
+            DriverLocation = DriverLocationList.FirstOrDefault();
+            Console.WriteLine("Updating DB " + DriverLocation.LocationId);
             DriverLocation.Latitude = latitude;
             DriverLocation.Longitude = longitude;
             DriverLocation.Timestamp = currentTime;

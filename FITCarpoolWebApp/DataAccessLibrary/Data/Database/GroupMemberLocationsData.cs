@@ -20,10 +20,10 @@ namespace DataAccessLibrary.Data.Database
             return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { });
         }
 
-        public async Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId, int tripID)
+        public async Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int tripID)
         {
-            string sql = @"SELECT * FROM GroupMemberLocations WHERE  UserID = @UserId and TripID = @TripID";
-            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = userId , TripID = tripID});
+            string sql = @"SELECT * FROM GroupMemberLocations WHERE  TripID = @TripID";
+            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new {TripID = tripID});
         }
 
         public async Task UpdateGroupMemberLocation(GroupMemberLocationsModel location)
@@ -45,13 +45,12 @@ namespace DataAccessLibrary.Data.Database
             await _db.SaveData(sql, new {UserID = location.UserID, TripID = location.TripID, Latitude = location.Latitude, Longitude = location.Longitude });
         }
 
-        public async Task<List<GroupMemberLocationsModel>> GetDriverLocations(int trip)
+        public async Task<List<GroupMemberLocationsModel>> GetDriverLocations(int tripID)
         {
-            string sql = @"SELECT GML.UserID, GM.TripID, GML.Latitude, GML.Longitude, GML.Timestamp, GML.LocationID
-                            FROM GroupMembers GM
-                            JOIN GroupMemberLocations GML ON GM.GroupID = GML.GroupID
-                            WHERE GM.UserId = @UserId;";
-            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = trip });
+            string sql = @"SELECT GML.UserID, GML.TripID, GML.Latitude, GML.Longitude, GML.Timestamp, GML.LocationID
+                            FROM GroupMemberLocations GML
+                            WHERE GML.TripID = @TripID;";
+            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { TripID = tripID });
 
         }
     }

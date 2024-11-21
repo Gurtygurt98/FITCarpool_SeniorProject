@@ -142,6 +142,8 @@
     public async Task DeleteFromDB()
     {
         loading = true;
+        await _dbGroupRec.DeleteRecommendedGroups(GroupList);
+        GroupList = new();
         loading = false;
     }
     private void OnYearChanged(int newYear)

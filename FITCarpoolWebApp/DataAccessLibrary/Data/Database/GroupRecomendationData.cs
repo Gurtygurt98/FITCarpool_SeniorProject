@@ -107,6 +107,26 @@ namespace DataAccessLibrary.Data.Database
             memberLessGroup.GroupMembers = await _dbUsers.GetListUserInfoModel(memberIDs);
             return memberLessGroup;
         }
+        public async Task DeleteRecommendedGroups(List<RecomendedGroup> groupsToDelete)
+        {
+            // Loop through each group in the provided list
+            foreach (var group in groupsToDelete)
+            {
+                // Delete from the GroupRecomendationMembership table first
+                string deleteMembershipSql = @"
+            DELETE FROM GroupRecomendationMembership
+            WHERE GroupID = @GroupID";
+
+                await _db.SaveData(deleteMembershipSql, new { GroupID = group.GroupID });
+
+                // Delete from the GroupRecomendation table
+                string deleteGroupSql = @"
+            DELETE FROM GroupRecomendation
+            WHERE GroupID = @GroupID";
+
+                await _db.SaveData(deleteGroupSql, new { GroupID = group.GroupID });
+            }
+        }
         public async Task InsertRecommendedGroups(RecomendedGroup recomendedGroup)
         {
             string sql = @"
@@ -372,6 +392,9 @@ namespace DataAccessLibrary.Data.Database
                             SET Status = 'Completed'
                             WHERE ID = @TripID;";
             await _db.SaveData(query, new { TripID });
+            string query2 = @"DELETE FROM GroupMemberLocations WHERE TripID = @TripID";
+            await _db.SaveData(query2, new { TripID });
+
         }
     }
 }

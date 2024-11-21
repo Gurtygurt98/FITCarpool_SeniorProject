@@ -1,6 +1,7 @@
-﻿@page "/rider"
+﻿@page "/Rider/{TripID:int}"
 @using DataAccessLibrary.Data.API
 @using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Logic_Models
 @using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -24,34 +25,17 @@
 @inject NavigationManager NavigationManager
 @attribute [Authorize]
 <RadzenStack>
-
-</RadzenStack>
-<RadzenStack>
-    @if (!carpoolInProgress && GroupList.Any())
+    @if(TripID == null || !carpoolInProgress)
     {
-        // Display Data Grid to allow user to start trips based on GroupList Retrivied in Intialization Method
-        <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You're trip has not started, please view your groups below (add contact info)</RadzenText>
-        <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
-                        WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)"
-                        Data="@GroupList" TItem="CarpoolGroupsModel" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
-            <Template Context="group">
-                <RadzenCard Style="width: 100%; padding: 0;">
-                    <RadzenStack Gap="1">
-                        <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-primary">Group: @(group.GroupName)</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Driver: @(group.DriverName)</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Destination: @(group.Destination)</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Riders: @(group.ListRiderNames())</RadzenText>
-                    </RadzenStack>
-                </RadzenCard>
-            </Template>
-        </RadzenDataList>
-
-
-    }
-    else if (!carpoolInProgress && !GroupList.Any())
-    {
-        <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You aren't a rider for any group!</RadzenText>
-
+        <MudText Typo="Typo.h3">ERROR</MudText>
+        <a href="https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1" target="_blank">
+            <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
+                      Alt="Profile"
+                      Style="width: 100px; height: 100px; cursor: pointer;" />
+        </a>
+        <MudText Typo="Typo.h5">
+            Consider downloading Fl Tech Safe App for safety features!
+        </MudText>
     }
     else
     {
@@ -60,24 +44,24 @@
             <MudCollapse Expanded="driverLocationCollapsable">
                 <RadzenStack>
                     <RadzenText Style="font-size: 16px;" Tag="h5" Class="text-primary">
-                        Group Name: @CurrentGroup?.GroupName
+                        Driver: @DriverProfile.FirstName @DriverProfile.LastName
                     </RadzenText>
                     <MudText Typo="Typo.h3">Driver Location @@ @DriverLocation.Timestamp:</MudText>
-                    </RadzenStack>
-                    <MudCardContent>
-                        <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
-                                         Center="new GoogleMapPosition() { Lat = DriverLocation.Latitude, Lng = DriverLocation.Longitude }" Zoom="zoom">
-                            <Markers>
-                                <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @DriverLocation.Latitude, Lng = @DriverLocation.Longitude }) />
-                            </Markers>
-                        </RadzenGoogleMap>
-                    </MudCardContent>
-                </MudCollapse>
-                <MudText Typo="Typo.h3" style="cursor:pointer;" @onclick="UserClickDriverInfo">View Driver Information</MudText>
-                <MudCollapse Expanded="driverInfoCollapsable">
-                    <MudCardContent>
-                        <MudGrid>
-                            @if (DriverProfile.ProfilePicture != null)
+                </RadzenStack>
+                <MudCardContent>
+                    <RadzenGoogleMap @ref="googleMap" ApiKey="@MapApi" Style="width:100%; height:50vh;"
+                                     Center="new GoogleMapPosition() { Lat = DriverLocation.Latitude, Lng = DriverLocation.Longitude }" Zoom="zoom">
+                        <Markers>
+                            <RadzenGoogleMapMarker Title="@userLocationInfo" Position=@(new GoogleMapPosition() { Lat = @DriverLocation.Latitude, Lng = @DriverLocation.Longitude }) />
+                        </Markers>
+                    </RadzenGoogleMap>
+                </MudCardContent>
+            </MudCollapse>
+            <MudText Typo="Typo.h3" style="cursor:pointer;" @onclick="UserClickDriverInfo">View Driver Information</MudText>
+            <MudCollapse Expanded="driverInfoCollapsable">
+                <MudCardContent>
+                    <MudGrid>
+                        @if (DriverProfile.ProfilePicture != null)
                         {
                             <MudItem xs="12" md="4">
                                 <RadzenText Text="Driver Picture" Style="margin-bottom: 10px;" />
@@ -102,30 +86,21 @@
                 </MudCardContent>
             </MudCollapse>
 
-
-        </RadzenCard>
-        <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-            <RadzenStack>
-                <MudText Typo="Typo.h5" Style=""> Consider downloading Fl Tech Safe App for safety features!</MudText>
+            <a href="https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1" target="_blank">
                 <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
                           Alt="Profile"
-                          Style="width: 100px; height: 100px; cursor: pointer;"
-                          Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
-                <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
-                          Alt="Profile"
-                          Style="width: 100px; height: 100px; cursor: pointer;"
-                          Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
-
-            </RadzenStack>
-
+                          Style="width: 100px; height: 100px; cursor: pointer;" />
+            </a>
+            <MudText Typo="Typo.h5">
+                Consider downloading Fl Tech Safe App for safety features!
+            </MudText>
         </RadzenCard>
-
     }
-
-
 </RadzenStack>
 
 @code {
+    [Parameter]
+    public int TripID { get; set; }
     private bool driverLocationCollapsable = true;
     private bool driverInfoCollapsable = true;
     private int zoom = 16;
@@ -135,17 +110,14 @@
     private string userLocationInfo = "Your Location";
     private RadzenGoogleMap googleMap;
     bool carpoolInProgress = false;
-    List<CarpoolGroupsModel> GroupList = new();
     GroupMemberLocationsModel DriverLocation = new();
-    List<GroupMembersModel> GroupMembersList = new();
-    CarpoolGroupsModel CurrentGroup = new();
     List<GroupMemberLocationsModel> DriverLocationList = new();
     UsersModel InputModel = new();
     private string userName = "Not found";
     bool allowVirtualization = true;
     private int LocationRefreshRate = 10;
     private System.Threading.Timer? locationRefreshTimer;
-    private UsersModel DriverProfile = new();
+    private UserInfoModel DriverProfile = new();
     protected override async Task OnInitializedAsync()
     {
         // Get google maps api key for location services later
@@ -175,23 +147,21 @@
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
         // Check if the user is part of trip that has started
-        DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
+        DriverLocationList = await _dbLocation.GetDriverLocations(TripID);
         carpoolInProgress = DriverLocationList.Any();
-        GroupList = await _dbGroups.GetRiderGroups(InputModel.UserId);
 
         if (carpoolInProgress)
         {
-            GetDriverLocation();
+            await GetDriverLocation();
             // Current driver location object, send this along with updated location to the database for riders to grab
-            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.TripID));
-            DriverProfile = (await _dbUsers.GetUser(DriverLocation.UserID)).FirstOrDefault();
-            OnRefreshRateChanged(30);
+            DriverProfile = (await _dbUsers.GetUserInfoModel(DriverLocation.UserID));
+            await OnRefreshRateChanged(30);
 
         }
     }
     private async Task GetDriverLocation()
     {
-        DriverLocationList = await _dbLocation.GetDriverLocations(InputModel.UserId);
+        DriverLocationList = await _dbLocation.GetDriverLocations(TripID);
         DriverLocation = DriverLocationList.FirstOrDefault();
         if (DriverLocation == null)
         {
@@ -201,7 +171,7 @@
         //userLocationInfo = await _GmapKey.GetLocationInfoAsync(DriverLocation.Longitude, DriverLocation.Latitude);
         //Console.WriteLine("Current User info " + userLocationInfo);
         IsLocationAvailable = true;
-        InvokeAsync(StateHasChanged); // Ensure UI is updated with new location
+        await InvokeAsync(StateHasChanged); // Ensure UI is updated with new location
 
     }
     private class Location

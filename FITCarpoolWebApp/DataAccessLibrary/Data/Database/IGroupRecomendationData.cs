@@ -19,6 +19,7 @@ namespace DataAccessLibrary.Data.Database
         Task<TripModel> GetTripWithMems(int TripID);
         Task StartTrip(int TripID); 
         Task EndTrip(int TripID);
+        Task DeleteRecommendedGroups(List<RecomendedGroup> groupsToDelete);
 
     }
 }
