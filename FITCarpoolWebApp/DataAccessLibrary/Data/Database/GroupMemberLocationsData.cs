@@ -20,15 +20,15 @@ namespace DataAccessLibrary.Data.Database
             return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { });
         }
 
-        public async Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId)
+        public async Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId, int tripID)
         {
-            string sql = "SELECT * FROM GroupMemberLocations WHERE  UserID = @UserId";
-            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = userId });
+            string sql = @"SELECT * FROM GroupMemberLocations WHERE  UserID = @UserId and TripID = @TripID";
+            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = userId , TripID = tripID});
         }
 
         public async Task UpdateGroupMemberLocation(GroupMemberLocationsModel location)
         {
-            string sql = @"UPDATE GroupMemberLocations SET UserID = @UserId, GroupID = @GroupId, Latitude = @Latitude, Longitude = @Longitude, Timestamp = @Timestamp WHERE LocationID = @LocationId";
+            string sql = @"UPDATE GroupMemberLocations SET UserId = @UserID, TripID = @TripID, Latitude = @Latitude, Longitude = @Longitude, Timestamp = @Timestamp WHERE LocationID = @LocationId";
             await _db.SaveData(sql,location );
             //new { UserId = location.UserId, GroupId = location.GroupId, Latitude = location.Latitude, Longitude = location.Longitude, TimeStap = location.Timestamp }
         }
@@ -40,9 +40,9 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task AddGroupMemberLocation(GroupMemberLocationsModel location)
         {
-            string sql = @"INSERT INTO GroupMemberLocations (UserID, TripID, Latitude, Longitude, Timestamp) 
-                   VALUES (@UserId, @TripID, @Latitude, @Longitude, @Timestamp);";
-            await _db.SaveData(sql, location);
+            string sql = @"INSERT INTO GroupMemberLocations (UserId, Latitude, Longitude, Timestamp, TripID) 
+                   VALUES (@UserID, @Latitude, @Longitude, CURRENT_TIMESTAMP , @TripID);";
+            await _db.SaveData(sql, new {UserID = location.UserID, TripID = location.TripID, Latitude = location.Latitude, Longitude = location.Longitude });
         }
 
         public async Task<List<GroupMemberLocationsModel>> GetDriverLocations(int trip)

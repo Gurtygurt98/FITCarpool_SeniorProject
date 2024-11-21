@@ -9,7 +9,7 @@ namespace DataAccessLibrary.Model.Database_Models
 {
     public class GroupMemberLocationsModel
     {
-        public int LocationId { get; set; }
+        public int LocationId { get; set; } = 0;
         public int UserID { get; set; }
         public int TripID { get; set; }
         public double Latitude { get; set; }
@@ -18,19 +18,19 @@ namespace DataAccessLibrary.Model.Database_Models
 
         public GroupMemberLocationsModel() { }
 
-        public GroupMemberLocationsModel(int locationId, int userId, int groupId, double latitude, double longitude, DateTime timestamp)
+        public GroupMemberLocationsModel(int locationId, int userId, int TripID, double latitude, double longitude, DateTime timestamp)
         {
             LocationId = locationId;
             UserID = userId;
-            TripID = groupId;
+            this.TripID = TripID;
             Latitude = latitude;
             Longitude = longitude;
             Timestamp = timestamp;
         }
-        public GroupMemberLocationsModel(int userId, int groupId, double latitude, double longitude, DateTime timestamp)
+        public GroupMemberLocationsModel(int userId, int TripID, double latitude, double longitude, DateTime timestamp)
         {
             UserID = userId;
-            TripID = groupId;
+            this.TripID = TripID;
             Latitude = latitude;
             Longitude = longitude;
             Timestamp = timestamp;

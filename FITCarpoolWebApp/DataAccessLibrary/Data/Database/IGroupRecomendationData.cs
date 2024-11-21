@@ -17,7 +17,8 @@ namespace DataAccessLibrary.Data.Database
         Task SetUserStatusToDeclineAsync(int tripId, int userId);
         Task SetUserStatusToDeclineAndSetDriverNull(int tripId, int userId);
         Task<TripModel> GetTripWithMems(int TripID);
-        Task StartTrip(int TripID);
+        Task StartTrip(int TripID); 
+        Task EndTrip(int TripID);
 
     }
 }

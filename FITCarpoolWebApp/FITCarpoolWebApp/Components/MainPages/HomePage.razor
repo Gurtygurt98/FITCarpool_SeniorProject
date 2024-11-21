@@ -39,7 +39,7 @@
                             <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
 
                                 <MudText Typo="Typo.h6" Align="Align.Center">
-                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus") betwee @trip.Start.ToString("hh:mm") & @trip.End.ToString("hh:mm")
+                                    @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus") between @trip.Start.ToString("hh:mm:tt") & @trip.End.ToString("hh:mm:tt")
                                 </MudText>
                                 @if (trip.DriverID == null)
                                 {
@@ -65,11 +65,7 @@
                                         <MudText Typo="Typo.h6" Align="Align.Center">Awaiting Driver to Start</MudText>
 
                                     }
-                                    else if (trip.Status.Equals("In Progress"))
-                                    {
-                                        <MudText Typo="Typo.h6" Align="Align.Center">Unable to join in progress trips</MudText>
 
-                                    }
                                     else
                                     {
                                         <RadzenButton Text="View Trip Progress" Click="@(() => ViewTripProgress(trip))" Style="width: 100%; background-color: green;" />
@@ -87,7 +83,12 @@
                                     @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
                                 </MudText>
                                 <MudText Typo="Typo.h5" Align="Align.Center">@trip.Start.ToString("MM/dd/yy") at @trip.Start.ToString("hh:mm tt")</MudText>
-                                @if (trip.UserTripStatus.Equals("Pending"))
+                                @if (trip.Status.Equals("In Progress"))
+                                {
+                                <MudText Typo="Typo.h6" Align="Align.Center">Unable to join in progress trips</MudText>
+
+                                }
+                                else if (trip.UserTripStatus.Equals("Pending"))
                                 {
                                     <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
                                     <RadzenButton Text="Decline" Click="@(() => DeclineTrip(trip))" Style="width: 100%; background-color: red;" />
@@ -413,7 +414,7 @@
 
         // Trips that have a Start of before today, sorted by Start
         PreviousTrips = AllTrips
-            .Where(trip => trip.Start < DateTime.Now.Date && trip.Status.Equals("Completed"))
+            .Where(trip => trip.Status.Equals("Completed"))
             .OrderBy(trip => trip.Start)
             .ToList();
 
@@ -476,7 +477,6 @@
     {
         NavigationManager.NavigateTo($"/Driver/{trip.ID}");
 
-    }
     } 
 }
 <style>

@@ -6,7 +6,7 @@ namespace DataAccessLibrary.Data.Database
     {
         Task DeleteGroupMemberLocation(int locationId);
         Task<List<GroupMemberLocationsModel>> GetAllGroupMemberLocations();
-        Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId);
+        Task<List<GroupMemberLocationsModel>> GetGroupMemberLocation(int userId, int tripID);
         Task UpdateGroupMemberLocation(GroupMemberLocationsModel location);
         Task AddGroupMemberLocation(GroupMemberLocationsModel location);
         Task<List<GroupMemberLocationsModel>> GetDriverLocations(int userID);

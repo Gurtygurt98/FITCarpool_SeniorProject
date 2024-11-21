@@ -271,6 +271,7 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task ConfirmTripAsDriver(TripModel trip, int userID)
         {
+
             await ConfirmTripAsRider(trip, userID);
 
             if (trip.DriverID == null)
@@ -361,6 +362,14 @@ namespace DataAccessLibrary.Data.Database
             string query = @"
                             UPDATE CarpoolTrips
                             SET Status = 'In Progress'
+                            WHERE ID = @TripID;";
+            await _db.SaveData(query, new { TripID });
+        }
+        public async Task EndTrip(int TripID)
+        {
+            string query = @"
+                            UPDATE CarpoolTrips
+                            SET Status = 'Completed'
                             WHERE ID = @TripID;";
             await _db.SaveData(query, new { TripID });
         }

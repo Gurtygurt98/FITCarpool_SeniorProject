@@ -31,7 +31,11 @@
         <RadzenStack>
             @if (CurrentTrip == null)
             {
-                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">Error Occured! Trip was null :(</RadzenText>
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">Error Occured! Trip was null or you are not a driver :(</RadzenText>
+            } else if(CurrentTrip.DriverID != CurrentUser.UserId)
+            {
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">Error Occured! Trip was null or you are not a driver :(</RadzenText>
+
             }
             else if (CurrentTrip.Status.Equals("Not Started"))
             {
@@ -108,19 +112,32 @@
                 } else
                 {
                     <div>
-                        <RadzenText>Current Location:</RadzenText>
-                        <RadzenText>Latitude: @userLocation.Latitude, Longitude: @userLocation.Longitude</RadzenText>
+
+                        <MudButton OnClick="@GenerateDirections" Style="margin-top: 20px;">Generate Directions</MudButton>
                         <MudButton OnClick="@EndRoute" Style="margin-top: 20px;">End Route</MudButton>
+
                     </div>
                 }
+                <hr />
 
+                <h4>Confirmed Users</h4>
+                @if (CurrentTrip.ConfirmedUsers.Any())
+                {
+                    <ul>
+                        @foreach (var user in CurrentTrip.ConfirmedUsers)
+                        {
+                            <li>
+                                <strong>@user.FirstName @user.LastName</strong> - Pickup: @user.PickupLocation, Dropoff: @user.DropoffLocation
+                                <br />
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No confirmed users.</p>
+                }
             }
-        </RadzenStack>
-    </RadzenCard>
-
-
-    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
             <a href="https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1" target="_blank">
                 <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
                           Alt="Profile"
@@ -129,11 +146,8 @@
             <MudText Typo="Typo.h5">
                 Consider downloading Fl Tech Safe App for safety features!
             </MudText>
-
         </RadzenStack>
-
     </RadzenCard>
-
 </RadzenStack>
 
 @code {
@@ -145,7 +159,7 @@
     List<GroupMembersModel> GroupMembersList = new();
     CarpoolGroupsModel CurrentGroup = new();
     private string? MapApi = null;
-    UsersModel InputModel = new();
+    UsersModel CurrentUser = new();
     private string userName = "Not found";
     string overallFinishTime = "6:00 PM";
     bool carpoolInProgress = false;
@@ -153,7 +167,7 @@
     private bool IsTripStarted = false;
     private Location userLocation = new Location();
     private bool locationAvailable = false;
-    private int LocationRefreshRate = 30;
+    private int LocationRefreshRate = 10;
     private System.Threading.Timer? locationRefreshTimer;
     protected override async Task OnInitializedAsync()
     {
@@ -174,24 +188,30 @@
         List<UsersModel> UserList = await _dbUsers.GetUser(userName);
         if (UserList.Any())
         {
-            InputModel = UserList.First();
+            CurrentUser = UserList.First();
         }
         else
         {
             NavigationManager.NavigateTo("/", forceLoad: true);
         }
         // Check if the user is already in progress of route
-        List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
+        List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(CurrentUser.UserId, TripID);
         carpoolInProgress = DriverLocationList.Any();
         // Get the details for the Trip given the TripID param
+        await GetTrip();
+
+    }
+    public async Task GetTrip()
+    {
         CurrentTrip = await _dbGroupRec.GetTripWithMems(TripID);
+        CurrentTrip.ConfirmedUsers = CurrentTrip.ConfirmedUsers.Where(e => e.UserID != CurrentUser.UserId).ToList();
 
     }
     private async Task StartTrip()
     {
         // Logic to start the trip and prevent pending users from joining
         await _dbGroupRec.StartTrip(CurrentTrip.ID);
-        CurrentTrip = await _dbGroupRec.GetTripWithMems(TripID);
+        await GetTrip();
         StateHasChanged();
     }
     List<string> pickupAddresses = new List<string>
@@ -210,16 +230,13 @@
         {
             locationAvailable = await JSRuntime.InvokeAsync<bool>("confirm", "Allow this site to access your location, please exit page if you don't want to allow?");
             OnRefreshRateChanged(LocationRefreshRate);
-
-            GetUserLocation();
+            await GetUserLocation();
         }
     }
     private async Task EndRoute()
     {
-        carpoolInProgress = false;
-        _dbLocation.DeleteGroupMemberLocation(DriverLocation.LocationId);
-        NavigationManager.NavigateTo("/Driver", forceLoad: true);
-
+        await _dbGroupRec.EndTrip(CurrentTrip.ID);
+        NavigationManager.NavigateTo("/", forceLoad: true);
     }
     [JSInvokable]
     public async void HandleSuccess(double latitude, double longitude)
@@ -232,9 +249,9 @@
         if (DriverLocation.LocationId == 0)
         {
             //GroupMemberLocationsModel(int locationId, int userId, int groupId, double latitude, double longitude, DateTime timestamp)
-            DriverLocation = new GroupMemberLocationsModel(InputModel.UserId, CurrentTrip.ID, latitude, longitude, currentTime);
+            DriverLocation = new GroupMemberLocationsModel(CurrentUser.UserId, CurrentTrip.ID, latitude, longitude, currentTime);
             await _dbLocation.AddGroupMemberLocation(DriverLocation);
-            List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
+            List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(CurrentUser.UserId, TripID);
             DriverLocation = DriverLocationList.FirstOrDefault();
 
         }
@@ -271,13 +288,79 @@
 
     private void GenerateDirections()
     {
+        string googleMapsBaseUrl = "https://www.google.com/maps/dir/?api=1";
 
+        // Determine the origin and destination based on trip direction
+        string origin, destination;
+        List<string> waypoints = new();
+
+        if (CurrentTrip.Direction.Equals("arrival", StringComparison.OrdinalIgnoreCase))
+        {
+            // For arrival, stops should end at campus
+            destination = "destination=150 W University Blvd, Melbourne, FL 32901"; // Campus address
+            origin = $"origin={userLocation.Latitude},{userLocation.Longitude}";
+
+            // Add all confirmed user pickup locations as waypoints
+            waypoints = CurrentTrip.ConfirmedUsers
+                .Where(u => u.PickupLatitude != 0 && u.PickupLongitude != 0 && u.UserID != CurrentUser.UserId)
+                .OrderBy(u => GetDistance(userLocation.Latitude, userLocation.Longitude, u.PickupLatitude, u.PickupLongitude)) // Order stops efficiently
+                .Select(u => $"{u.PickupLatitude},{u.PickupLongitude}")
+                .ToList();
+        }
+        else if (CurrentTrip.Direction.Equals("departure", StringComparison.OrdinalIgnoreCase))
+        {
+            // For departure, start at campus and end at the furthest user
+            origin = "origin=150 W University Blvd, Melbourne, FL 32901"; // Campus address
+
+            // Add all confirmed user drop-off locations as waypoints
+            var dropoffWaypoints = CurrentTrip.ConfirmedUsers
+                .Where(u => u.DropoffLatitude != 0 && u.DropoffLongitude != 0)
+                .OrderByDescending(u => GetDistance(userLocation.Latitude, userLocation.Longitude, u.DropoffLatitude, u.DropoffLongitude)) // Order efficiently for furthest stop
+                .Select(u => $"{u.DropoffLatitude},{u.DropoffLongitude}")
+                .ToList();
+
+            if (dropoffWaypoints.Any())
+            {
+                destination = $"destination={dropoffWaypoints.Last()}"; // Set the furthest user's drop-off as the last destination
+                dropoffWaypoints.RemoveAt(dropoffWaypoints.Count - 1); // Remove the last destination from waypoints
+                waypoints = dropoffWaypoints;
+            }
+            else
+            {
+                destination = "destination=150 W University Blvd, Melbourne, FL 32901"; // Fallback to campus
+            }
+        }
+        else
+        {
+            Console.WriteLine("Unknown trip direction.");
+            return;
+        }
+
+        // Construct the waypoints parameter
+        string waypointsParam = waypoints.Any() ? $"&waypoints={string.Join("|", waypoints)}" : string.Empty;
+
+        // Build the complete Google Maps URL
+        string googleMapsUrl = $"{googleMapsBaseUrl}&{origin}&{destination}{waypointsParam}&travelmode=driving";
+
+        // Open the URL in a new tab
+        JSRuntime.InvokeVoidAsync("open", googleMapsUrl, "_blank");
     }
-    private void StartTrip(CarpoolGroupsModel group)
+
+    // Helper function to calculate the distance between two coordinates
+    private double GetDistance(double lat1, double lon1, double lat2, double lon2)
     {
-        CurrentGroup = group;
-        Console.WriteLine("Group " + group.GroupName);
-        carpoolInProgress = true;
+        double R = 6371e3; // Earth's radius in meters
+        double phi1 = lat1 * Math.PI / 180;
+        double phi2 = lat2 * Math.PI / 180;
+        double deltaPhi = (lat2 - lat1) * Math.PI / 180;
+        double deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+        double a = Math.Sin(deltaPhi / 2) * Math.Sin(deltaPhi / 2) +
+                   Math.Cos(phi1) * Math.Cos(phi2) *
+                   Math.Sin(deltaLambda / 2) * Math.Sin(deltaLambda / 2);
+        double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+
+        return R * c; // Distance in meters
     }
     private void OnRefreshRateChanged(int value)
     {
@@ -308,4 +391,5 @@
     {
         NavigationManager.NavigateTo(url, true);
     }
+
 }
