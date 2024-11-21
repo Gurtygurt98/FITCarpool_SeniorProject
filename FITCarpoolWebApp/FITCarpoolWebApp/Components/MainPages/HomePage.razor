@@ -392,6 +392,7 @@
         NextWeekRecommendations.Remove(group);
         await RefreshTrips();
     }
+    
     public async Task RefreshTrips()
     {
         // Get All Trips for the user previous and upcoming
@@ -475,6 +476,7 @@
         NavigationManager.NavigateTo($"/Driver/{trip.ID}");
 
     }
+    } 
 }
 <style>
     .welcome-text {

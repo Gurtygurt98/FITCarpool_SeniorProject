@@ -12,6 +12,8 @@
 @inject IRatingsData _dbRatings
 @inject IReportsData _dbReports
 @inject IReviewsData _dbReviews
+@inject IGroupMembersData _dbGroupMembers
+
 
 @attribute [Authorize]
 
@@ -23,10 +25,8 @@
         {
             if (GroupRecommendations[group])
             {
-
                 <RadzenDataGrid Data="@RecommendationData[group]" TItem="UsersModel" AllowSorting="true">
                     <Columns>
-
                         <RadzenDataGridColumn TItem="UsersModel" Width="90px">
                             <Template Context="user">
                                 @if (user.ProfilePicture != null)
@@ -42,10 +42,7 @@
 
                         <RadzenDataGridColumn TItem="UsersModel" Title="Name" Width="140px">
                             <Template Context="user">
-                                @{
-                                    var fullName = $"{user.FirstName} {user.LastName}";
-                                }
-                                <text>@fullName</text>
+                                @user.FirstName @user.LastName
                             </Template>
                         </RadzenDataGridColumn>
 
@@ -64,9 +61,7 @@
 
                             <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
                                 <Template Context="user">
-                                    <div style="display: inline-flex;">
-                                        <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
-                                    </div>
+                                    <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
                                 </Template>
                             </RadzenDataGridColumn>
 
@@ -75,7 +70,6 @@
                                     <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
                                 </Template>
                             </RadzenDataGridColumn>
-
                         </Columns>
                     </RadzenDataGrid>
             }
@@ -84,39 +78,40 @@
         <div style="text-align: center; margin-top: 20px;">
             <RadzenButton Text="Submit Ratings" Click="@SubmitRatings" Style="background-color: green; color: white;" />
         </div>
-
     </RadzenCard>
 </RadzenStack>
 
 @code {
-    [Parameter]
-    [SupplyParameterFromQuery]
-    public int groupId { get; set; }
-
     private Dictionary<int, bool> GroupRecommendations = new();
     private Dictionary<int, List<UsersModel>> RecommendationData = new();
     private Dictionary<int, int> Ratings = new(); // Stores selected ratings for each user by UserId
+    private int groupId = 10; // Hardcoded groupId for demonstration
 
     protected override async Task OnInitializedAsync()
     {
-        var allUsers = await _dbUsers.GetAllUser();
-        RecommendationData.Add(0, allUsers.Skip(3).Take(3).ToList());
+        var groupMembers = await _dbGroupMembers.GetAllGroupMembers();
+        var groupSpecificMembers = groupMembers.Where(m => m.GroupId == groupId).ToList();
 
-        foreach (var key in RecommendationData.Keys)
+        // Retrieve the full user details for all members of the group
+        var userList = new List<UsersModel>();
+        foreach (var member in groupSpecificMembers)
         {
-            GroupRecommendations[key] = true;
-
-            foreach (var user in RecommendationData[key])
+            var userDetails = await _dbUsers.GetUser(member.UserId);
+            if (userDetails.Any())
             {
-                user.Rating = await _dbRatings.GetRatings(user.UserId); // Get average rating as double
+                var user = userDetails.First();
+                user.Rating = await _dbRatings.GetRatings(user.UserId); // Fetch the average rating
+                userList.Add(user);
             }
         }
+
+        RecommendationData.Add(groupId, userList);
+        GroupRecommendations[groupId] = true;
     }
 
     private int GetUserRating(int userId)
     {
-        // Returns the selected rating if available; otherwise, defaults to rounded average
-        return Ratings.ContainsKey(userId) ? Ratings[userId] : Convert.ToInt32(RecommendationData[0].FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
+        return Ratings.ContainsKey(userId) ? Ratings[userId] : Convert.ToInt32(RecommendationData[groupId].FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
     }
 
     private void StoreRating(int rating, int userId)
