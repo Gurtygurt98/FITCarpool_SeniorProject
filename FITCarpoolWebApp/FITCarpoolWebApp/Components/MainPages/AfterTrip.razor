@@ -38,6 +38,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
+
 @attribute [Authorize]
 
 <RadzenStack>
@@ -77,22 +78,22 @@
                         <Template Context="user">
                             <RadzenRating Value="@GetUserRating(user.UserId)" Max="5" Change="@(args => StoreRating(args, user.UserId))" Style="margin-right: 10px;" />
                             <MudText Typo="Typo.body1">Rating Value: @user.Rating.ToString("0.00")</MudText>
-                            </Template>
-                        </RadzenDataGridColumn>
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
-                            <Template Context="user">
-                                <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
-                            </Template>
-                        </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="UsersModel" Title="Review" Width="300px">
+                        <Template Context="user">
+                            <RadzenButton Text="Leave Review" Click="@(() => LeaveReview(user))" Style="color: white;" />
+                        </Template>
+                    </RadzenDataGridColumn>
 
-                        <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
-                            <Template>
-                                <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                    <RadzenDataGridColumn TItem="UsersModel" Context="user" Width="100px">
+                        <Template>
+                            <RadzenButton Text="Report" Click="@(() => ReportUser(user))" Style="width: 100%; background-color: tomato; color: white;" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
         }
         else
         {
@@ -121,7 +122,6 @@
             var currentUser = await _dbUsers.GetUser(user.Identity.Name);
             if (currentUser.Any())
             {
-                // Get the trip details with confirmed group members
                 CurrentTrip = await _dbGroupRec.GetTripWithMems(TripID);
                 if (CurrentTrip != null)
                 {
@@ -129,12 +129,14 @@
                     .Where(member => member.UserID != currentUser.First().UserId)
                     .Select(async member =>
                     {
+                        var userDetails = await _dbUsers.GetUser((int)member.UserID);
                         var userRating = await _dbRatings.GetRatings((int)member.UserID);
                         return new UsersModel
                                 {
-                                    UserId = (int)member.UserID, // Explicit conversion from long to int
+                                    UserId = (int)member.UserID,
                                     FirstName = member.FirstName,
                                     LastName = member.LastName,
+                                    Email = userDetails.FirstOrDefault()?.Email ?? string.Empty, // Ensure Email is set
                                     ProfilePicture = member.ProfilePicture,
                                     Rating = userRating
                                 };
@@ -146,25 +148,15 @@
         }
     }
 
-    private int GetUserRating(int userId)
-    {
-        return Ratings.ContainsKey(userId) ? Ratings[userId] : (int)Math.Round(GroupMembers.FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
-    }
+    private int GetUserRating(int userId) => Ratings.TryGetValue(userId, out var rating) ? rating : (int)Math.Round(GroupMembers.FirstOrDefault(u => u.UserId == userId)?.Rating ?? 0);
 
-    private void StoreRating(int rating, int userId)
-    {
-        Ratings[userId] = rating;
-    }
+    private void StoreRating(int rating, int userId) => Ratings[userId] = rating;
 
     private async Task SubmitRatings()
     {
         foreach (var rating in Ratings)
         {
-            var newRating = new RatingsModel
-                    {
-                        RatedUserID = rating.Key,
-                        Rating = rating.Value
-                    };
+            var newRating = new RatingsModel { RatedUserID = rating.Key, Rating = rating.Value };
             await _dbRatings.CreateNewRating(newRating);
         }
 
@@ -174,7 +166,14 @@
 
     private void ViewUser(string userEmail)
     {
-        NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
+        if (!string.IsNullOrEmpty(userEmail))
+        {
+            NavigationManager.NavigateTo($"/Other-User-Details/{userEmail}");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = "User email not found." });
+        }
     }
 
 
