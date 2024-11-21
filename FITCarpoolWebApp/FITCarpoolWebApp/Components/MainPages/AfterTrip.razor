@@ -89,6 +89,10 @@
 </RadzenStack>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public int groupId { get; set; }
+
     private Dictionary<int, bool> GroupRecommendations = new();
     private Dictionary<int, List<UsersModel>> RecommendationData = new();
     private Dictionary<int, int> Ratings = new(); // Stores selected ratings for each user by UserId

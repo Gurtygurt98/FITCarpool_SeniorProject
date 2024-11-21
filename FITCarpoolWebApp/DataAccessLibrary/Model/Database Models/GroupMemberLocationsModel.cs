@@ -11,7 +11,7 @@ namespace DataAccessLibrary.Model.Database_Models
     {
         public int LocationId { get; set; }
         public int UserID { get; set; }
-        public int GroupID { get; set; }
+        public int TripID { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public DateTime Timestamp { get; set; }
@@ -22,7 +22,7 @@ namespace DataAccessLibrary.Model.Database_Models
         {
             LocationId = locationId;
             UserID = userId;
-            GroupID = groupId;
+            TripID = groupId;
             Latitude = latitude;
             Longitude = longitude;
             Timestamp = timestamp;
@@ -30,14 +30,14 @@ namespace DataAccessLibrary.Model.Database_Models
         public GroupMemberLocationsModel(int userId, int groupId, double latitude, double longitude, DateTime timestamp)
         {
             UserID = userId;
-            GroupID = groupId;
+            TripID = groupId;
             Latitude = latitude;
             Longitude = longitude;
             Timestamp = timestamp;
         }
         public override string ToString()
         {
-            return $"LocationId: {LocationId}, UserId: {UserID}, GroupId: {GroupID}, Latitude: {Latitude}, Longitude: {Longitude}, Timestamp: {Timestamp}";
+            return $"LocationId: {LocationId}, UserId: {UserID}, TripID: {TripID}, Latitude: {Latitude}, Longitude: {Longitude}, Timestamp: {Timestamp}";
         }
     }
 

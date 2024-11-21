@@ -1,6 +1,7 @@
-﻿@page "/Driver"
+﻿@page "/Driver/{TripID:int}"
 @using DataAccessLibrary.Data.API
 @using DataAccessLibrary.Model
+@using DataAccessLibrary.Model.Logic_Models
 @using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -18,6 +19,8 @@
 @inject IGMapsAPI _GmapKey
 @inject IJSRuntime JSRuntime
 @inject ICarpoolGroupsData _dbGroups
+@inject IGroupRecommendationData _dbGroupRec
+
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
@@ -26,65 +29,91 @@
 <RadzenStack>
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
-            @if (!carpoolInProgress && GroupList.Any())
+            @if (CurrentTrip == null)
             {
-                // Display Data Grid to allow user to start trips based on GroupList Retrivied in Intialization Method
-                <RadzenText TextStyle="TextStyle.H4" TagName="TagName.H5" class="rz-color-primary">Please Select a Group to Start</RadzenText>
-                <RadzenDataList AllowVirtualization=@allowVirtualization Style="@(allowVirtualization ? "height:400px;overflow:auto;" : "")"
-                                WrapItems="@(!allowVirtualization)" AllowPaging="@(!allowVirtualization)"
-                                Data="@GroupList" TItem="CarpoolGroupsModel" PageSize="5" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true">
-                    <Template Context="group">
-                        <RadzenCard Style="width: 100%; padding: 0;">
-                            <RadzenStack Gap="1">
-
-                                <RadzenText TextStyle="TextStyle.H6" TagName="TagName.H5" class="rz-color-primary">Group: @(group.GroupName)</RadzenText>
-                                <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Destination: @(group.Destination)</RadzenText>
-                                <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Riders: @(group.ListRiderNames())</RadzenText>
-
-                                <RadzenButton Text="Start Trip" Click="@(() => StartTrip(group))" Style="width: 100%" />
-                            </RadzenStack>
-                        </RadzenCard>
-                    </Template>
-                </RadzenDataList>
-
-
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">Error Occured! Trip was null :(</RadzenText>
             }
-            else if (!carpoolInProgress && !GroupList.Any())
+            else if (CurrentTrip.Status.Equals("Not Started"))
             {
-                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H5" class="rz-color-primary">You aren't a driver for any group!</RadzenText>
+                <button class="btn btn-primary" @onclick="StartTrip">Start Trip</button>
+                <p class="text-danger mt-2">
+                    Note: Clicking "Start Trip" will prevent pending users from joining this trip.
+                </p>
 
-            }
-            else
-            {
-                <RadzenText Style="font-size: 16px;" Tag="h5" Class="text-primary">
-                    Group Name: @CurrentGroup?.GroupName
-                </RadzenText>
-                @if (!locationAvailable)
+                <hr />
+
+                <h4>Confirmed Users</h4>
+                @if (CurrentTrip.ConfirmedUsers.Any())
                 {
-                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Please click below to allow location services</RadzenText>
-                    // A button that prompts the user for their location to start the and is labeled Start Trip
-                    <MudButton OnClick="@GetUserLocation" Style="margin-top: 20px;">Prompt for User Location</MudButton>
+                    <ul>
+                        @foreach (var user in CurrentTrip.ConfirmedUsers)
+                        {
+                            <li>
+                                <strong>@user.FirstName @user.LastName</strong> - Pickup: @user.PickupLocation, Dropoff: @user.DropoffLocation
+                                <br />
+                            </li>
+                        }
+                    </ul>
                 }
                 else
                 {
-                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Select your location refresh rate</RadzenText>
-                    <MudSelect T="int" Value="LocationRefreshRate" MultiSelection="false" ValueChanged="@(value =>OnRefreshRateChanged(value))">
-                        <MudSelectItem T="int" Value="10"> 10 </MudSelectItem>
-                        <MudSelectItem T="int" Value="30"> 30 </MudSelectItem>
-                        <MudSelectItem T="int" Value="60"> 60 </MudSelectItem>
-                    </MudSelect>
+                    <p>No confirmed users yet.</p>
+                }
+
+                <h4>Pending Users</h4>
+                @if (CurrentTrip.PendingUsers.Any())
+                {
+                    <ul>
+                        @foreach (var user in CurrentTrip.PendingUsers)
+                        {
+                            <li>
+                                <strong>@user.FirstName @user.LastName</strong> - Pickup: @user.PickupLocation, Dropoff: @user.DropoffLocation
+                                <br />
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No pending users yet.</p>
+                }
+
+                <h4>Declined Users</h4>
+                @if (CurrentTrip.DeclinedUsers.Any())
+                {
+                    <ul>
+                        @foreach (var user in CurrentTrip.DeclinedUsers)
+                        {
+                            <li>
+                                <strong>@user.FirstName @user.LastName</strong> - Pickup: @user.PickupLocation, Dropoff: @user.DropoffLocation
+                                <br />
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <p>No declined users yet.</p>
+                }
+
+            }
+            else if (CurrentTrip.Status.Equals("In Progress"))
+            {
+                @if (!locationAvailable)
+                {
+                    <RadzenText TextStyle="TextStyle.Body1" TagName="TagName.H5" class="rz-color-primary">Please click below to allow location services. This will allow your group to see your location</RadzenText>
+                    // A button that prompts the user for their location to start the and is labeled Start Trip
+                    <MudButton OnClick="@GetUserLocation" Style="margin-top: 20px;">Prompt for User Location</MudButton>
+
+                } else
+                {
                     <div>
                         <RadzenText>Current Location:</RadzenText>
                         <RadzenText>Latitude: @userLocation.Latitude, Longitude: @userLocation.Longitude</RadzenText>
-                            <MudButton OnClick="@EndRoute" Style="margin-top: 20px;">End Route</MudButton>
-                        </div>
+                        <MudButton OnClick="@EndRoute" Style="margin-top: 20px;">End Route</MudButton>
+                    </div>
                 }
 
-                // Need to make calls to get the users location in this
-
-                // A button that allows the user to cancel starting this trip, this sets carpoolInProgress back to false which brings the user to the if statement
-                // Once the user allows location and the trip starts every 30 seconds ( possibly add a dial for this) this page will update the database with the drivers current location
-
             }
         </RadzenStack>
     </RadzenCard>
@@ -92,40 +121,25 @@
 
     <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
         <RadzenStack>
-            <MudText Typo="Typo.h5" Style=""> Consider downloading Fl Tech Safe App for safety features!</MudText>
-            <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
-                      Alt="Profile"
-                      Style="width: 100px; height: 100px; cursor: pointer;"
-                      Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
-            <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
-                      Alt="Profile"
-                      Style="width: 100px; height: 100px; cursor: pointer;"
-                      Click="@(() => NavigateTo("https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1"))" />
+            <a href="https://play.google.com/store/apps/details?id=com.cutcom.apparmor.floridatech&pli=1" target="_blank">
+                <MudImage Src="https://www.fit.edu/media/site-specific/wwwfitedu/marketing-amp-comm/images/florida-tech-safe.JPG"
+                          Alt="Profile"
+                          Style="width: 100px; height: 100px; cursor: pointer;" />
+            </a>
+            <MudText Typo="Typo.h5">
+                Consider downloading Fl Tech Safe App for safety features!
+            </MudText>
 
         </RadzenStack>
 
     </RadzenCard>
 
-</RadzenStack>
-<RadzenStack>
-    <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width:75%">
-        <RadzenStack>
-            <MudText Typo="Typo.h3">Overall Finish Time: @overallFinishTime</MudText>
-                <MudText Typo="Typo.h4">Pickup Locations:</MudText>
-
-                @foreach (var address in pickupAddresses)
-            {
-                <div>
-                    <span>@address</span>
-                    <span style="margin-left: 10px;">ETA: @GetETA(address)</span>
-                </div>
-            }
-            <RadzenButton Text="Generate Directions" Click="@(() => GenerateDirections())" Style="margin-top: 20px;" />
-        </RadzenStack>
-    </RadzenCard>
 </RadzenStack>
 
 @code {
+    [Parameter]
+    public int TripID { get; set; }
+    public TripModel CurrentTrip { get; set; }
     List<CarpoolGroupsModel> GroupList = new();
     GroupMemberLocationsModel DriverLocation = new();
     List<GroupMembersModel> GroupMembersList = new();
@@ -161,7 +175,6 @@
         if (UserList.Any())
         {
             InputModel = UserList.First();
-            Console.WriteLine(InputModel.FirstName + " " + InputModel.UserId);
         }
         else
         {
@@ -170,15 +183,16 @@
         // Check if the user is already in progress of route
         List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
         carpoolInProgress = DriverLocationList.Any();
-        // Get what Groups the user is a driver of since they dont have any routes in progress
-        GroupList = await _dbGroups.GetDriverGroups(InputModel.UserId);
+        // Get the details for the Trip given the TripID param
+        CurrentTrip = await _dbGroupRec.GetTripWithMems(TripID);
 
-        if (carpoolInProgress)
-        {
-            // Current driver location object, send this along with updated location to the database for riders to grab
-            DriverLocation = DriverLocationList.First();
-            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
-        }
+    }
+    private async Task StartTrip()
+    {
+        // Logic to start the trip and prevent pending users from joining
+        await _dbGroupRec.StartTrip(CurrentTrip.ID);
+        CurrentTrip = await _dbGroupRec.GetTripWithMems(TripID);
+        StateHasChanged();
     }
     List<string> pickupAddresses = new List<string>
     {
@@ -218,7 +232,7 @@
         if (DriverLocation.LocationId == 0)
         {
             //GroupMemberLocationsModel(int locationId, int userId, int groupId, double latitude, double longitude, DateTime timestamp)
-            DriverLocation = new GroupMemberLocationsModel(InputModel.UserId, CurrentGroup.GroupId, latitude, longitude, currentTime);
+            DriverLocation = new GroupMemberLocationsModel(InputModel.UserId, CurrentTrip.ID, latitude, longitude, currentTime);
             await _dbLocation.AddGroupMemberLocation(DriverLocation);
             List<GroupMemberLocationsModel> DriverLocationList = await _dbLocation.GetGroupMemberLocation(InputModel.UserId);
             DriverLocation = DriverLocationList.FirstOrDefault();
@@ -229,7 +243,6 @@
             DriverLocation.Latitude = latitude;
             DriverLocation.Longitude = longitude;
             DriverLocation.Timestamp = currentTime;
-            CurrentGroup = GroupList.FirstOrDefault(group => group.GroupId.Equals(DriverLocation.GroupID));
             await _dbLocation.UpdateGroupMemberLocation(DriverLocation);
         }
         // Need to create call to either add or update user location in database
@@ -291,7 +304,6 @@
     {
         locationRefreshTimer?.Dispose();
     }
-
     private void NavigateTo(string url)
     {
         NavigationManager.NavigateTo(url, true);

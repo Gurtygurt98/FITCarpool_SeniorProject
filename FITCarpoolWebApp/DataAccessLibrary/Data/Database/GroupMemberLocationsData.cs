@@ -40,18 +40,18 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task AddGroupMemberLocation(GroupMemberLocationsModel location)
         {
-            string sql = @"INSERT INTO GroupMemberLocations (UserID, GroupID, Latitude, Longitude, Timestamp) 
-                   VALUES (@UserId, @GroupId, @Latitude, @Longitude, @Timestamp);";
+            string sql = @"INSERT INTO GroupMemberLocations (UserID, TripID, Latitude, Longitude, Timestamp) 
+                   VALUES (@UserId, @TripID, @Latitude, @Longitude, @Timestamp);";
             await _db.SaveData(sql, location);
         }
 
-        public async Task<List<GroupMemberLocationsModel>> GetDriverLocations(int userID)
+        public async Task<List<GroupMemberLocationsModel>> GetDriverLocations(int trip)
         {
-            string sql = @"SELECT GML.UserID, GM.GroupID, GML.Latitude, GML.Longitude, GML.Timestamp, GML.LocationID
+            string sql = @"SELECT GML.UserID, GM.TripID, GML.Latitude, GML.Longitude, GML.Timestamp, GML.LocationID
                             FROM GroupMembers GM
                             JOIN GroupMemberLocations GML ON GM.GroupID = GML.GroupID
                             WHERE GM.UserId = @UserId;";
-            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = userID });
+            return await _db.LoadData<GroupMemberLocationsModel, dynamic>(sql, new { UserId = trip });
 
         }
     }

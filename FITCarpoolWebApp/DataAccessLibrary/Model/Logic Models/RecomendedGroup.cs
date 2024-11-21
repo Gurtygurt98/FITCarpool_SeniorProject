@@ -151,8 +151,6 @@ namespace DataAccessLibrary.Model.Logic_Models
                     .Select(date => ShortenDayOfTheWeek(date.DayOfWeek.ToString()))
                     .Distinct()
                     .ToList();
-                Console.WriteLine(daysOfWeek.FirstOrDefault() + " Here2");
-
                 return string.Join(", ", daysOfWeek);
             }
 
@@ -170,7 +168,6 @@ namespace DataAccessLibrary.Model.Logic_Models
         }
         public string ShortenDayOfTheWeek(string DayOfWeek)
         {
-            Console.WriteLine(DayOfWeek);
             if (DayOfWeek == null) return string.Empty;
 
             switch (DayOfWeek)
