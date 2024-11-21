@@ -190,13 +190,6 @@
                             @if (trip.UserTripStatus.Equals("Pending"))
                             {
                                 <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
-                                <RadzenButton Text="Decline" Click="@(() => DeclineTrip(trip))" Style="width: 100%; background-color: red;" />
-
-                            }
-                            else if (trip.UserTripStatus.Equals("Declined"))
-                            {
-                                <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
-                                <RadzenButton Text="Remove" Click="@(() => RemoveFromTrip(trip))" Style="width: 100%; background-color: red;" />
                             }
                             else
                             {

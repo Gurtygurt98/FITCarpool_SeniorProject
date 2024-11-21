@@ -259,7 +259,7 @@ namespace DataAccessLibrary.Data.Database
             foreach (int TripID in TripIDs)
             {
                 string sqlInsert = "INSERT INTO CarpoolTripMembers (TripID, UserID, Status) Values (@TripID, @UserID, @Status)";
-                var para = new { TripID, UserID, Status = "Pending" };
+                var para = new { TripID, UserID, Status = "Confirmed" };
                 await _db.SaveData(sqlInsert, para);
             }
         }
