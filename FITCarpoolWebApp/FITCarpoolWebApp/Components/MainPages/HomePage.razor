@@ -19,6 +19,7 @@
 @inject IRolesData _dbRoles
 @inject IGroupRecommendationData _dbGroupRec
 @inject Radzen.DialogService DialogService;
+@inject ISnackbar Snackbar;
 
 <AuthorizeView>
     @*User is logged in *@
@@ -28,44 +29,108 @@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <MudText Typo="Typo.h3" Align="Align.Start"><b>Today's Trip</b></MudText>
             <div style="display: flex; flex-direction: row; gap: 20px;">
-                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                @if (TodaysTrips.Count > 0)
                 {
-                    var today = DateTime.Today;
-
-                    var todayTrips = upcomingTrips.Where(trip => trip.Start.Date == today).ToList();
-
-                    if (todayTrips.Count > 0)
+                    @foreach (var trip in TodaysTrips)
                     {
-                        @foreach (var trip in todayTrips)
+
+                        @if (trip.UserTripStatus.Equals("Confirmed"))
                         {
                             <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
-                                <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
-                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">
-                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
-                                </MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
 
-                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateToRiderConfirmation(trip.GroupID))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
+                                <MudText Typo="Typo.h6" Align="Align.Center">
+                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus") betwee @trip.Start.ToString("hh:mm") & @trip.End.ToString("hh:mm")
+                                </MudText>
+                                @if (trip.DriverID == null)
+                                {
+                                    <MudText Typo="Typo.h6" Align="Align.Center">No Driver in Group trip cannot start</MudText>
+                                    <RadzenButton Text="Join as Driver" Click="@(() => JoinTripAsDriver(trip))" Style="width: 100%; background-color: green;" />
+                                }
+                                else if (trip.DriverID == userModel.UserId)
+                                {
+                                    <MudText Typo="Typo.h6" Align="Align.Center">You're the Driver</MudText>
+                                    if (trip.Status.Equals("In Progress"))
+                                    {
+                                        <RadzenButton Text="Continue Trip" Click="@(() => StartTrip(trip))" Style="width: 100%; background-color: green;" />
+                                    }
+                                    else
+                                    {
+                                        <RadzenButton Text="Start Trip" Click="@(() => StartTrip(trip))" Style="width: 100%; background-color: green;" />
+                                    }
+                                }
+                                else
+                                {
+                                    if (trip.Status.Equals("Not Started"))
+                                    {
+                                        <MudText Typo="Typo.h6" Align="Align.Center">Awaiting Driver to Start</MudText>
+
+                                    }
+                                    else if (trip.Status.Equals("In Progress"))
+                                    {
+                                        <MudText Typo="Typo.h6" Align="Align.Center">Unable to join in progress trips</MudText>
+
+                                    }
+                                    else
+                                    {
+                                        <RadzenButton Text="View Trip Progress" Click="@(() => ViewTripProgress(trip))" Style="width: 100%; background-color: green;" />
+
+                                    }
+                                }
                             </RadzenCard>
                         }
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h6">No rides today.</MudText>
-                    }
+                        else
+                        {
+                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                                <MudText Typo="Typo.h5" Align="Align.Center">@trip.UserTripStatus</MudText>
+
+                                <MudText Typo="Typo.h6" Align="Align.Center">
+                                    @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                                </MudText>
+                                <MudText Typo="Typo.h5" Align="Align.Center">@trip.Start.ToString("MM/dd/yy") at @trip.Start.ToString("hh:mm tt")</MudText>
+                                @if (trip.UserTripStatus.Equals("Pending"))
+                                {
+                                    <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
+                                    <RadzenButton Text="Decline" Click="@(() => DeclineTrip(trip))" Style="width: 100%; background-color: red;" />
+
+                                }
+                                else if (trip.UserTripStatus.Equals("Declined"))
+                                {
+                                    <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
+                                    <RadzenButton Text="Remove" Click="@(() => RemoveFromTrip(trip))" Style="width: 100%; background-color: red;" />
+                                }
+                                else
+                                {
+                                    // User has accepted the group already
+                                    @if (trip.DriverID == null)
+                                    {
+                                        <MudText Typo="Typo.h6" Align="Align.Center">No Driver in Group</MudText>
+                                        <RadzenButton Text="Join as Driver" Click="@(() => JoinTripAsDriver(trip))" Style="width: 100%; background-color: green;" />
+                                    }
+                                    else if (trip.DriverID == userModel.UserId)
+                                    {
+                                        <MudText Typo="Typo.h6" Align="Align.Center">Driver</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText Typo="Typo.h6" Align="Align.Center">Rider</MudText>
+                                    }
+                                    <RadzenButton Text="Decline" Click="@(() => DeclineTrip(trip))" Style="width: 100%; background-color: red;" />
+
+                                }
+                            </RadzenCard>
+                        }
+
+                }
                 }
                 else
                 {
-                    <MudText Typo="Typo.h6">No rides today.</MudText>
+                <MudText Typo="Typo.h6">No trips today.</MudText>
                 }
             </div>
 
 
         </RadzenCard>
-
-        
-        @* Recommend Groups Card on top *@
+         @* Recommend Groups Card on top *@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <RadzenRow>
                 <RadzenColumn Width="70%">
@@ -76,23 +141,22 @@
                 </RadzenColumn>
             </RadzenRow>
             @*Group Recommendation for the Upcoming Week*@
-            <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
+            <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px; min-height:inherit">
                 @if (NextWeekRecommendations.Count > 0)
                 {
                     @foreach (var recommendation in NextWeekRecommendations)
                     {
                         <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
-                            <MudText Typo="Typo.h4" Align="Align.Center">@recommendation.GetDaysOfWeek()</MudText>
-                            <MudText Typo="Typo.h5" Align="Align.Center">Date: @recommendation.GetFormattedDateRange()</MudText>
-                            <MudText Typo="Typo.h6" Align="Align.Center">
-                                Direction: @(recommendation.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
-                            </MudText>
-                            <MudStack>
-                                <RadzenButton Text="Accept" Click="@(() => AcceptGroupRecommendation(recommendation))" Style="width: 100%; background-color: green;" />
-                                <RadzenButton Text="Decline" Click="@(() => DeclineGroupRecommendation(recommendation))" Style="width: 100%; background-color: red;" />
-                                <RadzenButton Text="View" Click="@(() => ShowGroupDetails(recommendation))" Style="width: 100%; background-color: blue;" />
+                            <MudText Typo="Typo.h6" Align="Align.Center">@recommendation.GetDaysOfWeek()</MudText>
+                            <MudText Typo="Typo.h6" Align="Align.Center">Date: @recommendation.GetFormattedDateRange()</MudText>
+                            <MudText Typo="Typo.h6" Align="Align.Center">@recommendation.StartWindow.ToShortTimeString() - @recommendation.EndWindow.ToShortTimeString()</MudText>
 
-                            </MudStack>
+                            <MudText Typo="Typo.h6" Align="Align.Center">
+                                @(recommendation.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                            </MudText>
+                            <RadzenButton Text="Accept" Click="@(() => AcceptGroupRecommendation(recommendation))" Style="width: 100%; background-color: green;" />
+                            <RadzenButton Text="Decline" Click="@(() => DeclineGroupRecommendation(recommendation))" Style="width: 100%; background-color: red;" />
+                            <RadzenButton Text="View" Click="@(() => ShowGroupDetails(recommendation))" Style="width: 100%; background-color: blue;" />
                         </RadzenCard>
                     }
                 }
@@ -102,8 +166,6 @@
                 }
             </div>
         </RadzenCard>
-
-
         @* Future Trips *@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <RadzenRow>
@@ -112,37 +174,48 @@
                 </RadzenColumn>
                 
             </RadzenRow>
-
             <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
-                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                @if (UpcomingTrips.Count > 0)
                 {
-                    var today = DateTime.Today;
-
-                    var futureTrips = upcomingTrips
-                    .Where(trip => trip.Start.Date > today)
-                    .OrderBy(trip => trip.Start)
-                    .ToList();
-
-
-                    if (futureTrips.Count > 0)
+                    @foreach (var trip in UpcomingTrips)
                     {
-                        @foreach (var trip in futureTrips)
-                        {
-                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
-                                <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
-                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">
-                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
-                                </MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
+                        <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                            <MudText Typo="Typo.h5" Align="Align.Center">@trip.UserTripStatus</MudText>
 
-                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateToRiderConfirmation(trip.GroupID))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
-                            </RadzenCard>
-                        }
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+                            <MudText Typo="Typo.h6" Align="Align.Center">
+                                @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                            </MudText>
+                            <MudText Typo="Typo.h5" Align="Align.Center">@trip.Start.ToString("MM/dd/yy") at @trip.Start.ToString("hh:mm tt")</MudText>
+                            @if (trip.UserTripStatus.Equals("Pending"))
+                            {
+                                <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
+                                <RadzenButton Text="Decline" Click="@(() => DeclineTrip(trip))" Style="width: 100%; background-color: red;" />
+
+                            }
+                            else if (trip.UserTripStatus.Equals("Declined"))
+                            {
+                                <RadzenButton Text="Confirm" Click="@(() => ConfirmTrip(trip))" Style="width: 100%; background-color: green;" />
+                                <RadzenButton Text="Remove" Click="@(() => RemoveFromTrip(trip))" Style="width: 100%; background-color: red;" />
+                            }
+                            else
+                            {
+                                // User has accepted the group already
+                                @if (trip.DriverID == null)
+                                {
+                                    <MudText Typo="Typo.h6" Align="Align.Center">No Driver in Group</MudText>
+                                    <RadzenButton Text="Join as Driver" Click="@(() => JoinTripAsDriver(trip))" Style="width: 100%; background-color: green;" />
+                                }
+                                else if (trip.DriverID == userModel.UserId)
+                                {
+                                    <MudText Typo="Typo.h6" Align="Align.Center">Driver</MudText>
+                                } else
+                                {
+                                    <MudText Typo="Typo.h6" Align="Align.Center">Rider</MudText>
+                                }
+                                <RadzenButton Text="Decline" Click="@(() => DeclineTrip(trip))" Style="width: 100%; background-color: red;" />
+
+                            }
+                        </RadzenCard>
                     }
                 }
                 else
@@ -151,7 +224,6 @@
                 }
             </div>
         </RadzenCard>
-
         @* Past Trips *@
         <RadzenCard Class="rz-my-12 rz-mx-auto" Style="width: 100%; overflow-x: auto;">
             <RadzenRow>
@@ -162,48 +234,38 @@
             </RadzenRow>
 
             <div style="display: flex; flex-direction: row; gap: 20px; overflow-x: auto; padding: 10px;">
-                @if (upcomingTrips != null && upcomingTrips.Count > 0)
+                @if (PreviousTrips.Count > 0)
                 {
-                    var today = DateTime.Today;
-
-                    var pastTrips = upcomingTrips
-                    .Where(trip => trip.Start.Date < today)
-                    .OrderBy(trip => trip.Start)
-                    .ToList();
-
-                    if (pastTrips.Count > 0)
+                    @foreach (var trip in PreviousTrips)
                     {
-                        @foreach (var trip in pastTrips)
-                        {
-                            <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
-                                <MudText Typo="Typo.h4" Align="Align.Center">Day: @trip.Day</MudText>
-                                <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">
-                                    Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
-                                </MudText>
-                                <MudText Typo="Typo.h6" Align="Align.Center">Role: @userRole</MudText>
-
-                                <RadzenButton Text="Confirm Ride" Click="@(() => NavigateToAfterTrip(trip.GroupID))" Style="width: 100%; background-color: #D3D3D3; color: #333;" />
-                            </RadzenCard>
-                        }
-                    }
-                    else
-                    {
-                        <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+                        <RadzenCard Class="rz-my-12" Style="min-width: 300px; width: auto;">
+                            <MudText Typo="Typo.h5" Align="Align.Center">Date: @trip.Start.ToString("MMMM dd, yyyy") at @trip.Start.ToString("hh:mm tt")</MudText>
+                            <MudText Typo="Typo.h6" Align="Align.Center">
+                                Direction: @(trip.Direction == "arrival" ? "Arriving to Campus" : "Departing from Campus")
+                            </MudText>
+                            @if (trip.DriverID == null)
+                            {
+                                <MudText Typo="Typo.h6" Align="Align.Center">No Driver in Group</MudText>
+                                <RadzenButton Text="Join as Driver" Click="@(() => JoinTripAsDriver(trip))" Style="width: 100%; background-color: green;" />
+                            }
+                            else if (trip.DriverID == userModel.UserId)
+                            {
+                                <MudText Typo="Typo.h6" Align="Align.Center">Driver</MudText>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.h6" Align="Align.Center">Rider</MudText>
+                            }
+                        </RadzenCard>
                     }
                 }
                 else
                 {
-                    <MudText Typo="Typo.h6">No upcoming rides found.</MudText>
+                    <MudText Typo="Typo.h6">No Previous Completed Rides.</MudText>
                 }
             </div>
         </RadzenCard>
-
-
-
-        
     </Authorized>
-
     <NotAuthorized>
         <MudGrid>
             <MudItem xs="12" sm="6" md="6" lg="6">
@@ -229,7 +291,10 @@
 
     private string userName;
     private string userRole = "rider";
-    private List<GroupScheduleModel> upcomingTrips = new();
+    private List<TripModel> AllTrips = new();
+    private List<TripModel> PreviousTrips = new();
+    private List<TripModel> TodaysTrips = new();
+    private List<TripModel> UpcomingTrips = new();
     private List<Friend> friends = new();
     private int ID = 0;
     public UsersModel userModel = new();
@@ -253,23 +318,6 @@
 
         userModel = userList.First();
         ID = userModel.UserId;
-        // Fetch all groups for the user
-        var userGroups = await _dbCarpoolGroups.GetCurrentGroups(ID);
-        if (userGroups.Any())
-        {
-            foreach (var group in userGroups)
-            {
-                int groupID = group.Item1;
-
-                // Use each retrieved group ID to get the schedule
-                var groupSchedules = await _dbGroupSchedule.GetScheduleForGroup(groupID);
-                if (groupSchedules != null)
-                {
-                    upcomingTrips.AddRange(groupSchedules);
-                }
-
-            }
-        }
         // Fetch friends
         var friendList = await _dbFriends.GetFriends(ID);
         foreach (var dataFriend in friendList)
@@ -289,18 +337,15 @@
                 friends.Add(new Friend { Name = $"{temp.First().FirstName} {temp.First().LastName}" });
             }
         }
+
         // Pull Next Week Recomendation from the GroupRecomendation & GroupRecomendation Membership table
         var GroupRec = await _dbGroupRec.GetUsersUpcomingRecommendations(userModel.UserId);
         if (GroupRec != null)
         {
             NextWeekRecommendations.AddRange(GroupRec);
         }
-        else
-        {
-            Console.WriteLine("No Groups Found");
-        }
+        RefreshTrips();
     }
-
     private void NavigateToRiderConfirmation(int groupId)
     {
         var url = $"/Rider-Confirmation?groupId={Uri.EscapeDataString(groupId.ToString())}";
@@ -311,7 +356,6 @@
         var url = $"/After-Trip?groupId={Uri.EscapeDataString(groupId.ToString())}";
         NavigationManager.NavigateTo(url);
     }
-
     private void ViewUser(string email)
     {
         NavigationManager.NavigateTo($"/Other-User-Details/{email}");
@@ -346,6 +390,90 @@
     {
         await _dbGroupRec.AcceptGroupRec(group, userModel.UserId);
         NextWeekRecommendations.Remove(group);
+        await RefreshTrips();
+    }
+    public async Task RefreshTrips()
+    {
+        // Get All Trips for the user previous and upcoming
+        AllTrips = await _dbGroupRec.GetTripModelsForHomePage(ID);
+
+        // Trips that have a Start (DateTime) that is past today's date, sorted by Start
+        UpcomingTrips = AllTrips
+            .Where(trip => trip.Start > DateTime.Now && !trip.Status.Equals("Completed"))
+            .OrderBy(trip => trip.Start)
+            .ToList();
+
+        // Trips that have a Start that is today at any time, sorted by Start
+        TodaysTrips = AllTrips
+            .Where(trip => trip.Start.Date == DateTime.Now.Date && !trip.Status.Equals("Completed"))
+            .OrderBy(trip => trip.Start)
+            .ToList();
+
+        // Trips that have a Start of before today, sorted by Start
+        PreviousTrips = AllTrips
+            .Where(trip => trip.Start < DateTime.Now.Date && trip.Status.Equals("Completed"))
+            .OrderBy(trip => trip.Start)
+            .ToList();
+
+    }
+    public async Task JoinTripAsDriver(TripModel trip)
+    {
+        if (userModel.UserType.Equals("driver"))
+        {
+            Snackbar.Add($"You are now the driver for occuring {trip.Start}", Severity.Normal);
+            await _dbGroupRec.ConfirmTripAsDriver(trip, ID);
+            await RefreshTrips();
+        } else
+        {
+            Snackbar.Add("Error - You must set your role to driver under your profile to join as a driver ", Severity.Error);
+        }
+    }
+    public async Task ConfirmTrip(TripModel trip)
+    {
+        if (userModel.UserType.ToLower().Equals("driver"))
+        {
+            await _dbGroupRec.ConfirmTripAsDriver(trip,ID);
+        }else
+        {
+            await _dbGroupRec.ConfirmTripAsRider(trip, ID);
+        }
+
+        await RefreshTrips();
+    }
+    public async Task DeclineTrip(TripModel trip)
+    {
+        if (trip.UserTripStatus.Equals("Pending"))
+        {
+            await _dbGroupRec.SetUserStatusToDeclineAsync(trip.ID, ID);
+        }
+        else
+        {
+            if(trip.DriverID == null)
+            {
+                await _dbGroupRec.SetUserStatusToDeclineAsync(trip.ID, ID);
+            } else
+            {
+                if (trip.DriverID.Value == ID)
+                {
+                    await _dbGroupRec.SetUserStatusToDeclineAndSetDriverNull(trip.ID, ID);
+                }
+            }
+        }
+        await RefreshTrips();
+    }
+    public async Task RemoveFromTrip(TripModel trip)
+    {
+        await _dbGroupRec.RemoveUserFromTripAsync(trip.ID, ID);
+        await RefreshTrips();
+    }
+    public async Task ViewTripProgress(TripModel trip)
+    {
+        
+    }
+    public async Task StartTrip(TripModel trip)
+    {
+        NavigationManager.NavigateTo($"/Driver/{trip.ID}");
+
     }
 }
 <style>
@@ -353,13 +481,5 @@
         font-size: 2.5rem; /* Default for larger screens */
     }
 
-    media (max-width: 768px) {
-        .welcome-text
 
-    {
-        font-size: 1.5rem; /* Smaller font size for mobile */
-        text-align: center; /* Center-align for smaller screens */
-    }
-
-    }
 </style>

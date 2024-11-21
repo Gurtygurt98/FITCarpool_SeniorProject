@@ -18,6 +18,36 @@ namespace DataAccessLibrary.Data.Database
             _db = db;
             _dbUsers = usersData;
         }
+        public async Task<TripModel> GetTripWithMems(int TripID)
+        {
+            string query = @"select  CT.ID, CT.DriverID, CT.GroupID, CT.Start, CT.End, CGT.Direction, CT.Status
+                                from CarpoolTrips CT
+                                JOIN CarpoolGroupTable CGT on CT.GroupID = CGT.ID
+                                WHERE CT.ID = @TripID";
+            List<TripModel> tripModels = await _db.LoadData<TripModel, dynamic>(query, new { TripID });
+            if (tripModels.Any())
+            {
+                TripModel Trip = tripModels.First();
+                string UserQueryConfirmed = @"select UserID from CarpoolTripMembers where TripID = @TripID and Status = @Status";
+                List<int> ConfiremdUserIDs = await _db.LoadData<int, dynamic>(UserQueryConfirmed, new { TripID , Status = "Confirmed"});
+                string UserQueryPending = @"select UserID from CarpoolTripMembers where TripID = @TripID and Status = @Status";
+                List<int> PendingUserIDs = await _db.LoadData<int, dynamic>(UserQueryPending, new { TripID, Status = "Pending" });
+                string UserQueryDeclined= @"select UserID from CarpoolTripMembers where TripID = @TripID and Status = @Status";
+                List<int> DeclinedUserIDs = await _db.LoadData<int, dynamic>(UserQueryDeclined, new { TripID, Status = "Declined" });
+                Trip.ConfirmedUsers = await _dbUsers.GetListUserInfoModel(ConfiremdUserIDs);
+                Trip.PendingUsers = await _dbUsers.GetListUserInfoModel(PendingUserIDs);
+                Trip.DeclinedUsers = await _dbUsers.GetListUserInfoModel(DeclinedUserIDs);
+
+
+                return Trip;
+            }
+            else
+            {
+                return null;
+            }
+
+        }
+
         public async Task<List<RecomendedGroup>> GetRecommendedGroupsForTimePeriod(Week week)
         {
             // SQL query to select groups within the specified time period
@@ -186,8 +216,8 @@ namespace DataAccessLibrary.Data.Database
             // Create Trips for each time slots  
             foreach (DateTime TripStart in group.ActiveTimeSlots)
             {
-                string TripSQL = @"INSERT INTO CarpoolTrips (GroupID, Start, End) Values (@GroupId, @TripStart, @TripEnd)";
-                var TripParameters = new { GroupId, TripStart, TripEnd = TripStart.AddHours(1) };
+                string TripSQL = @"INSERT INTO CarpoolTrips (GroupID, Start, End, Status) Values (@GroupId, @TripStart, @TripEnd, @Status)";
+                var TripParameters = new { GroupId, TripStart, TripEnd = TripStart.AddHours(1) , Status = "Not Started"};
                 int TripID = await _db.SaveDataAndGetLastId(TripSQL, TripParameters);
             }
             // Add Group Creator as pending invite 
@@ -215,7 +245,124 @@ namespace DataAccessLibrary.Data.Database
         }
         public async Task DeclineGroupRec(RecomendedGroup group, int UserID)
         {
+            string query = @"
+            DELETE FROM GroupRecomendationMembership
+            WHERE GroupID = @GroupID AND UserID = @UserID";
+            await _db.SaveData(query, new { GroupID = group.GroupID, UserID = UserID });
+        }
+        public async Task<List<TripModel>> GetTripModelsForHomePage(int UserID)
+        {
+            List<TripModel> tripModels = new List<TripModel>();
+            string query = @"select  CT.ID, CT.DriverID, CT.GroupID, CT.Start, CT.End, CGT.Direction, CT.Status, CTM.Status as UserTripStatus
+                                from CarpoolTrips CT
+                                JOIN CarpoolTripMembers CTM on CT.ID = CTM.TripID
+                                JOIN CarpoolGroupTable CGT on CT.GroupID = CGT.ID
+                                WHERE CTM.UserId = @UserID";
+            tripModels = await _db.LoadData<TripModel,dynamic>(query, new { UserID = UserID });
+            return tripModels;
+        }
+        public async Task ConfirmTripAsRider(TripModel trip, int userID)
+        {
+            string query = @"
+                            UPDATE CarpoolTripMembers
+                            SET Status = 'Confirmed'
+                            WHERE TripID = @TripID AND UserID = @UserID;";
+            await _db.SaveData(query, new { TripID = trip.ID, UserID = userID });
+        }
+        public async Task ConfirmTripAsDriver(TripModel trip, int userID)
+        {
+            await ConfirmTripAsRider(trip, userID);
 
+            if (trip.DriverID == null)
+            {
+               
+                string query = @"
+                                UPDATE CarpoolTrips
+                                SET DriverID = @UserID
+                                WHERE ID = @TripID;";
+                await _db.SaveData(query, new { TripID = trip.ID, UserID = userID });
+            }
+            else
+            {
+                int LeastDrivenID = await LeastMilesDriver(trip.DriverID.Value, userID);
+                if(LeastDrivenID == userID)
+                {
+                    string query = @"
+                                UPDATE CarpoolTrips
+                                SET DriverID = @UserID
+                                WHERE ID = @TripID;";
+                    await _db.SaveData(query, new { TripID = trip.ID, UserID = userID });
+                }
+            }
+
+
+        }
+        public async Task SetUserStatusToDeclineAsync(int tripId, int userId)
+        {
+            string query = @"
+                        UPDATE CarpoolTripMembers
+                        SET Status = 'Declined'
+                        WHERE TripID = @TripID AND UserID = @UserID;";
+
+            await _db.SaveData(query, new { TripID = tripId, UserID = userId });
+        }
+        public async Task RemoveUserFromTripAsync(int tripId, int userId)
+        {
+            string query = @"
+                DELETE FROM CarpoolTripMembers
+                WHERE TripID = @TripID AND UserID = @UserID;";
+
+            await _db.SaveData(query, new { TripID = tripId, UserID = userId });
+        }
+        public async Task SetUserStatusToDeclineAndSetDriverNull(int tripId, int userId)
+        {
+            string query = @"
+                        UPDATE CarpoolTripMembers
+                        SET Status = 'Declined'
+                        WHERE TripID = @TripID AND UserID = @UserID;";
+            await _db.SaveData(query, new { TripID = tripId, UserID = userId });
+            string query2 = @"
+                        UPDATE CarpoolTrip
+                        SET DriverID = NULL
+                        WHERE TripID = @TripID AND DriverID = @UserID;";
+            await _db.SaveData(query2, new { TripID = tripId, UserID = userId });
+        }
+        public async Task<int> LeastMilesDriver(int userID1, int userID2)
+        {
+            string sql = @"WITH UserMiles AS (
+                                SELECT 
+                                    UserID, 
+                                    COALESCE(MilesDriven, 0) AS MilesDriven
+                                FROM 
+                                    TripStatistics
+                                WHERE 
+                                    UserID IN (@userID1, @userID2)
+                            )
+                            SELECT 
+                                CASE 
+                                    WHEN COUNT(*) < 2 THEN -1 -- If data for one or both users doesn't exist
+                                    WHEN MIN(MilesDriven) = MAX(MilesDriven) THEN -1 -- If miles are equal
+                                    ELSE (SELECT UserID FROM UserMiles ORDER BY MilesDriven ASC LIMIT 1) 
+                                END AS Result
+                            FROM 
+                                UserMiles;";
+            List<int> x = await _db.LoadData<int,dynamic>(sql, new { userID1, userID2 });
+            if (x.Count > 0)
+            {
+                return x.First();
+            } 
+            else 
+            { 
+                return -1; 
+            }
+        }
+        public async Task StartTrip(int TripID)
+        {
+            string query = @"
+                            UPDATE CarpoolTrips
+                            SET Status = 'In Progress'
+                            WHERE ID = @TripID;";
+            await _db.SaveData(query, new { TripID });
         }
     }
 }
