@@ -154,14 +154,46 @@
 
     private async Task SubmitRatings()
     {
-        foreach (var rating in Ratings)
+        try
         {
-            var newRating = new RatingsModel { RatedUserID = rating.Key, Rating = rating.Value };
-            await _dbRatings.CreateNewRating(newRating);
-        }
+            // Show a loading notification
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "Submitting Ratings", Detail = "Please wait..." });
 
-        NavigationManager.NavigateTo("/", forceLoad: true);
-        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Ratings Submitted" });
+            if (Ratings.Count == 0)
+            {
+                NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Warning, Summary = "No Ratings", Detail = "You must rate at least one user." });
+                return;
+            }
+
+            foreach (var rating in Ratings)
+            {
+                var groupMember = GroupMembers.FirstOrDefault(member => member.UserId == rating.Key);
+                if (groupMember == null)
+                {
+                    NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = $"Could not find user with ID {rating.Key}." });
+                    continue;
+                }
+
+                var newRating = new RatingsModel
+                        {
+                            RatedUserID = rating.Key,
+                            Rating = rating.Value
+                        };
+
+                // Create a new rating entry in the database
+                await _dbRatings.CreateNewRating(newRating);
+            }
+
+            NavigationManager.NavigateTo("/", forceLoad: true);
+
+            // Notify the user of success
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Success, Summary = "Ratings Submitted", Detail = "Your ratings have been successfully submitted." });
+        }
+        catch (Exception ex)
+        {
+            // Handle any exceptions and notify the user
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "Error", Detail = $"An error occurred: {ex.Message}" });
+        }
     }
 
     private void ViewUser(string userEmail)
